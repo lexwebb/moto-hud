@@ -87,8 +87,23 @@ func roadRibbonSVG(points []RoadPoint, turnIndex int, w, h int) string {
 	return b.String()
 }
 
+// ribbonForNav prefers phone-supplied corridor points; otherwise a canned schematic.
+func ribbonForNav(nav protocol.NavMessage) (points []RoadPoint, turnIndex int) {
+	if len(nav.RibbonPoints) >= 2 {
+		pts := make([]RoadPoint, len(nav.RibbonPoints))
+		for i, p := range nav.RibbonPoints {
+			pts[i] = RoadPoint{X: p.X, Y: p.Y}
+		}
+		turn := nav.RibbonTurn
+		if turn < 0 || turn >= len(pts) {
+			turn = -1
+		}
+		return pts, turn
+	}
+	return schematicRibbonForManeuver(nav.Maneuver)
+}
+
 // schematicRibbonForManeuver returns canned corridor geometry matching the design kit.
-// Real route polylines can replace this later via protocol without changing the SVG drawer.
 func schematicRibbonForManeuver(m protocol.Maneuver) (points []RoadPoint, turnIndex int) {
 	switch m {
 	case protocol.ManeuverLeft, protocol.ManeuverSlightLeft:

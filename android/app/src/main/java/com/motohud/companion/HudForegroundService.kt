@@ -24,6 +24,7 @@ class HudForegroundService : Service() {
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Main.immediate)
     private lateinit var ble: BleClient
     private lateinit var media: MediaWatcher
+    private lateinit var ribbon: RibbonEnricher
     private var http: HttpHudSink? = null
     private var jobs: Job? = null
 
@@ -32,6 +33,7 @@ class HudForegroundService : Service() {
         createChannel()
         ble = BleClient(this)
         media = MediaWatcher(this)
+        ribbon = RibbonEnricher(this)
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
@@ -49,7 +51,8 @@ class HudForegroundService : Service() {
         jobs = scope.launch {
             launch {
                 HudBus.nav.collect { nav ->
-                    dispatchNav(nav)
+                    val enriched = ribbon.enrich(nav)
+                    dispatchNav(enriched)
                     updateNotif()
                 }
             }

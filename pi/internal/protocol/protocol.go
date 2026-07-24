@@ -25,15 +25,24 @@ const (
 	ManeuverUnknown     Maneuver = "unknown"
 )
 
+// RibbonPoint is a corridor vertex in local units (not lat/lng).
+// Y increases ahead of the rider; X is lateral (right positive).
+type RibbonPoint struct {
+	X float64 `json:"x"`
+	Y float64 `json:"y"`
+}
+
 type NavMessage struct {
-	Type         string   `json:"type"`
-	Active       bool     `json:"active"`
-	Instruction  string   `json:"instruction"`
-	DistanceM    int      `json:"distance_m"`
-	DistanceText string   `json:"distance_text"`
-	Road         string   `json:"road"`
-	EtaMin       int      `json:"eta_min"`
-	Maneuver     Maneuver `json:"maneuver"`
+	Type         string        `json:"type"`
+	Active       bool          `json:"active"`
+	Instruction  string        `json:"instruction"`
+	DistanceM    int           `json:"distance_m"`
+	DistanceText string        `json:"distance_text"`
+	Road         string        `json:"road"`
+	EtaMin       int           `json:"eta_min"`
+	Maneuver     Maneuver      `json:"maneuver"`
+	RibbonPoints []RibbonPoint `json:"ribbon_points,omitempty"`
+	RibbonTurn   int           `json:"ribbon_turn,omitempty"`
 }
 
 type MediaMessage struct {

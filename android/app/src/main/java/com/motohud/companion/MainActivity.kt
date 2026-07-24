@@ -66,6 +66,11 @@ class MainActivity : AppCompatActivity() {
 
     private fun ensurePermissions() {
         val needed = mutableListOf<String>()
+        if (ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION)
+            != PackageManager.PERMISSION_GRANTED
+        ) {
+            needed += Manifest.permission.ACCESS_FINE_LOCATION
+        }
         if (Build.VERSION.SDK_INT >= 31) {
             listOf(
                 Manifest.permission.BLUETOOTH_CONNECT,

@@ -1,6 +1,12 @@
 package com.motohud.companion
 
+import org.json.JSONArray
 import org.json.JSONObject
+
+data class RibbonPoint(
+    val x: Double,
+    val y: Double,
+)
 
 data class NavState(
     val active: Boolean = false,
@@ -10,6 +16,8 @@ data class NavState(
     val road: String = "",
     val etaMin: Int = 0,
     val maneuver: String = "unknown",
+    val ribbonPoints: List<RibbonPoint> = emptyList(),
+    val ribbonTurn: Int = -1,
 ) {
     fun toJson(): ByteArray = JSONObject().apply {
         put("type", "nav")
@@ -20,6 +28,14 @@ data class NavState(
         put("road", road)
         put("eta_min", etaMin)
         put("maneuver", maneuver)
+        if (ribbonPoints.size >= 2) {
+            put("ribbon_points", JSONArray().also { arr ->
+                ribbonPoints.forEach { p ->
+                    arr.put(JSONObject().put("x", p.x.toInt()).put("y", p.y.toInt()))
+                }
+            })
+            put("ribbon_turn", ribbonTurn)
+        }
     }.toString().toByteArray(Charsets.UTF_8)
 }
 

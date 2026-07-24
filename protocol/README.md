@@ -31,11 +31,19 @@ See [uuids.json](uuids.json). Shared constants also live in:
   "distance_text": "200 m",
   "road": "High St",
   "eta_min": 12,
-  "maneuver": "left"
+  "maneuver": "left",
+  "ribbon_points": [
+    {"x": 0, "y": 0},
+    {"x": 0, "y": 120},
+    {"x": -40, "y": 180}
+  ],
+  "ribbon_turn": 2
 }
 ```
 
 `maneuver` enum: `left`, `right`, `straight`, `slight_left`, `slight_right`, `u_turn`, `roundabout`, `arrive`, `depart`, `unknown`
+
+Optional `ribbon_points` / `ribbon_turn`: local-unit corridor vertices (Y ahead, X right). When present (≥2 points), the Pi draws that corridor; otherwise it falls back to a synthetic kink from `maneuver`. The Android companion fills these from a short public-OSRM probe using GPS + the Maps notification distance/maneuver (no Maps polyline API). Omit or leave empty when GPS/OSRM is unavailable.
 
 ### `media`
 
@@ -93,6 +101,6 @@ If nav fields are empty, disable Google Maps **Live Updates** / **Live info** no
 
 ## Road ribbon
 
-Active nav draws a schematic **RoadRibbon** (design kit) under the road name: a bold kinked corridor, not a map. Geometry is **synthetic from `maneuver`** on the Pi today (`schematicRibbonForManeuver`); unknown maneuver → dashed placeholder. Progress ticks are omitted while the ribbon is shown.
+Active nav draws a **RoadRibbon** under the road name: a bold kinked corridor, not a map. Prefer optional `ribbon_points` from the phone (OSRM corridor guess + GPS). If missing, geometry is **synthetic from `maneuver`** on the Pi (`schematicRibbonForManeuver`); unknown maneuver → dashed placeholder. Progress ticks are omitted while the ribbon is shown.
 
-Future: optional `ribbon_points` on `nav` from the phone for real upcoming geometry; drawer already accepts arbitrary points.
+OSRM uses the public demo server (`router.project-osrm.org`) with no API key — rate-limited and fine for personal use; revisit if it becomes a problem (self-host or another provider).

@@ -205,7 +205,7 @@ func buildNavBody(nav protocol.NavMessage, bleLinked bool) map[string]string {
 	distBaseline := heroTop + (heroH-hero.Metrics.CellH)/2 + hero.Metrics.Ascent
 	roadBaseline := roadTop + body.Metrics.Ascent
 
-	pts, turnIdx := schematicRibbonForManeuver(nav.Maneuver)
+	pts, turnIdx := ribbonForNav(nav)
 
 	var c strings.Builder
 	fmt.Fprintf(&c, `<g id="maneuver" transform="translate(-2,%d)" fill="#000" stroke="#000" stroke-width="3" stroke-linecap="square" stroke-linejoin="miter">%s</g>`,

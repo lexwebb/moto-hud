@@ -36,6 +36,26 @@ func TestSchematicRibbonForManeuver(t *testing.T) {
 	}
 }
 
+func TestRibbonForNavPrefersProtocolPoints(t *testing.T) {
+	nav := protocol.NavMessage{
+		Maneuver: protocol.ManeuverLeft, // schematic would bend left
+		RibbonPoints: []protocol.RibbonPoint{
+			{X: 0, Y: 0}, {X: 0, Y: 10}, {X: 20, Y: 20},
+		},
+		RibbonTurn: 2,
+	}
+	pts, idx := ribbonForNav(nav)
+	if len(pts) != 3 || idx != 2 || pts[2].X != 20 {
+		t.Fatalf("expected protocol points, got %v idx=%d", pts, idx)
+	}
+	nav.RibbonPoints = nil
+	pts, idx = ribbonForNav(nav)
+	schematic, sIdx := schematicRibbonForManeuver(protocol.ManeuverLeft)
+	if len(pts) != len(schematic) || idx != sIdx {
+		t.Fatalf("expected schematic fallback, got %v %d", pts, idx)
+	}
+}
+
 func TestBuildNavBodyIncludesRibbon(t *testing.T) {
 	vars := buildNavBody(protocol.NavMessage{
 		Active:       true,
