@@ -49,3 +49,35 @@ func TestToGray1BitSnaps(t *testing.T) {
 		}
 	}
 }
+
+func TestFontSpecimensRender(t *testing.T) {
+	SetAssetDir("/Users/lex/src/moto-hud/assets/hud")
+	cands := ListFontCandidates()
+	if len(cands) < 2 {
+		t.Fatalf("expected candidates, got %d", len(cands))
+	}
+	for _, c := range cands {
+		img, err := RenderFontSpecimen(c.ID)
+		if err != nil {
+			t.Fatalf("%s: %v", c.ID, err)
+		}
+		if img.Bounds() != image.Rect(0, 0, Width, Height) {
+			t.Fatalf("%s size %v", c.ID, img.Bounds())
+		}
+		var black int
+		for y := 0; y < Height; y++ {
+			for x := 0; x < Width; x++ {
+				v := img.GrayAt(x, y).Y
+				if v != 0 && v != 255 {
+					t.Fatalf("%s mid-gray %d", c.ID, v)
+				}
+				if v == 0 {
+					black++
+				}
+			}
+		}
+		if black < 50 {
+			t.Fatalf("%s too empty (%d black px)", c.ID, black)
+		}
+	}
+}

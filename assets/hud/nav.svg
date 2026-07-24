@@ -1,18 +1,14 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="250" height="122" viewBox="0 0 250 122">
   <rect width="250" height="122" fill="#fff"/>
 
-  <!-- Maneuver glyph (vector). Text uses Spleen via data-spleen; y is baseline. -->
-  <!-- Square caps: round caps leave soft AA fringes after 1-bit threshold. -->
-  <g id="maneuver" transform="translate(8,8)" fill="#000" stroke="#000" stroke-width="3" stroke-linecap="square" stroke-linejoin="miter">
-    {{maneuver_paths}}
+  <g id="main" transform="translate(4,3)">
+    <text id="mode" x="0" y="11" data-pixel="6x12" font-size="12" fill="#000">NAV</text>
+    <g id="link" transform="translate(168,1)">{{link_mark}}</g>
+    {{nav_content}}
   </g>
 
-  <text id="distance" x="244" y="30" text-anchor="end"
-        data-spleen="16x32" font-size="32" fill="#000">{{distance}}</text>
-  <text id="road" x="8" y="78"
-        data-spleen="12x24" font-size="24" fill="#000">{{road}}</text>
-  <text id="eta" x="8" y="102"
-        data-spleen="8x16" font-size="16" fill="#000">{{eta}}</text>
-  <text id="idle" x="8" y="116"
-        data-spleen="6x12" font-size="12" fill="#000">{{idle}}</text>
+  <line x1="206" y1="3" x2="206" y2="119" stroke="#000" stroke-width="1"/>
+  <text id="leg_prev" x="246" y="14" text-anchor="end" data-pixel="6x12" font-size="12" fill="#000">{{leg_prev}}</text>
+  <text id="leg_action" x="246" y="64" text-anchor="end" data-pixel="6x12" font-size="12" fill="#000">{{leg_action}}</text>
+  <text id="leg_next" x="246" y="114" text-anchor="end" data-pixel="6x12" font-size="12" fill="#000">{{leg_next}}</text>
 </svg>

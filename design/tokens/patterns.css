@@ -1,0 +1,3 @@
+:root{--dither-25:repeating-conic-gradient(var(--ink) 0% 25%,var(--paper) 0% 50%) 0 0/2px 2px;--dither-50:repeating-conic-gradient(var(--ink) 0% 25%,var(--paper) 0% 50%) 0 0/4px 4px;--hatch:repeating-linear-gradient(45deg,var(--ink) 0,var(--ink) 1px,var(--paper) 1px,var(--paper) 4px)}
+.pixel-crisp{shape-rendering:crispEdges;image-rendering:pixelated}
+*{box-sizing:border-box}

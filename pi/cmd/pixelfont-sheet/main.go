@@ -1,4 +1,4 @@
-// Command pixelfont-sheet writes verification PNGs proving each Spleen size
+// Command pixelfont-sheet writes verification PNGs proving each Terminus Bold size
 // is 1-bit and aligned to the pixel grid (no gray fringes).
 package main
 
@@ -30,8 +30,8 @@ func main() {
 	}
 	defer mf.Close()
 
-	fmt.Fprintf(mf, "Spleen bitmap faces — exact BDF metrics (no scaling)\n")
-	fmt.Fprintf(mf, "License: BSD-2-Clause (see assets/fonts/spleen/LICENSE)\n\n")
+	fmt.Fprintf(mf, "Terminus Bold bitmap faces — exact BDF metrics (no scaling)\n")
+	fmt.Fprintf(mf, "License: SIL OFL 1.1 (see assets/fonts/terminus/OFL.TXT)\n\n")
 
 	for _, sz := range pixelfont.AllSizes() {
 		face, err := pixelfont.Load(sz)
@@ -69,7 +69,7 @@ func main() {
 			}
 		}
 
-		path := filepath.Join(outDir, fmt.Sprintf("spleen-%s.png", sz))
+		path := filepath.Join(outDir, fmt.Sprintf("terminus-%s.png", sz))
 		if err := writePNG(path, img); err != nil {
 			fatal(err)
 		}

@@ -9,9 +9,9 @@ import (
 
 var textElemRe = regexp.MustCompile(`(?s)<text\b([^>]*)>(.*?)</text>`)
 
-// ReplaceSVGText turns every <text> into a <g> of 1×1 pixel rects using Spleen BDFs.
-// Layout attributes (x, y=baseline, text-anchor, data-spleen / font-size) drive placement.
-// The result is identical in browser preview and canvas rasterization.
+// ReplaceSVGText turns every <text> into a <g> of 1×1 pixel rects using Terminus Bold.
+// Layout attributes (x, y=baseline, text-anchor, data-pixel / font-size) drive placement.
+// data-spleen is accepted as an alias for data-pixel.
 func ReplaceSVGText(svg string) (string, error) {
 	var firstErr error
 	out := textElemRe.ReplaceAllStringFunc(svg, func(full string) string {
@@ -53,9 +53,9 @@ func ReplaceSVGText(svg string) (string, error) {
 
 		var b strings.Builder
 		if id != "" {
-			fmt.Fprintf(&b, `<g id="%s" data-spleen="%s" data-baseline="%d">`, escapeAttr(id), size, baseline)
+			fmt.Fprintf(&b, `<g id="%s" data-pixel="%s" data-baseline="%d">`, escapeAttr(id), size, baseline)
 		} else {
-			fmt.Fprintf(&b, `<g data-spleen="%s" data-baseline="%d">`, size, baseline)
+			fmt.Fprintf(&b, `<g data-pixel="%s" data-baseline="%d">`, size, baseline)
 		}
 		b.WriteString(face.StringToSVG(content, penX, baseline, fill))
 		b.WriteString(`</g>`)
@@ -92,7 +92,11 @@ func (f *Face) StringToSVG(s string, penX, baselineY int, fill string) string {
 }
 
 func sizeFromAttrs(attrs string) (Size, error) {
-	if s := attrString(attrs, "data-spleen", ""); s != "" {
+	s := attrString(attrs, "data-pixel", "")
+	if s == "" {
+		s = attrString(attrs, "data-spleen", "") // legacy alias
+	}
+	if s != "" {
 		switch s {
 		case "6x12":
 			return Size6x12, nil
@@ -103,7 +107,7 @@ func sizeFromAttrs(attrs string) (Size, error) {
 		case "16x32":
 			return Size16x32, nil
 		default:
-			return 0, fmt.Errorf("unknown data-spleen %q", s)
+			return 0, fmt.Errorf("unknown data-pixel %q", s)
 		}
 	}
 	fs := attrFloat(attrs, "font-size", 16)
@@ -116,7 +120,6 @@ func sizeFromAttrs(attrs string) (Size, error) {
 		return Size12x24, nil
 	case 32:
 		return Size16x32, nil
-	// legacy mappings from earlier Liberation sizes
 	case 11, 13:
 		return Size6x12, nil
 	case 17, 18:
@@ -124,7 +127,7 @@ func sizeFromAttrs(attrs string) (Size, error) {
 	case 26, 28:
 		return Size16x32, nil
 	default:
-		return 0, fmt.Errorf("unsupported font-size %g (use 12/16/24/32 or data-spleen)", fs)
+		return 0, fmt.Errorf("unsupported font-size %g (use 12/16/24/32 or data-pixel)", fs)
 	}
 }
 

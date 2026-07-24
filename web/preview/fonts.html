@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>Moto HUD — font candidates</title>
+  <style>
+    :root {
+      --bg: #1a1c1e;
+      --panel: #2a2e32;
+      --ink: #f2f0e8;
+      --accent: #c4a35a;
+      --muted: #9aa0a6;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      min-height: 100vh;
+      font-family: system-ui, sans-serif;
+      background:
+        radial-gradient(ellipse at 20% 0%, #2f343a 0%, transparent 50%),
+        var(--bg);
+      color: var(--ink);
+      padding: 2rem;
+      max-width: 960px;
+    }
+    a { color: var(--accent); }
+    h1 { margin: 0 0 .35rem; font-size: 1.5rem; }
+    .lead { color: var(--muted); margin: 0 0 1.5rem; }
+    .nav { margin-bottom: 1.5rem; }
+    .card {
+      background: var(--panel);
+      border-radius: 4px;
+      padding: 1.1rem 1.25rem 1.25rem;
+      margin-bottom: 1.25rem;
+    }
+    .card h2 { margin: 0 0 .35rem; font-size: 1.1rem; }
+    .notes { color: var(--muted); font-size: .9rem; margin: 0 0 .85rem; }
+    .bezel {
+      background: #0d0e10;
+      padding: 1rem;
+      width: fit-content;
+      border-radius: 3px;
+    }
+    .screen {
+      width: 500px;
+      height: 244px;
+      background: #fff;
+      overflow: hidden;
+    }
+    .screen canvas {
+      width: 250px;
+      height: 122px;
+      display: block;
+      transform: scale(2);
+      transform-origin: top left;
+      image-rendering: pixelated;
+      image-rendering: crisp-edges;
+    }
+    .err { color: #e07070; font-size: .9rem; }
+  </style>
+</head>
+<body>
+  <p class="nav"><a href="./">← HUD preview</a></p>
+  <h1>Font candidates</h1>
+  <p class="lead">Same 250×122 nav mock, native bitmap then CSS ×2. Pick a family; we’ll wire it into the HUD next.</p>
+  <div id="list"></div>
+  <script src="fonts.js"></script>
+</body>
+</html>

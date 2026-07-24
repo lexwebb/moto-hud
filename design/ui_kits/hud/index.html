@@ -1,0 +1,56 @@
+<!-- @dsCard group="HUD" viewport="700x300" name="HUD Screens" subtitle="Interactive Prev/Next/Action walkthrough of all 6 modes" -->
+<!DOCTYPE html><html><head><meta charset="utf-8">
+<link rel="stylesheet" href="../../styles.css">
+<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+<script src="../../_ds_bundle.js"></script>
+<style>
+body{margin:0;background:#eee;font-family:'Silkscreen',monospace;display:flex;flex-direction:column;align-items:center;padding:24px;gap:16px;box-sizing:border-box}
+.stageWrap{width:600px;height:293px}
+.stage{display:inline-block;width:250px;height:122px;transform:scale(2.4);transform-origin:top left;margin:0}
+.panelRow{display:flex;align-items:flex-start;gap:24px}
+.btncol{display:flex;flex-direction:column;gap:10px}
+button{font-family:'Silkscreen',monospace;font-size:12px;padding:10px 16px;border:2px solid #000;background:#fff;cursor:pointer;width:90px}
+button:active{background:#000;color:#fff}
+.tag{font-size:11px;color:#555}
+</style></head>
+<body>
+<div id="root"></div>
+<script type="text/babel" src="HudPanel.jsx"></script>
+<script type="text/babel" src="NavActiveNoRibbon.jsx"></script>
+<script type="text/babel" src="NavActiveRibbon.jsx"></script>
+<script type="text/babel" src="NavIdle.jsx"></script>
+<script type="text/babel" src="MediaFocus.jsx"></script>
+<script type="text/babel" src="StatusDiagnostics.jsx"></script>
+<script type="text/babel" src="NavMediaHybrid.jsx"></script>
+<script type="text/babel">
+const ORDER = ['NavActiveNoRibbon','NavActiveRibbon','NavIdle','MediaFocus','StatusDiagnostics','NavMediaHybrid'];
+const LABELS = {NavActiveNoRibbon:'Nav active — no ribbon',NavActiveRibbon:'Nav active — with ribbon',NavIdle:'Nav idle / waiting for route',MediaFocus:'Media focus',StatusDiagnostics:'Status / link diagnostics',NavMediaHybrid:'Nav + media hybrid'};
+function App(){
+  const [i,setI] = React.useState(0);
+  const [playing,setPlaying] = React.useState(true);
+  const [flash,setFlash] = React.useState(false);
+  const pressTimer = React.useRef(null);
+  const longRef = React.useRef(false);
+  function down(fn){ longRef.current=false; pressTimer.current=setTimeout(()=>{longRef.current=true; fn(true);},500); }
+  function up(fn){ clearTimeout(pressTimer.current); if(!longRef.current) fn(false); }
+  function prev(isLong){ if(ORDER[i]==='MediaFocus' && !isLong) return; setI(v=>(v-1+ORDER.length)%ORDER.length); }
+  function next(isLong){ if(ORDER[i]==='MediaFocus' && !isLong) return; setI(v=>(v+1)%ORDER.length); }
+  function action(isLong){ if(isLong){ setI(0); return; } if(ORDER[i]==='MediaFocus') setPlaying(p=>!p); if(ORDER[i]==='StatusDiagnostics'){ setFlash(true); setTimeout(()=>setFlash(false),150); } }
+  const Screen = window[ORDER[i]];
+  return <React.Fragment>
+    <div className="tag">{LABELS[ORDER[i]]}</div>
+    <div className="panelRow">
+      <div className="stageWrap"><div className="stage" style={{opacity:flash?0.3:1}}><Screen playing={playing} /></div></div>
+      <div className="btncol">
+        <button onMouseDown={()=>down(prev)} onMouseUp={()=>up(prev)}>PREV</button>
+        <button onMouseDown={()=>down(action)} onMouseUp={()=>up(action)}>ACTION</button>
+        <button onMouseDown={()=>down(next)} onMouseUp={()=>up(next)}>NEXT</button>
+      </div>
+    </div>
+  </React.Fragment>;
+}
+ReactDOM.createRoot(document.getElementById('root')).render(<App/>);
+</script>
+</body></html>

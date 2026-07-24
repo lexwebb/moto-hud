@@ -1,4 +1,4 @@
-// Package pixelfont loads Spleen BDF bitmap fonts and blits 1-bit glyphs
+// Package pixelfont loads Terminus Bold BDF bitmap fonts and blits 1-bit glyphs
 // at integer pixel coordinates only (no scaling, no antialiasing).
 package pixelfont
 
@@ -9,6 +9,7 @@ import (
 	"fmt"
 	"image"
 	"image/color"
+	"os"
 	"strconv"
 	"strings"
 )
@@ -16,26 +17,26 @@ import (
 //go:embed data/*.bdf
 var bdfFS embed.FS
 
-// Size is a fixed Spleen face. Cell is glyph cell WxH; use only these sizes.
+// Size is a fixed Terminus Bold face. Values are PIXEL_SIZE (cell height).
 type Size int
 
 const (
-	Size6x12  Size = 12 // spleen-6x12 — meta / footers
-	Size8x16  Size = 16 // spleen-8x16 — secondary lines
-	Size12x24 Size = 24 // spleen-12x24 — road / titles
-	Size16x32 Size = 32 // spleen-16x32 — distance hero
+	Size6x12  Size = 12 // ter-u12b — meta / footers
+	Size8x16  Size = 16 // ter-u16b — secondary lines
+	Size12x24 Size = 24 // ter-u24b — road / titles
+	Size16x32 Size = 32 // ter-u32b — distance hero
 )
 
 func (s Size) file() string {
 	switch s {
 	case Size6x12:
-		return "data/spleen-6x12.bdf"
+		return "data/ter-u12b.bdf"
 	case Size8x16:
-		return "data/spleen-8x16.bdf"
+		return "data/ter-u16b.bdf"
 	case Size12x24:
-		return "data/spleen-12x24.bdf"
+		return "data/ter-u24b.bdf"
 	case Size16x32:
-		return "data/spleen-16x32.bdf"
+		return "data/ter-u32b.bdf"
 	default:
 		return ""
 	}
@@ -103,6 +104,19 @@ func Load(size Size) (*Face, error) {
 		return nil, fmt.Errorf("%s: %w", size, err)
 	}
 	cache[size] = f
+	return f, nil
+}
+
+// LoadFile parses a BDF from disk (for font candidates / tooling).
+func LoadFile(path string) (*Face, error) {
+	raw, err := os.ReadFile(path)
+	if err != nil {
+		return nil, err
+	}
+	f, err := parseBDF(raw)
+	if err != nil {
+		return nil, fmt.Errorf("%s: %w", path, err)
+	}
 	return f, nil
 }
 
@@ -238,6 +252,14 @@ func (f *Face) Measure(s string) int {
 
 // DrawString blits s in solid black. baselineY is baseline in image Y-down coords.
 func (f *Face) DrawString(dst *image.Gray, x, baselineY int, s string) {
+	f.DrawStringScaled(dst, x, baselineY, s, 1)
+}
+
+// DrawStringScaled blits s with each glyph pixel expanded to scale×scale.
+func (f *Face) DrawStringScaled(dst *image.Gray, x, baselineY int, s string, scale int) {
+	if scale < 1 {
+		scale = 1
+	}
 	pen := x
 	for _, r := range s {
 		g, ok := f.glyphs[r]
@@ -247,27 +269,44 @@ func (f *Face) DrawString(dst *image.Gray, x, baselineY int, s string) {
 				continue
 			}
 		}
-		top := baselineY - (g.h + g.yOff)
-		left := pen + g.xOff
+		top := baselineY - (g.h+g.yOff)*scale
+		left := pen + g.xOff*scale
 		for gy := 0; gy < g.h; gy++ {
 			for gx := 0; gx < g.w; gx++ {
 				if !g.on(gx, gy) {
 					continue
 				}
-				px, py := left+gx, top+gy
-				if px < dst.Rect.Min.X || py < dst.Rect.Min.Y || px >= dst.Rect.Max.X || py >= dst.Rect.Max.Y {
-					continue
+				for dy := 0; dy < scale; dy++ {
+					for dx := 0; dx < scale; dx++ {
+						px, py := left+gx*scale+dx, top+gy*scale+dy
+						if px < dst.Rect.Min.X || py < dst.Rect.Min.Y || px >= dst.Rect.Max.X || py >= dst.Rect.Max.Y {
+							continue
+						}
+						dst.SetGray(px, py, color.Gray{Y: 0})
+					}
 				}
-				dst.SetGray(px, py, color.Gray{Y: 0})
 			}
 		}
-		pen += g.advance
+		pen += g.advance * scale
 	}
+}
+
+// MeasureScaled is Measure × scale.
+func (f *Face) MeasureScaled(s string, scale int) int {
+	if scale < 1 {
+		scale = 1
+	}
+	return f.Measure(s) * scale
 }
 
 // DrawStringRight draws s right-aligned so its right edge is at rightX.
 func (f *Face) DrawStringRight(dst *image.Gray, rightX, baselineY int, s string) {
 	f.DrawString(dst, rightX-f.Measure(s), baselineY, s)
+}
+
+// DrawStringRightScaled is DrawStringRight with pixel scale.
+func (f *Face) DrawStringRightScaled(dst *image.Gray, rightX, baselineY int, s string, scale int) {
+	f.DrawStringScaled(dst, rightX-f.MeasureScaled(s, scale), baselineY, s, scale)
 }
 
 // AllSizes lists supported pregenerated faces.

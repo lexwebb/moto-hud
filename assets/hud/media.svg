@@ -1,8 +1,18 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="250" height="122" viewBox="0 0 250 122">
   <rect width="250" height="122" fill="#fff"/>
-  <text x="8" y="14" data-spleen="6x12" font-size="12" fill="#000">MEDIA</text>
-  <text id="playing" x="242" y="14" text-anchor="end" data-spleen="6x12" font-size="12" fill="#000">{{playing}}</text>
-  <text id="title" x="8" y="48" data-spleen="12x24" font-size="24" fill="#000">{{title}}</text>
-  <text id="artist" x="8" y="72" data-spleen="8x16" font-size="16" fill="#000">{{artist}}</text>
-  <text x="8" y="116" data-spleen="6x12" font-size="12" fill="#000">ACT=play  &lt;&gt;=skip</text>
+
+  <g id="main" transform="translate(4,3)">
+    <text id="mode" x="0" y="11" data-pixel="6x12" font-size="12" fill="#000">MEDIA</text>
+    <g id="link" transform="translate(168,1)">{{link_mark}}</g>
+    <line x1="0" y1="15" x2="196" y2="15" stroke="#000" stroke-width="1"/>
+
+    <text id="playing" x="0" y="36" data-pixel="6x12" font-size="12" fill="#000">{{playing}}</text>
+    <text id="title" x="0" y="68" data-pixel="12x24" font-size="24" fill="#000">{{title}}</text>
+    <text id="artist" x="0" y="96" data-pixel="8x16" font-size="16" fill="#000">{{artist}}</text>
+  </g>
+
+  <line x1="206" y1="3" x2="206" y2="119" stroke="#000" stroke-width="1"/>
+  <text x="246" y="14" text-anchor="end" data-pixel="6x12" font-size="12" fill="#000">{{leg_prev}}</text>
+  <text x="246" y="64" text-anchor="end" data-pixel="6x12" font-size="12" fill="#000">{{leg_action}}</text>
+  <text x="246" y="114" text-anchor="end" data-pixel="6x12" font-size="12" fill="#000">{{leg_next}}</text>
 </svg>

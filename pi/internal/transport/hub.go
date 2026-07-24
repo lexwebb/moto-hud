@@ -167,6 +167,27 @@ func (h *Hub) StartHTTP(ctx context.Context, addr string) error {
 			log.Printf("transport: frame.png encode: %v", err)
 		}
 	})
+	mux.HandleFunc("/fonts.json", func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		w.Header().Set("Cache-Control", "no-store")
+		_ = json.NewEncoder(w).Encode(hud.ListFontCandidates())
+	})
+	mux.HandleFunc("/font-specimen.png", func(w http.ResponseWriter, r *http.Request) {
+		id := r.URL.Query().Get("id")
+		if id == "" {
+			id = "terminus-bold"
+		}
+		img, err := hud.RenderFontSpecimen(id)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusBadRequest)
+			return
+		}
+		w.Header().Set("Content-Type", "image/png")
+		w.Header().Set("Cache-Control", "no-store")
+		if err := png.Encode(w, img); err != nil {
+			log.Printf("transport: font-specimen encode: %v", err)
+		}
+	})
 	if root := findRepoRoot(); root != "" {
 		mux.Handle("/preview/", http.StripPrefix("/preview/", http.FileServer(http.Dir(filepath.Join(root, "web/preview")))))
 		mux.Handle("/assets/", http.StripPrefix("/assets/", http.FileServer(http.Dir(filepath.Join(root, "assets")))))

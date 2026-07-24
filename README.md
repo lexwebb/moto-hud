@@ -17,7 +17,10 @@ Buttons (GPIO) ─────────────────────�
 | [`pi/`](pi/) | Go HUD service, mock injector, systemd unit |
 | [`android/`](android/) | Kotlin companion app |
 
-## SVG UI (browser + Pi)
+## Design system
+
+Reference pack from Claude Design lives in [`design/`](design/) (tokens, React kit, guidelines). **Production type is Terminus Bold**, not the kit’s browser monospace stand-in. Interactive mock: open `design/ui_kits/hud/index.html` via a static server.
+
 
 Layouts live in [`assets/hud/`](assets/hud/) as 250×122 SVG with `{{placeholders}}`.
 
@@ -28,16 +31,16 @@ cd /Users/lex/src/moto-hud
 # SVG source (debug): http://127.0.0.1:8787/frame.svg
 ```
 
-**Typography (SVG + Spleen):** Templates in `assets/hud/*.svg` use `<text data-spleen="12x24" font-size="24" …>`. At render those become **1×1 pixel `<rect>`s** from the BDF; arrows are stroked then hard-thresholded to 1-bit. The web preview shows **`/frame.png`** (same raster as the Pi), so the browser can’t AA the arrow.
+**Typography (SVG + Terminus Bold):** Templates in `assets/hud/*.svg` use `<text data-pixel="12x24" font-size="24" …>`. At render those become **1×1 pixel `<rect>`s** from Terminus Bold BDFs; arrows are stroked then hard-thresholded to 1-bit. The web preview shows **`/frame.png`** (same raster as the Pi). Compare faces at `/preview/fonts.html`.
 
-| Role | `data-spleen` | Cell |
-|------|---------------|------|
-| Distance | `16x32` | 16×32 |
-| Road / titles | `12x24` | 12×24 |
-| Body / ETA | `8x16` | 8×16 |
-| Meta | `6x12` | 6×12 |
+| Role | `data-pixel` | Face |
+|------|--------------|------|
+| Distance | `16x32` | `ter-u32b` |
+| Road / titles | `12x24` | `ter-u24b` |
+| Body / ETA | `8x16` | `ter-u16b` |
+| Meta | `6x12` | `ter-u12b` |
 
-Only those four sizes — no runtime scaling. Preview: http://127.0.0.1:8787/preview/ (polls `/frame.svg`).
+Only those four sizes — no runtime scaling. License: SIL OFL 1.1 (`assets/fonts/terminus/OFL.TXT`).
 
 ```bash
 cd pi

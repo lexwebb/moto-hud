@@ -1,0 +1,218 @@
+{
+  "plugins": [
+    "react",
+    "import"
+  ],
+  "rules": {
+    "react/forbid-elements": [
+      "warn",
+      {
+        "forbid": []
+      }
+    ],
+    "no-restricted-imports": [
+      "warn",
+      {
+        "patterns": [
+          {
+            "group": [
+              "components/chrome/**",
+              "components/core/**",
+              "components/glyphs/**",
+              "components/navigation/**",
+              "components/readouts/**",
+              "ui_kits/hud/**"
+            ],
+            "message": "Import design-system components from 'index.js', not component internals."
+          }
+        ]
+      }
+    ],
+    "no-restricted-syntax": [
+      "warn",
+      {
+        "selector": "Literal[value=/#[0-9a-fA-F]{3,8}\\b/]",
+        "message": "Raw hex color — use a design-system color token via var()."
+      },
+      {
+        "selector": "Literal[value=/\\b\\d+px\\b/]",
+        "message": "Raw px value — use a design-system spacing token via var()."
+      },
+      {
+        "selector": "Literal[value=/font-family\\s*:\\s*(?!['\\\"]?(?:Silkscreen))/i]",
+        "message": "Font not provided by the design system. Available: Silkscreen."
+      },
+      {
+        "selector": "JSXOpeningElement[name.name='ConnectionMark'] > JSXAttribute > JSXIdentifier[name!=/^(?:connected|heartbeat|size|key|ref|className|style|children)$/]",
+        "message": "<ConnectionMark> doesn't accept that prop. Declared props: connected, heartbeat, size."
+      },
+      {
+        "selector": "JSXOpeningElement[name.name='DistanceReadout'] > JSXAttribute > JSXIdentifier[name!=/^(?:value|unit|size|key|ref|className|style|children)$/]",
+        "message": "<DistanceReadout> doesn't accept that prop. Declared props: value, unit, size."
+      },
+      {
+        "selector": "JSXOpeningElement[name.name='DistanceReadout'] > JSXAttribute[name.name='size'] > Literal[value!=/^(?:hero|secondary)$/]",
+        "message": "<DistanceReadout> size must be one of 'hero' | 'secondary'."
+      },
+      {
+        "selector": "JSXOpeningElement[name.name='ETAReadout'] > JSXAttribute > JSXIdentifier[name!=/^(?:etaMin|key|ref|className|style|children)$/]",
+        "message": "<ETAReadout> doesn't accept that prop. Declared props: etaMin."
+      },
+      {
+        "selector": "JSXOpeningElement[name.name='FooterHint'] > JSXAttribute > JSXIdentifier[name!=/^(?:btn|label|key|ref|className|style|children)$/]",
+        "message": "<FooterHint> doesn't accept that prop. Declared props: btn, label."
+      },
+      {
+        "selector": "JSXOpeningElement[name.name='FooterHint'] > JSXAttribute[name.name='btn'] > Literal[value!=/^(?:PREV|NEXT|HOLD)$/]",
+        "message": "<FooterHint> btn must be one of 'PREV' | 'NEXT' | 'HOLD'."
+      },
+      {
+        "selector": "JSXOpeningElement[name.name='ManeuverGlyph'] > JSXAttribute > JSXIdentifier[name!=/^(?:type|size|key|ref|className|style|children)$/]",
+        "message": "<ManeuverGlyph> doesn't accept that prop. Declared props: type, size."
+      },
+      {
+        "selector": "JSXOpeningElement[name.name='ManeuverGlyph'] > JSXAttribute[name.name='type'] > Literal[value!=/^(?:left|right|slight-left|slight-right|straight|u-turn|roundabout|arrive|depart|unknown)$/]",
+        "message": "<ManeuverGlyph> type must be one of 'left' | 'right' | 'slight-left' | 'slight-right' | 'straight' | 'u-turn' | 'roundabout' | 'arrive' | 'depart' | 'unknown'."
+      },
+      {
+        "selector": "JSXOpeningElement[name.name='MediaLine'] > JSXAttribute > JSXIdentifier[name!=/^(?:playing|title|artist|key|ref|className|style|children)$/]",
+        "message": "<MediaLine> doesn't accept that prop. Declared props: playing, title, artist."
+      },
+      {
+        "selector": "JSXOpeningElement[name.name='ModeHeader'] > JSXAttribute > JSXIdentifier[name!=/^(?:mode|connected|heartbeat|key|ref|className|style|children)$/]",
+        "message": "<ModeHeader> doesn't accept that prop. Declared props: mode, connected, heartbeat."
+      },
+      {
+        "selector": "JSXOpeningElement[name.name='ModeHeader'] > JSXAttribute[name.name='mode'] > Literal[value!=/^(?:NAV|MEDIA|STATUS)$/]",
+        "message": "<ModeHeader> mode must be one of 'NAV' | 'MEDIA' | 'STATUS'."
+      },
+      {
+        "selector": "JSXOpeningElement[name.name='PixelDivider'] > JSXAttribute > JSXIdentifier[name!=/^(?:variant|key|ref|className|style|children)$/]",
+        "message": "<PixelDivider> doesn't accept that prop. Declared props: variant."
+      },
+      {
+        "selector": "JSXOpeningElement[name.name='PixelDivider'] > JSXAttribute[name.name='variant'] > Literal[value!=/^(?:solid|dashed|dither)$/]",
+        "message": "<PixelDivider> variant must be one of 'solid' | 'dashed' | 'dither'."
+      },
+      {
+        "selector": "JSXOpeningElement[name.name='ProgressTicks'] > JSXAttribute > JSXIdentifier[name!=/^(?:total|filled|key|ref|className|style|children)$/]",
+        "message": "<ProgressTicks> doesn't accept that prop. Declared props: total, filled."
+      },
+      {
+        "selector": "JSXOpeningElement[name.name='RoadPoint'] > JSXAttribute > JSXIdentifier[name!=/^(?:x|y|key|ref|className|style|children)$/]",
+        "message": "<RoadPoint> doesn't accept that prop. Declared props: x, y."
+      }
+    ]
+  },
+  "overrides": [
+    {
+      "files": [
+        "**/index.js"
+      ],
+      "rules": {
+        "no-restricted-imports": "off"
+      }
+    }
+  ],
+  "x-omelette": {
+    "components": {
+      "ConnectionMark": {
+        "replaces": []
+      },
+      "DistanceReadout": {
+        "replaces": []
+      },
+      "ETAReadout": {
+        "replaces": []
+      },
+      "FooterHint": {
+        "replaces": []
+      },
+      "ManeuverGlyph": {
+        "replaces": []
+      },
+      "MediaLine": {
+        "replaces": []
+      },
+      "ModeHeader": {
+        "replaces": []
+      },
+      "PixelDivider": {
+        "replaces": []
+      },
+      "ProgressTicks": {
+        "replaces": []
+      },
+      "RoadPoint": {
+        "replaces": []
+      }
+    },
+    "tokens": [
+      "--border-ink",
+      "--content-ink",
+      "--dither-25",
+      "--dither-50",
+      "--dither-a",
+      "--dither-b",
+      "--font-pixel",
+      "--hatch",
+      "--ink",
+      "--lh-snug",
+      "--lh-tight",
+      "--panel-h",
+      "--panel-w",
+      "--paper",
+      "--space-1",
+      "--space-2",
+      "--space-3",
+      "--space-4",
+      "--space-5",
+      "--space-6",
+      "--stroke-bold",
+      "--stroke-heavy",
+      "--stroke-thin",
+      "--surface-paper",
+      "--text-eta",
+      "--text-hero",
+      "--text-meta",
+      "--text-road",
+      "--weight-bold",
+      "--weight-regular"
+    ],
+    "tokenKinds": {
+      "--ink": "color",
+      "--paper": "color",
+      "--content-ink": "color",
+      "--surface-paper": "color",
+      "--border-ink": "color",
+      "--dither-a": "color",
+      "--dither-b": "color",
+      "--font-pixel": "font",
+      "--weight-regular": "font",
+      "--weight-bold": "font",
+      "--text-meta": "font",
+      "--text-road": "font",
+      "--text-eta": "font",
+      "--text-hero": "font",
+      "--lh-tight": "other",
+      "--lh-snug": "other",
+      "--space-1": "spacing",
+      "--space-2": "spacing",
+      "--space-3": "spacing",
+      "--space-4": "spacing",
+      "--space-5": "spacing",
+      "--space-6": "spacing",
+      "--panel-w": "spacing",
+      "--panel-h": "spacing",
+      "--stroke-thin": "color",
+      "--stroke-bold": "color",
+      "--stroke-heavy": "color",
+      "--dither-25": "color",
+      "--dither-50": "color",
+      "--hatch": "color"
+    },
+    "fontFamilies": [
+      "Silkscreen"
+    ]
+  }
+}
