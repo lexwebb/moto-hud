@@ -2,8 +2,9 @@ package hud
 
 import "moto-hud/pi/internal/protocol"
 
-// Distance thresholds that trigger a full e-ink redraw (metres).
-var distanceThresholds = []int{500, 200, 100, 50, 20}
+// distanceStepM is how finely we refresh the panel as distance counts down.
+// Matches the ≈ nearest-50 m presentation used for e-ink.
+const distanceStepM = 50
 
 type RefreshGate struct {
 	lastManeuver protocol.Maneuver
@@ -14,13 +15,13 @@ type RefreshGate struct {
 	hasLast      bool
 }
 
+// bucketForDistance snaps metres to the nearest distanceStepM so the panel
+// aims to redraw about every 50 m (when a refresh isn't already in flight).
 func bucketForDistance(m int) int {
-	for _, t := range distanceThresholds {
-		if m >= t {
-			return t
-		}
+	if m <= 0 {
+		return 0
 	}
-	return 0
+	return ((m + distanceStepM/2) / distanceStepM) * distanceStepM
 }
 
 // ShouldRedraw returns true when the e-ink panel should do a full refresh.

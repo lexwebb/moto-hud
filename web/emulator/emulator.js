@@ -77,6 +77,22 @@ function nextManeuver(route, alongM) {
   };
 }
 
+/** E-ink presentation: nearest 50 m + ≈ (U+2248, in Terminus). */
+function formatEinkDistance(m) {
+  const rounded = Math.max(0, Math.round(m / 50) * 50);
+  if (rounded >= 1000) {
+    const km = (rounded / 1000).toFixed(1);
+    return { distance_m: rounded, distance_text: `≈ ${km} km` };
+  }
+  return { distance_m: rounded, distance_text: `≈ ${rounded} m` };
+}
+
+function forPanel(nav, eink) {
+  if (!eink) return nav;
+  const d = formatEinkDistance(nav.distance_m);
+  return { ...nav, ...d };
+}
+
 /** @typedef {{ applyNav(j:string):any, applyMedia(j:string):any, button(e:string):any, renderPNG():Uint8Array, screen():string }} HudBackend */
 
   async function createWasmBackend() {
@@ -148,7 +164,7 @@ function createHttpBackend() {
   };
 }
 
-async function paintHud(canvas, pngBytes) {
+async function paintHudInstant(canvas, pngBytes) {
   const bitmap = await createImageBitmap(new Blob([pngBytes], { type: 'image/png' }));
   canvas.width = NATIVE_W;
   canvas.height = NATIVE_H;
@@ -160,10 +176,190 @@ async function paintHud(canvas, pngBytes) {
   bitmap.close();
 }
 
+function sleep(ms) {
+  return new Promise((r) => setTimeout(r, ms));
+}
+
+/** Mirrors pi/internal/hud.RefreshGate — redraw about every 50 m. */
+const DISTANCE_STEP_M = 50;
+
+function bucketForDistance(m) {
+  if (m <= 0) return 0;
+  return Math.round(m / DISTANCE_STEP_M) * DISTANCE_STEP_M;
+}
+
+class RefreshGate {
+  constructor() {
+    this.hasLast = false;
+  }
+
+  wouldRedraw(screen, nav, force) {
+    if (force || !this.hasLast) return true;
+    if (screen !== this.lastScreen) return true;
+    if (screen !== 'NAV') return false;
+    if (
+      nav.active !== this.lastActive ||
+      nav.maneuver !== this.lastManeuver ||
+      nav.road !== this.lastRoad
+    ) {
+      return true;
+    }
+    return bucketForDistance(nav.distance_m) !== this.lastBucket;
+  }
+
+  shouldRedraw(screen, nav, force) {
+    if (!this.wouldRedraw(screen, nav, force)) return false;
+    this.remember(screen, nav);
+    return true;
+  }
+
+  remember(screen, nav) {
+    this.lastScreen = screen;
+    this.lastManeuver = nav.maneuver;
+    this.lastRoad = nav.road;
+    this.lastActive = nav.active;
+    this.lastBucket = bucketForDistance(nav.distance_m);
+    this.hasLast = true;
+  }
+
+  reset() {
+    this.hasLast = false;
+  }
+}
+
+/**
+ * Inky-style full refresh: all pixels on → all off → fade in new frame (~1s).
+ * When disabled, paints instantly every call.
+ */
+class EinkPanel {
+  constructor(canvas, opts = {}) {
+    this.canvas = canvas;
+    this.screenEl = canvas.closest('.screen');
+    this.enabled = opts.enabled !== false;
+    this.flashMs = opts.flashMs ?? 120;
+    this.fadeMs = opts.fadeMs ?? 1000;
+    this.gate = new RefreshGate();
+    this.busy = false;
+    this.pending = null;
+    this.lastRefreshAt = 0;
+    this.refreshCount = 0;
+  }
+
+  get refreshMs() {
+    return this.flashMs * 2 + this.fadeMs;
+  }
+
+  setEnabled(on) {
+    this.enabled = on;
+    if (!on) this.gate.reset();
+  }
+
+  async show(pngBytes, { screen = 'nav', nav = {}, force = false } = {}) {
+    if (!this.enabled) {
+      await paintHudInstant(this.canvas, pngBytes);
+      this.lastRefreshAt = performance.now();
+      this.refreshCount += 1;
+      return { refreshed: true, wiped: false };
+    }
+
+    if (!this.gate.shouldRedraw(screen, nav, force)) {
+      return { refreshed: false, wiped: false };
+    }
+
+    if (this.busy) {
+      this.pending = { pngBytes, screen, nav, force: true };
+      return { refreshed: false, wiped: false, queued: true };
+    }
+
+    this.busy = true;
+    return this.#runRefresh(pngBytes);
+  }
+
+  async #runRefresh(pngBytes) {
+    this.screenEl?.classList.add('wiping');
+    const ctx = this.canvas.getContext('2d', { alpha: false });
+    this.canvas.width = NATIVE_W;
+    this.canvas.height = NATIVE_H;
+    ctx.imageSmoothingEnabled = false;
+
+    // Drive waveform: all pixels on, then all off (clear).
+    ctx.fillStyle = '#000';
+    ctx.fillRect(0, 0, NATIVE_W, NATIVE_H);
+    await sleep(this.flashMs);
+    ctx.fillStyle = '#fff';
+    ctx.fillRect(0, 0, NATIVE_W, NATIVE_H);
+    await sleep(this.flashMs);
+
+    // Fade new frame in over ~1s (pigment settling).
+    const bitmap = await createImageBitmap(new Blob([pngBytes], { type: 'image/png' }));
+    const t0 = performance.now();
+    await new Promise((resolve) => {
+      const step = (now) => {
+        const t = Math.min(1, (now - t0) / this.fadeMs);
+        // Ease-out: fast start, settle at the end like e-ink.
+        const a = 1 - (1 - t) ** 2;
+        ctx.globalAlpha = 1;
+        ctx.fillStyle = '#fff';
+        ctx.fillRect(0, 0, NATIVE_W, NATIVE_H);
+        ctx.globalAlpha = a;
+        ctx.drawImage(bitmap, 0, 0);
+        ctx.globalAlpha = 1;
+        if (t < 1) {
+          requestAnimationFrame(step);
+        } else {
+          resolve();
+        }
+      };
+      requestAnimationFrame(step);
+    });
+    ctx.fillStyle = '#fff';
+    ctx.fillRect(0, 0, NATIVE_W, NATIVE_H);
+    ctx.drawImage(bitmap, 0, 0);
+    bitmap.close();
+
+    this.screenEl?.classList.remove('wiping');
+    this.busy = false;
+    this.lastRefreshAt = performance.now();
+    this.refreshCount += 1;
+
+    if (this.pending) {
+      const next = this.pending;
+      this.pending = null;
+      this.gate.reset();
+      return this.show(next.pngBytes, next);
+    }
+    return { refreshed: true, wiped: true };
+  }
+
+  statusLine() {
+    if (!this.enabled) return 'e-ink off (instant)';
+    const ago = this.lastRefreshAt
+      ? `${Math.round((performance.now() - this.lastRefreshAt) / 100) / 10}s ago`
+      : 'never';
+    const state = this.busy ? 'refreshing…' : `idle · last ${ago}`;
+    return `e-ink on · flash+fade ${this.refreshMs}ms · ${this.refreshCount} refreshes · ${state}`;
+  }
+}
+
 async function main() {
   const canvas = document.getElementById('hud');
   const stats = document.getElementById('stats');
   const meta = document.getElementById('backendMeta');
+  const einkToggle = document.getElementById('einkToggle');
+  const einkHint = document.getElementById('einkHint');
+
+  const panel = new EinkPanel(canvas, { enabled: einkToggle.checked });
+  const updateEinkHint = () => {
+    einkHint.textContent = panel.enabled
+      ? 'flash all on → off, then ~1s fade-in · ≈ nearest 50 m · redraw ~every 50 m'
+      : 'instant frames (no gate, no flash)';
+  };
+  updateEinkHint();
+  einkToggle.addEventListener('change', () => {
+    panel.setEnabled(einkToggle.checked);
+    updateEinkHint();
+    void refreshOnce(true);
+  });
 
   let backend;
   try {
@@ -176,7 +372,7 @@ async function main() {
       'Backend: HTTP → motohud (-host emu|png). Build WASM with scripts/build-wasm.sh for offline core.';
   }
 
-  const route = await (await fetch('routes/riverside.json')).json();
+  const route = await (await fetch('routes/whitehall-farringdon.json')).json();
   const latlngs = route.coordinates.map(([lng, lat]) => [lat, lng]);
 
   const map = L.map('map', { zoomControl: true }).setView(latlngs[0], 15);
@@ -200,6 +396,24 @@ async function main() {
   let along = 0;
   let playing = false;
   let lastTs = 0;
+  let lastNav = nextManeuver(route, 0);
+
+  async function paintFromState({ force = false } = {}) {
+    const screen = await backend.screen();
+    const displayNav = forPanel(lastNav, panel.enabled);
+    if (panel.enabled && !force && !panel.gate.wouldRedraw(screen, displayNav, false)) {
+      return { refreshed: false, wiped: false };
+    }
+    const png = await backend.renderPNG();
+    return panel.show(png, { screen, nav: displayNav, force });
+  }
+
+  async function pushNav(nav) {
+    lastNav = nav;
+    const displayNav = forPanel(nav, panel.enabled);
+    await backend.applyNav(displayNav);
+    return displayNav;
+  }
 
   async function tick(ts) {
     if (!playing) return;
@@ -209,26 +423,27 @@ async function main() {
     along = Math.min(totalM, along + route.speed_mps * dt);
     const pos = pointAlong(route.coordinates, along);
     bike.setLatLng([pos.lat, pos.lng]);
-    const nav = nextManeuver(route, along);
-    await backend.applyNav(nav);
-    const png = await backend.renderPNG();
-    await paintHud(canvas, png);
+    const displayNav = await pushNav(nextManeuver(route, along));
+    // Don't await wipe — map keeps moving while the panel refreshes.
+    void paintFromState({ force: false });
     const screen = await backend.screen();
     stats.textContent =
       `along ${Math.round(along)} / ${Math.round(totalM)} m · ` +
-      `${nav.maneuver} · ${nav.distance_text} · ${nav.road} · screen ${screen}`;
+      `${displayNav.maneuver} · ${displayNav.distance_text} · ${displayNav.road} · screen ${screen}\n` +
+      panel.statusLine();
     if (along >= totalM) {
       playing = false;
       document.getElementById('play').disabled = false;
+      void paintFromState({ force: true });
       return;
     }
     requestAnimationFrame(tick);
   }
 
-  async function refreshOnce() {
-    const nav = nextManeuver(route, along);
-    await backend.applyNav(nav);
-    await paintHud(canvas, await backend.renderPNG());
+  async function refreshOnce(force = true) {
+    await pushNav(nextManeuver(route, along));
+    await paintFromState({ force });
+    stats.textContent = panel.statusLine();
   }
 
   document.getElementById('play').addEventListener('click', () => {
@@ -248,18 +463,21 @@ async function main() {
     lastTs = 0;
     document.getElementById('play').disabled = false;
     bike.setLatLng(latlngs[0]);
-    await refreshOnce();
+    panel.gate.reset();
+    await refreshOnce(true);
   });
 
   for (const btn of document.querySelectorAll('[data-btn]')) {
     btn.addEventListener('click', async () => {
       await backend.button(btn.getAttribute('data-btn'));
-      await paintHud(canvas, await backend.renderPNG());
-      stats.textContent = `screen ${await backend.screen()} (manual)`;
+      await pushNav(nextManeuver(route, along));
+      await paintFromState({ force: true });
+      stats.textContent =
+        `screen ${await backend.screen()} (manual)\n` + panel.statusLine();
     });
   }
 
-  await refreshOnce();
+  await refreshOnce(true);
 }
 
 main().catch((err) => {

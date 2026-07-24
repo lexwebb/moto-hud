@@ -14,13 +14,17 @@ func TestRefreshGateThresholds(t *testing.T) {
 	if !g.ShouldRedraw(ScreenNav, nav, false) {
 		t.Fatal("first draw should redraw")
 	}
-	nav.DistanceM = 700
+	nav.DistanceM = 790
 	if g.ShouldRedraw(ScreenNav, nav, false) {
-		t.Fatal("same bucket should skip")
+		t.Fatal("same 50 m step should skip")
 	}
-	nav.DistanceM = 450
+	nav.DistanceM = 760
 	if !g.ShouldRedraw(ScreenNav, nav, false) {
-		t.Fatal("crossing 500->200 bucket should redraw")
+		t.Fatal("crossing to next 50 m step should redraw")
+	}
+	nav.DistanceM = 755
+	if g.ShouldRedraw(ScreenNav, nav, false) {
+		t.Fatal("same step (750) should skip")
 	}
 	nav.Maneuver = protocol.ManeuverRight
 	if !g.ShouldRedraw(ScreenNav, nav, false) {
@@ -34,6 +38,15 @@ func TestRefreshGateThresholds(t *testing.T) {
 	}
 	if !g.ShouldRedraw(ScreenMedia, nav, true) {
 		t.Fatal("force should redraw")
+	}
+}
+
+func TestBucketForDistance(t *testing.T) {
+	cases := map[int]int{0: 0, 10: 0, 24: 0, 25: 50, 49: 50, 50: 50, 74: 50, 75: 100, 724: 700, 725: 750}
+	for in, want := range cases {
+		if got := bucketForDistance(in); got != want {
+			t.Fatalf("bucketForDistance(%d)=%d want %d", in, got, want)
+		}
 	}
 }
 

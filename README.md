@@ -27,9 +27,10 @@ Full ride simulation with Leaflet (OSM) + HUD driven by the same Go core (WASM p
 # open http://127.0.0.1:8787/emulator/
 ```
 
-- Map animates a canned London riverside route (`web/emulator/routes/riverside.json`)
+- Map animates a real OSRM street route Whitehall → Farringdon (`web/emulator/routes/whitehall-farringdon.json`)
 - Each tick posts nav distance/maneuver into the HUD
 - Virtual Prev/Next/Action buttons
+- **E-ink emulation** toggle: flash all pixels on→off, then ~1s fade-in; distance as **≈ nearest 50 m**; redraws about every **50 m** (plus maneuver / road / screen changes)
 - Build WASM only: `./scripts/build-wasm.sh` → `web/emulator/motohud.wasm` (gitignored, ~15MB)
 
 ## Hardware hosts

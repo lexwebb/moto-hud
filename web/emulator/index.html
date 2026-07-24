@@ -77,6 +77,33 @@
       margin-top: .75rem;
       line-height: 1.5;
     }
+    .eink-row {
+      display: flex;
+      align-items: center;
+      gap: .75rem;
+      flex-wrap: wrap;
+      margin-top: .85rem;
+      padding: .65rem .75rem;
+      background: #1e2124;
+      border: 1px solid #3a3f44;
+      border-radius: 3px;
+      font-size: .9rem;
+    }
+    .eink-row label {
+      display: inline-flex;
+      align-items: center;
+      gap: .45rem;
+      cursor: pointer;
+      user-select: none;
+      font-weight: 600;
+    }
+    .eink-row input[type="checkbox"] {
+      width: 1rem;
+      height: 1rem;
+      accent-color: var(--accent);
+    }
+    .eink-row .hint { color: var(--muted); font-weight: 400; font-size: .8rem; }
+    .screen.wiping { outline: 1px solid var(--accent); }
     a { color: var(--accent); }
     @media (max-width: 960px) {
       body { grid-template-columns: 1fr; }
@@ -98,6 +125,13 @@
     <p class="meta" id="backendMeta">Loading backend…</p>
     <div class="bezel">
       <div class="screen"><canvas id="hud" width="250" height="122" aria-label="HUD"></canvas></div>
+    </div>
+    <div class="eink-row">
+      <label>
+        <input type="checkbox" id="einkToggle" checked />
+        E-ink emulation
+      </label>
+      <span class="hint" id="einkHint">flash on→off, then ~1s fade-in · ≈ 50 m steps</span>
     </div>
     <div class="row">
       <button type="button" id="play" class="primary">Play route</button>
