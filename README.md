@@ -16,6 +16,7 @@ Buttons (GPIO) ─────────────────────�
 | [`protocol/`](protocol/) | BLE UUIDs + JSON message schema |
 | [`pi/`](pi/) | Go HUD service, mock injector, systemd unit |
 | [`android/`](android/) | Kotlin companion app |
+| [`enclosure/`](enclosure/) | OpenSCAD bench case + browser mesh preview |
 
 
 ## Browser emulator

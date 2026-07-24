@@ -1,0 +1,219 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Moto HUD enclosure preview</title>
+  <style>
+    :root {
+      --bg: #0e1012;
+      --panel: #1c1f24;
+      --text: #e8eaed;
+      --muted: #9aa0a6;
+      --accent: #8ab4f8;
+    }
+    * { box-sizing: border-box; }
+    html, body {
+      margin: 0;
+      height: 100%;
+      font-family: "Segoe UI", system-ui, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+    }
+    header {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: baseline;
+      gap: 0.5rem 1.25rem;
+      padding: 0.85rem 1.25rem;
+      background: var(--panel);
+      border-bottom: 1px solid #2c3036;
+    }
+    h1 {
+      margin: 0;
+      font-size: 1.05rem;
+      font-weight: 600;
+    }
+    p {
+      margin: 0;
+      color: var(--muted);
+      font-size: 0.9rem;
+    }
+    a { color: var(--accent); }
+    #viewport {
+      width: 100%;
+      height: calc(100% - 3.2rem);
+      display: block;
+    }
+    #status {
+      position: absolute;
+      left: 1rem;
+      bottom: 1rem;
+      color: var(--muted);
+      font-size: 0.8rem;
+      pointer-events: none;
+    }
+  </style>
+  <script type="importmap">
+  {
+    "imports": {
+      "three": "https://unpkg.com/three@0.170.0/build/three.module.js",
+      "three/addons/": "https://unpkg.com/three@0.170.0/examples/jsm/"
+    }
+  }
+  </script>
+</head>
+<body>
+  <header>
+    <h1>Moto HUD enclosure</h1>
+    <p>Orbit drag · scroll zoom · re-export <code>exports/assembly.glb</code> after SCAD changes · see <a href="README.md">README</a></p>
+  </header>
+  <canvas id="viewport"></canvas>
+  <div id="status">Loading…</div>
+  <script type="module">
+    import * as THREE from "three";
+    import { OrbitControls } from "three/addons/controls/OrbitControls.js";
+    import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js";
+
+    const canvas = document.getElementById("viewport");
+    const status = document.getElementById("status");
+
+    const renderer = new THREE.WebGLRenderer({ canvas, antialias: true });
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+    renderer.setClearColor(0x12151a, 1);
+    renderer.shadowMap.enabled = true;
+    renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+    renderer.toneMapping = THREE.ACESFilmicToneMapping;
+    renderer.toneMappingExposure = 1.05;
+    renderer.outputColorSpace = THREE.SRGBColorSpace;
+
+    const scene = new THREE.Scene();
+    scene.background = new THREE.Color(0x12151a);
+
+    const camera = new THREE.PerspectiveCamera(40, 1, 0.001, 20);
+    camera.position.set(0.11, 0.08, 0.13);
+
+    const controls = new OrbitControls(camera, canvas);
+    controls.enableDamping = true;
+    controls.dampingFactor = 0.08;
+    controls.minDistance = 0.05;
+    controls.maxDistance = 0.6;
+
+    scene.add(new THREE.AmbientLight(0xffffff, 0.15));
+
+    // Key light — casts shadows onto the model and ground
+    const key = new THREE.DirectionalLight(0xffffff, 2.6);
+    key.castShadow = true;
+    key.shadow.mapSize.set(2048, 2048);
+    key.shadow.bias = -0.0001;
+    key.shadow.normalBias = 0.001;
+    scene.add(key);
+    scene.add(key.target);
+
+    // Soft fill — no shadows, so keyed faces stay readable
+    const fill = new THREE.DirectionalLight(0x9eb6d4, 0.35);
+    fill.position.set(-1, 0.4, -0.5);
+    scene.add(fill);
+
+    const ground = new THREE.Mesh(
+      new THREE.CircleGeometry(0.4, 48),
+      new THREE.ShadowMaterial({ opacity: 0.5 })
+    );
+    ground.rotation.x = -Math.PI / 2;
+    ground.receiveShadow = true;
+    scene.add(ground);
+
+    function placeKeyLight(object) {
+      const box = new THREE.Box3().setFromObject(object);
+      const size = box.getSize(new THREE.Vector3());
+      const center = box.getCenter(new THREE.Vector3());
+      const extent = Math.max(size.x, size.y, size.z);
+
+      key.target.position.copy(center);
+      key.position.set(
+        center.x + extent * 1.2,
+        center.y + extent * 2.2,
+        center.z + extent * 1.4
+      );
+      key.target.updateMatrixWorld();
+
+      const cam = key.shadow.camera;
+      const span = extent * 1.4;
+      cam.near = extent * 0.1;
+      cam.far = extent * 6;
+      cam.left = -span;
+      cam.right = span;
+      cam.top = span;
+      cam.bottom = -span;
+      cam.updateProjectionMatrix();
+      key.shadow.needsUpdate = true;
+    }
+
+    function resize() {
+      const w = canvas.clientWidth;
+      const h = canvas.clientHeight;
+      renderer.setSize(w, h, false);
+      camera.aspect = w / h;
+      camera.updateProjectionMatrix();
+    }
+    window.addEventListener("resize", resize);
+    new ResizeObserver(resize).observe(canvas);
+    resize();
+
+    const plastic = new THREE.MeshStandardMaterial({
+      color: 0x9aa3ae,
+      metalness: 0.05,
+      roughness: 0.65,
+      flatShading: true,
+    });
+
+    new GLTFLoader().load(
+      "exports/assembly.glb",
+      (gltf) => {
+        const root = gltf.scene;
+
+        // Normalize size (GLB is in mm)
+        const box0 = new THREE.Box3().setFromObject(root);
+        const size0 = box0.getSize(new THREE.Vector3());
+        const scale = 0.12 / Math.max(size0.x, size0.y, size0.z, 1e-6);
+        root.scale.setScalar(scale);
+        root.updateMatrixWorld(true);
+
+        const box1 = new THREE.Box3().setFromObject(root);
+        const center1 = box1.getCenter(new THREE.Vector3());
+        root.position.x -= center1.x;
+        root.position.z -= center1.z;
+        root.position.y -= box1.min.y;
+        root.updateMatrixWorld(true);
+
+        root.traverse((obj) => {
+          if (!obj.isMesh) return;
+          obj.castShadow = true;
+          obj.receiveShadow = true;
+          obj.material = plastic.clone();
+          obj.geometry.computeVertexNormals();
+        });
+
+        scene.add(root);
+        placeKeyLight(root);
+
+        const h = new THREE.Box3().setFromObject(root).getSize(new THREE.Vector3()).y;
+        controls.target.set(0, h * 0.4, 0);
+        controls.update();
+        status.textContent = "";
+      },
+      undefined,
+      (err) => {
+        console.error(err);
+        status.textContent = "Failed to load exports/assembly.glb";
+      }
+    );
+
+    (function frame() {
+      controls.update();
+      renderer.render(scene, camera);
+      requestAnimationFrame(frame);
+    })();
+  </script>
+</body>
+</html>
