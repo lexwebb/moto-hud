@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>Moto HUD — preview</title>
+  <style>
+    :root {
+      --bg: #1a1c1e;
+      --panel: #2a2e32;
+      --ink: #f2f0e8;
+      --accent: #c4a35a;
+      --scale: 2;
+      --native-w: 250;
+      --native-h: 122;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      min-height: 100vh;
+      font-family: system-ui, sans-serif;
+      background:
+        radial-gradient(ellipse at 20% 0%, #2f343a 0%, transparent 50%),
+        var(--bg);
+      color: var(--ink);
+      display: grid;
+      grid-template-columns: 1fr 320px;
+      gap: 2rem;
+      padding: 2rem;
+    }
+    h1 { font-size: 1.5rem; margin: 0 0 0.5rem; }
+    .stage { display: flex; flex-direction: column; gap: 1rem; }
+    .bezel {
+      background: #0d0e10;
+      padding: 1.25rem;
+      border-radius: 4px;
+      box-shadow: 0 20px 50px rgba(0,0,0,.45);
+      width: fit-content;
+    }
+    /* Layout box is scaled size; bitmap stays native and is transformed up. */
+    .screen {
+      width: calc(var(--native-w) * 1px * var(--scale));
+      height: calc(var(--native-h) * 1px * var(--scale));
+      background: #fff;
+      overflow: hidden;
+    }
+    .screen canvas {
+      width: calc(var(--native-w) * 1px);
+      height: calc(var(--native-h) * 1px);
+      display: block;
+      transform: scale(var(--scale));
+      transform-origin: top left;
+      image-rendering: pixelated;
+      image-rendering: crisp-edges;
+    }
+    .meta { opacity: .7; font-size: .9rem; }
+    aside {
+      background: var(--panel);
+      padding: 1.25rem;
+      border-radius: 4px;
+      align-self: start;
+    }
+    label {
+      display: block;
+      font-size: .75rem;
+      text-transform: uppercase;
+      letter-spacing: .06em;
+      opacity: .6;
+      margin-top: .85rem;
+    }
+    input, select, button {
+      width: 100%;
+      margin-top: .35rem;
+      padding: .5rem .6rem;
+      border: 1px solid #444;
+      border-radius: 3px;
+      background: #1e2124;
+      color: var(--ink);
+      font: inherit;
+    }
+    button {
+      margin-top: 1rem;
+      background: var(--accent);
+      color: #1a1c1e;
+      border: none;
+      font-weight: 600;
+      cursor: pointer;
+    }
+    button.secondary {
+      background: transparent;
+      color: var(--ink);
+      border: 1px solid #555;
+    }
+    .row { display: flex; gap: .5rem; }
+    .row > * { flex: 1; }
+  </style>
+</head>
+<body>
+  <main class="stage">
+    <div>
+      <h1>Moto HUD</h1>
+      <p class="meta">Native 250×122 bitmap · CSS scale(<span id="scaleLabel">2</span>×) · nearest-neighbor</p>
+    </div>
+    <div class="bezel">
+      <div class="screen" id="screen">
+        <canvas id="frame" width="250" height="122" aria-label="HUD frame"></canvas>
+      </div>
+    </div>
+    <p class="meta">Source: <code>/frame.png</code> (same 1-bit raster as the Pi). SVG debug: <code>/frame.svg</code>.</p>
+  </main>
+  <aside>
+    <label>Screen</label>
+    <select id="screenSel">
+      <option value="nav">Nav</option>
+      <option value="media">Media</option>
+      <option value="status">Status</option>
+    </select>
+    <div id="navFields">
+      <label>Maneuver</label>
+      <select id="maneuver">
+        <option>left</option>
+        <option>right</option>
+        <option>straight</option>
+        <option>u_turn</option>
+        <option>roundabout</option>
+        <option>arrive</option>
+        <option>depart</option>
+        <option>unknown</option>
+      </select>
+      <label>Distance</label>
+      <input id="distance" value="200 m" />
+      <label>Road</label>
+      <input id="road" value="High St" />
+      <label>ETA text</label>
+      <input id="eta" value="ETA 12 min" />
+      <label>Idle banner</label>
+      <input id="idle" value="" />
+    </div>
+    <div id="mediaFields" hidden>
+      <label>Playing</label>
+      <input id="playing" value="PLAYING" />
+      <label>Title</label>
+      <input id="title" value="Born to Run" />
+      <label>Artist</label>
+      <input id="artist" value="Bruce Springsteen" />
+    </div>
+    <div id="statusFields" hidden>
+      <label>BLE</label>
+      <input id="ble" value="BLE: UP" />
+      <label>Nav</label>
+      <input id="nav" value="NAV: ON" />
+    </div>
+    <div class="row">
+      <button type="button" id="apply">Push to HUD</button>
+      <button type="button" class="secondary" id="reload">Refresh frame</button>
+    </div>
+  </aside>
+  <script src="preview.js"></script>
+</body>
+</html>

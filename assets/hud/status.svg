@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="250" height="122" viewBox="0 0 250 122">
+  <rect width="250" height="122" fill="#fff"/>
+  <text x="8" y="14" data-spleen="6x12" font-size="12" fill="#000">STATUS</text>
+  <text id="ble" x="8" y="48" data-spleen="12x24" font-size="24" fill="#000">{{ble}}</text>
+  <text id="nav" x="8" y="78" data-spleen="12x24" font-size="24" fill="#000">{{nav}}</text>
+  <text x="8" y="116" data-spleen="6x12" font-size="12" fill="#000">ACT=redraw</text>
+</svg>

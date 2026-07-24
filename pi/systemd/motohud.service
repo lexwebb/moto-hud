@@ -1,0 +1,15 @@
+[Unit]
+Description=Moto HUD e-ink service
+After=bluetooth.target network.target
+Wants=bluetooth.target
+
+[Service]
+Type=simple
+User=pi
+WorkingDirectory=/home/pi/moto-hud
+ExecStart=/home/pi/moto-hud/bin/motohud -inky -out /tmp/hud.png -http :8787
+Restart=on-failure
+RestartSec=3
+
+[Install]
+WantedBy=multi-user.target

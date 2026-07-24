@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Moto HUD</string>
+    <string name="notification_access">Grant notification access</string>
+    <string name="start_hud">Start HUD link</string>
+    <string name="stop_hud">Stop HUD link</string>
+    <string name="maps_tip">If turn text is empty, disable Google Maps Live Updates / Live info notification categories, then restart navigation.</string>
+</resources>

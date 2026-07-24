@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="250" height="122" viewBox="0 0 250 122">
+  <rect width="250" height="122" fill="#fff"/>
+
+  <!-- Maneuver glyph (vector). Text uses Spleen via data-spleen; y is baseline. -->
+  <!-- Square caps: round caps leave soft AA fringes after 1-bit threshold. -->
+  <g id="maneuver" transform="translate(8,8)" fill="#000" stroke="#000" stroke-width="3" stroke-linecap="square" stroke-linejoin="miter">
+    {{maneuver_paths}}
+  </g>
+
+  <text id="distance" x="244" y="30" text-anchor="end"
+        data-spleen="16x32" font-size="32" fill="#000">{{distance}}</text>
+  <text id="road" x="8" y="78"
+        data-spleen="12x24" font-size="24" fill="#000">{{road}}</text>
+  <text id="eta" x="8" y="102"
+        data-spleen="8x16" font-size="16" fill="#000">{{eta}}</text>
+  <text id="idle" x="8" y="116"
+        data-spleen="6x12" font-size="12" fill="#000">{{idle}}</text>
+</svg>
