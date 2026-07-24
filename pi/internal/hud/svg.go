@@ -2,6 +2,7 @@ package hud
 
 import (
 	"bytes"
+	"embed"
 	"fmt"
 	"image"
 	"image/color"
@@ -23,6 +24,9 @@ const (
 	Height = 122
 )
 
+//go:embed assets/frame.svg
+var embeddedFS embed.FS
+
 var (
 	assetOnce sync.Once
 	assetDir  string
@@ -35,6 +39,16 @@ var rawSVGKeys = map[string]bool{
 
 func SetAssetDir(dir string) {
 	assetDir = dir
+}
+
+func loadFrameSVG() ([]byte, error) {
+	if dir := resolveAssetDir(); dir != "" {
+		path := filepath.Join(dir, "frame.svg")
+		if b, err := os.ReadFile(path); err == nil {
+			return b, nil
+		}
+	}
+	return embeddedFS.ReadFile("assets/frame.svg")
 }
 
 func resolveAssetDir() string {
@@ -86,7 +100,7 @@ func BuildSVG(screen Screen, nav protocol.NavMessage, media protocol.MediaMessag
 	default:
 		vars = buildNavBody(nav, bleLinked)
 	}
-	raw, err := os.ReadFile(filepath.Join(resolveAssetDir(), "frame.svg"))
+	raw, err := loadFrameSVG()
 	if err != nil {
 		return nil, err
 	}

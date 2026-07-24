@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>Moto HUD — Emulator</title>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <style>
+    :root {
+      --bg: #1a1c1e;
+      --panel: #2a2e32;
+      --ink: #f2f0e8;
+      --accent: #c4a35a;
+      --muted: #9aa0a6;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      min-height: 100vh;
+      font-family: system-ui, sans-serif;
+      background: radial-gradient(ellipse at 15% 0%, #2f343a 0%, transparent 45%), var(--bg);
+      color: var(--ink);
+      display: grid;
+      grid-template-columns: 1.2fr 0.8fr;
+      gap: 1.25rem;
+      padding: 1.25rem;
+    }
+    h1 { margin: 0 0 .25rem; font-size: 1.35rem; }
+    .meta { color: var(--muted); font-size: .9rem; margin: 0 0 1rem; }
+    .panel {
+      background: var(--panel);
+      border-radius: 4px;
+      padding: 1rem;
+      min-height: 0;
+    }
+    #map { height: min(70vh, 560px); border-radius: 3px; background: #111; }
+    .bezel {
+      background: #0d0e10;
+      padding: 1rem;
+      width: fit-content;
+      border-radius: 3px;
+      margin: 0 auto 1rem;
+    }
+    .screen {
+      width: 500px;
+      height: 244px;
+      background: #fff;
+      overflow: hidden;
+    }
+    .screen canvas {
+      width: 250px;
+      height: 122px;
+      display: block;
+      transform: scale(2);
+      transform-origin: top left;
+      image-rendering: pixelated;
+      image-rendering: crisp-edges;
+    }
+    .row { display: flex; gap: .5rem; flex-wrap: wrap; margin-top: .75rem; }
+    button {
+      flex: 1;
+      min-width: 5rem;
+      padding: .55rem .7rem;
+      border: 1px solid #555;
+      border-radius: 3px;
+      background: #1e2124;
+      color: var(--ink);
+      font: inherit;
+      font-weight: 600;
+      cursor: pointer;
+    }
+    button.primary { background: var(--accent); color: #1a1c1e; border: none; }
+    button:disabled { opacity: .45; cursor: wait; }
+    .stat {
+      font-family: ui-monospace, monospace;
+      font-size: .8rem;
+      color: var(--muted);
+      margin-top: .75rem;
+      line-height: 1.5;
+    }
+    a { color: var(--accent); }
+    @media (max-width: 960px) {
+      body { grid-template-columns: 1fr; }
+      .screen { width: 100%; max-width: 500px; height: auto; aspect-ratio: 250 / 122; }
+      .screen canvas { width: 100%; height: auto; transform: none; }
+    }
+  </style>
+</head>
+<body>
+  <section class="panel">
+    <h1>Route map</h1>
+    <p class="meta">Leaflet + OSM · fake ride feeds the HUD over the same nav protocol</p>
+    <div id="map"></div>
+    <p class="meta" style="margin-top:.75rem">© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a></p>
+  </section>
+
+  <section class="panel">
+    <h1>HUD</h1>
+    <p class="meta" id="backendMeta">Loading backend…</p>
+    <div class="bezel">
+      <div class="screen"><canvas id="hud" width="250" height="122" aria-label="HUD"></canvas></div>
+    </div>
+    <div class="row">
+      <button type="button" id="play" class="primary">Play route</button>
+      <button type="button" id="pause">Pause</button>
+      <button type="button" id="reset">Reset</button>
+    </div>
+    <div class="row">
+      <button type="button" data-btn="prev">Prev</button>
+      <button type="button" data-btn="action">Action</button>
+      <button type="button" data-btn="next">Next</button>
+    </div>
+    <div class="row">
+      <button type="button" data-btn="prev_long">Prev long</button>
+      <button type="button" data-btn="action_long">Home (long)</button>
+      <button type="button" data-btn="next_long">Next long</button>
+    </div>
+    <div class="stat" id="stats">—</div>
+    <p class="meta" style="margin-top:1rem">
+      <a href="/preview/">classic preview</a> ·
+      <a href="/preview/fonts.html">fonts</a>
+    </p>
+  </section>
+
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script src="wasm_exec.js"></script>
+  <script type="module" src="emulator.js"></script>
+</body>
+</html>

@@ -190,6 +190,7 @@ func (h *Hub) StartHTTP(ctx context.Context, addr string) error {
 	})
 	if root := findRepoRoot(); root != "" {
 		mux.Handle("/preview/", http.StripPrefix("/preview/", http.FileServer(http.Dir(filepath.Join(root, "web/preview")))))
+		mux.Handle("/emulator/", http.StripPrefix("/emulator/", http.FileServer(http.Dir(filepath.Join(root, "web/emulator")))))
 		mux.Handle("/assets/", http.StripPrefix("/assets/", http.FileServer(http.Dir(filepath.Join(root, "assets")))))
 	}
 	mux.HandleFunc("/cmd/stream", func(w http.ResponseWriter, r *http.Request) {
@@ -229,7 +230,7 @@ func (h *Hub) StartHTTP(ctx context.Context, addr string) error {
 		defer cancel()
 		_ = srv.Shutdown(shutdownCtx)
 	}()
-	log.Printf("transport: HTTP injector on http://%s (preview /preview/  frame /frame.png|/frame.svg)", addr)
+	log.Printf("transport: HTTP on http://%s (emulator /emulator/  preview /preview/  frame /frame.png)", addr)
 	go func() {
 		if err := srv.ListenAndServe(); err != nil && err != http.ErrServerClosed {
 			log.Printf("transport: HTTP error: %v", err)

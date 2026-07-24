@@ -2,6 +2,7 @@
 /bin/
 /out/
 *.png
+*.wasm
 
 # Unused / abandoned font experiments
 assets/fonts/LiberationSans-Bold.ttf

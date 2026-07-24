@@ -17,7 +17,40 @@ Buttons (GPIO) ─────────────────────�
 | [`pi/`](pi/) | Go HUD service, mock injector, systemd unit |
 | [`android/`](android/) | Kotlin companion app |
 
-## Design system
+
+## Browser emulator
+
+Full ride simulation with Leaflet (OSM) + HUD driven by the same Go core (WASM preferred, HTTP fallback):
+
+```bash
+./scripts/emu.sh
+# open http://127.0.0.1:8787/emulator/
+```
+
+- Map animates a canned London riverside route (`web/emulator/routes/riverside.json`)
+- Each tick posts nav distance/maneuver into the HUD
+- Virtual Prev/Next/Action buttons
+- Build WASM only: `./scripts/build-wasm.sh` → `web/emulator/motohud.wasm` (gitignored, ~15MB)
+
+## Hardware hosts
+
+`motohud` talks to the panel/buttons/phone through `pi/internal/platform` ports so adapters can be swapped:
+
+| `-host` | Screen | Controls | Phone link |
+|---------|--------|----------|------------|
+| `auto` (default) | PNG, or Inky if `-inky` | keyboard / GPIO | BLE stub (or `-tags ble`) |
+| `png` | PNG file | keyboard / GPIO | BLE stub |
+| `inky` | Inky pHAT | GPIO | BLE |
+| `emu` | memory (+ optional PNG) | channel (injectable) | loopback linked |
+| `test` | memory | channel | loopback |
+
+```bash
+./bin/motohud -demo -host png -out out/hud.png -http :8787
+./bin/motohud -host inky -inky   # on the Pi
+```
+
+The browser emulator uses Go WASM (`pi/cmd/motohud-wasm`) for the HUD core, with HTTP → `-host emu` as fallback.
+
 
 Reference pack from Claude Design lives in [`design/`](design/) (tokens, React kit, guidelines). **Production type is Terminus Bold**, not the kit’s browser monospace stand-in. Interactive mock: open `design/ui_kits/hud/index.html` via a static server.
 
