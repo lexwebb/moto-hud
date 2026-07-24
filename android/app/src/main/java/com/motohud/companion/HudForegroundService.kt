@@ -7,6 +7,7 @@ import android.app.PendingIntent
 import android.app.Service
 import android.content.Intent
 import android.os.IBinder
+import android.util.Log
 import androidx.core.app.NotificationCompat
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -16,12 +17,14 @@ import kotlinx.coroutines.cancel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 class HudForegroundService : Service() {
 
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Main.immediate)
     private lateinit var ble: BleClient
     private lateinit var media: MediaWatcher
+    private var http: HttpHudSink? = null
     private var jobs: Job? = null
 
     override fun onCreate() {
@@ -35,17 +38,24 @@ class HudForegroundService : Service() {
         startForeground(NOTIF_ID, buildNotification("Connecting…"))
         media.start()
         ble.startScan()
+        http = if (LinkPrefs.httpEnabled(this)) {
+            HttpHudSink(LinkPrefs.httpBaseUrl(this)).also {
+                HudBus.setStatus("HTTP → ${LinkPrefs.httpBaseUrl(this)}")
+            }
+        } else {
+            null
+        }
         jobs?.cancel()
         jobs = scope.launch {
             launch {
                 HudBus.nav.collect { nav ->
-                    if (ble.connected) ble.writeNav(nav)
+                    dispatchNav(nav)
                     updateNotif()
                 }
             }
             launch {
                 HudBus.media.collect { m ->
-                    if (ble.connected) ble.writeMedia(m)
+                    dispatchMedia(m)
                 }
             }
             launch {
@@ -57,11 +67,47 @@ class HudForegroundService : Service() {
                 HudBus.status.collect { updateNotif() }
             }
             while (isActive) {
-                if (ble.connected) ble.writeHeartbeat()
+                dispatchHeartbeat()
                 delay(15_000)
             }
         }
         return START_STICKY
+    }
+
+    private suspend fun dispatchNav(nav: NavState) {
+        if (ble.connected) ble.writeNav(nav)
+        val sink = http ?: return
+        withContext(Dispatchers.IO) {
+            try {
+                sink.writeNav(nav)
+            } catch (e: Exception) {
+                Log.w(TAG, "HTTP nav failed", e)
+                HudBus.setStatus("HTTP nav failed: ${e.message}")
+            }
+        }
+    }
+
+    private suspend fun dispatchMedia(m: MediaState) {
+        if (ble.connected) ble.writeMedia(m)
+        val sink = http ?: return
+        withContext(Dispatchers.IO) {
+            try {
+                sink.writeMedia(m)
+            } catch (e: Exception) {
+                Log.w(TAG, "HTTP media failed", e)
+            }
+        }
+    }
+
+    private suspend fun dispatchHeartbeat() {
+        if (ble.connected) ble.writeHeartbeat()
+        val sink = http ?: return
+        withContext(Dispatchers.IO) {
+            try {
+                sink.writeHeartbeat()
+            } catch (_: Exception) {
+            }
+        }
     }
 
     override fun onDestroy() {
@@ -69,6 +115,7 @@ class HudForegroundService : Service() {
         scope.cancel()
         media.stop()
         ble.close()
+        http = null
         super.onDestroy()
     }
 
@@ -99,6 +146,7 @@ class HudForegroundService : Service() {
     }
 
     companion object {
+        private const val TAG = "HudService"
         private const val CHANNEL = "motohud_link"
         private const val NOTIF_ID = 42
     }

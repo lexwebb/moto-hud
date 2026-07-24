@@ -5,4 +5,8 @@
     <string name="start_hud">Start HUD link</string>
     <string name="stop_hud">Stop HUD link</string>
     <string name="maps_tip">If turn text is empty, disable Google Maps Live Updates / Live info notification categories, then restart navigation.</string>
+    <string name="http_section">Dev HTTP injector</string>
+    <string name="http_enable">Also POST nav/media over HTTP</string>
+    <string name="http_url_hint">http://10.0.2.2:8787</string>
+    <string name="http_tip">Emulator → host loopback is 10.0.2.2. Phone on LAN: use your PC\'s IP. Run: motohud -host png -http :8787</string>
 </resources>

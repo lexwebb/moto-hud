@@ -157,18 +157,20 @@ Screens: **Nav** → **Media** → **Status**.
 
 ## Android companion
 
-Open [`android/`](android/) in Android Studio, sync Gradle, side-load on a phone.
+Open [`android/`](android/) in Android Studio, sync Gradle, side-load on a phone (or emulator).
 
 1. Grant **notification access** (required for Maps + media sessions).
 2. Start Google Maps navigation; if fields are empty, disable Maps **Live Updates** / **Live info** notification categories.
 3. Tap **Start HUD link** — scans for BLE device **MotoHUD**.
 4. Keep the foreground notification running while riding.
 
-Without a BLE-capable Pi build (`-tags ble`), use the HTTP injector over Wi‑Fi for bring-up, then enable BLE on device.
+**Dev HTTP (no Pi BLE):** enable **Also POST nav/media over HTTP** and set the base URL (emulator → host is `http://10.0.2.2:8787`). Run `motohud -host png -http :8787` on the PC. BLE scan still runs; HTTP posts happen whenever nav/media update. See [`protocol/README.md`](protocol/README.md).
 
-## Protocol
+Unit tests: `ManeuverParser` — from Android Studio or CI (`gradle :app:testDebugUnitTest`).
 
-See [`protocol/README.md`](protocol/README.md).
+## CI
+
+[`.github/workflows/ci.yml`](.github/workflows/ci.yml) runs `go test ./...` in `pi/` and Android unit tests on push/PR.
 
 ## Notes
 

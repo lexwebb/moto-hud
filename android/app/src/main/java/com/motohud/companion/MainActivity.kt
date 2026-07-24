@@ -7,8 +7,10 @@ import android.os.Build
 import android.os.Bundle
 import android.provider.Settings
 import android.widget.Button
+import android.widget.EditText
 import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
+import androidx.appcompat.widget.SwitchCompat
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.lifecycleScope
@@ -23,11 +25,17 @@ class MainActivity : AppCompatActivity() {
         val status = findViewById<TextView>(R.id.statusText)
         val navText = findViewById<TextView>(R.id.navText)
         val mediaText = findViewById<TextView>(R.id.mediaText)
+        val httpEnable = findViewById<SwitchCompat>(R.id.httpEnable)
+        val httpUrl = findViewById<EditText>(R.id.httpUrl)
+
+        httpEnable.isChecked = LinkPrefs.httpEnabled(this)
+        httpUrl.setText(LinkPrefs.httpBaseUrl(this))
 
         findViewById<Button>(R.id.btnNotificationAccess).setOnClickListener {
             startActivity(Intent(Settings.ACTION_NOTIFICATION_LISTENER_SETTINGS))
         }
         findViewById<Button>(R.id.btnStart).setOnClickListener {
+            LinkPrefs.setHttp(this, httpEnable.isChecked, httpUrl.text.toString())
             ensurePermissions()
             ContextCompat.startForegroundService(this, Intent(this, HudForegroundService::class.java))
         }

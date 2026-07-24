@@ -20,7 +20,7 @@ import org.json.JSONObject
 import java.util.UUID
 
 @SuppressLint("MissingPermission")
-class BleClient(private val context: Context) {
+class BleClient(private val context: Context) : HudSink {
 
     private val adapter: BluetoothAdapter? =
         (context.getSystemService(Context.BLUETOOTH_SERVICE) as BluetoothManager).adapter
