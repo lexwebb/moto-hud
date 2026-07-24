@@ -30,10 +30,7 @@ var (
 
 // Raw SVG fragment placeholders (not XML-escaped).
 var rawSVGKeys = map[string]bool{
-	"maneuver_paths": true,
-	"link_mark":      true,
-	"progress_ticks": true,
-	"nav_content":    true,
+	"body": true,
 }
 
 func SetAssetDir(dir string) {
@@ -78,20 +75,18 @@ func Render(screen Screen, nav protocol.NavMessage, media protocol.MediaMessage,
 
 // BuildSVG returns filled SVG markup with <text> placeholders resolved (designer form).
 func BuildSVG(screen Screen, nav protocol.NavMessage, media protocol.MediaMessage, bleLinked bool) ([]byte, error) {
-	name := "nav.svg"
 	vars := map[string]string{}
 	switch screen {
 	case ScreenNav:
-		name = "nav.svg"
-		vars = navVars(nav, bleLinked)
+		vars = buildNavBody(nav, bleLinked)
 	case ScreenMedia:
-		name = "media.svg"
-		vars = mediaVars(media, bleLinked)
+		vars = buildMediaBody(media, bleLinked)
 	case ScreenStatus:
-		name = "status.svg"
-		vars = statusVars(bleLinked, nav.Active)
+		vars = buildStatusBody(bleLinked, nav.Active)
+	default:
+		vars = buildNavBody(nav, bleLinked)
 	}
-	raw, err := os.ReadFile(filepath.Join(resolveAssetDir(), name))
+	raw, err := os.ReadFile(filepath.Join(resolveAssetDir(), "frame.svg"))
 	if err != nil {
 		return nil, err
 	}
@@ -128,87 +123,6 @@ func applyVars(svg string, vars map[string]string) string {
 
 func escapeXML(s string) string {
 	return strings.NewReplacer("&", "&amp;", "<", "&lt;", ">", "&gt;", "\"", "&quot;").Replace(s)
-}
-
-func navVars(nav protocol.NavMessage, bleLinked bool) map[string]string {
-	v := map[string]string{
-		"link_mark":  linkMarkSVG(bleLinked),
-		"leg_prev":   "MODE",
-		"leg_action": "—",
-		"leg_next":   "MODE",
-	}
-	if !nav.Active {
-		v["leg_prev"] = "MEDIA"
-		v["leg_next"] = "STATUS"
-		v["nav_content"] = `
-    <line x1="0" y1="15" x2="196" y2="15" stroke="#000" stroke-width="1" stroke-dasharray="3 2"/>
-    <text x="98" y="58" text-anchor="middle" data-pixel="8x16" font-size="16" fill="#000">MOTO HUD</text>
-    <text x="98" y="82" text-anchor="middle" data-pixel="8x16" font-size="16" fill="#000">Waiting for route…</text>`
-		return v
-	}
-	dist := nav.DistanceText
-	if dist == "" {
-		dist = formatDistance(nav.DistanceM)
-	}
-	road := nav.Road
-	if road == "" {
-		road = truncate(nav.Instruction, 18)
-	} else {
-		road = truncate(road, 18)
-	}
-	eta := ""
-	if nav.EtaMin > 0 {
-		eta = formatETA(nav.EtaMin)
-	}
-	v["nav_content"] = fmt.Sprintf(`
-    <line x1="0" y1="15" x2="196" y2="15" stroke="#000" stroke-width="1"/>
-    <g id="maneuver" transform="translate(0,20)" fill="#000" stroke="#000" stroke-width="3" stroke-linecap="square" stroke-linejoin="miter">
-      %s
-    </g>
-    <text id="distance" x="196" y="52" text-anchor="end" data-pixel="16x32" font-size="32" fill="#000">%s</text>
-    <text id="road" x="0" y="78" data-pixel="8x16" font-size="16" fill="#000">%s</text>
-    <text id="eta" x="0" y="108" data-pixel="8x16" font-size="16" fill="#000">%s</text>
-    <g id="ticks" transform="translate(120,98)">%s</g>`,
-		maneuverPaths(nav.Maneuver),
-		escapeXML(dist),
-		escapeXML(road),
-		escapeXML(eta),
-		progressTicks(nav.DistanceM),
-	)
-	return v
-}
-
-func mediaVars(media protocol.MediaMessage, bleLinked bool) map[string]string {
-	playing := "PAUSED"
-	action := "PLAY"
-	if media.Playing {
-		playing = "PLAYING"
-		action = "PAUSE"
-	}
-	return map[string]string{
-		"link_mark":  linkMarkSVG(bleLinked),
-		"playing":    playing,
-		"title":      truncate(media.Title, 16),
-		"artist":     truncate(media.Artist, 18),
-		"leg_prev":   "SKIP",
-		"leg_action": action,
-		"leg_next":   "SKIP",
-	}
-}
-
-func statusVars(bleLinked, navActive bool) map[string]string {
-	ble, nav := "DOWN", "OFF"
-	if bleLinked {
-		ble = "UP"
-	}
-	if navActive {
-		nav = "ON"
-	}
-	return map[string]string{
-		"link_mark": linkMarkSVG(bleLinked),
-		"ble":       ble,
-		"nav":       nav,
-	}
 }
 
 func linkMarkSVG(connected bool) string {

@@ -83,6 +83,10 @@ func main() {
 			EtaMin:       12,
 			Maneuver:     protocol.ManeuverLeft,
 		})
+		state.SetMedia(protocol.MediaMessage{
+			Type: "media", Playing: true, Title: "Born to Run", Artist: "Bruce Springsteen",
+		})
+		state.SetBLELinked(true)
 	}
 	requestRedraw()
 
