@@ -1,0 +1,12 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import DesignKit from '../components/DesignKit';
+---
+<BaseLayout title="Design kit" description="Interactive HUD screen mock (design stand-in)">
+  <h1>Design kit</h1>
+  <p class="lede">
+    Interactive walkthrough of the six HUD modes. Browser monospace stand-in —
+    production raster uses Terminus Bold BDFs on the Pi.
+  </p>
+  <DesignKit client:load />
+</BaseLayout>

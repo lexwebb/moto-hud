@@ -16,10 +16,26 @@ Buttons (GPIO) ─────────────────────�
 | [`protocol/`](protocol/) | BLE UUIDs + JSON message schema |
 | [`pi/`](pi/) | Go HUD service, mock injector, systemd unit |
 | [`android/`](android/) | Kotlin companion app |
-| [`enclosure/`](enclosure/) | OpenSCAD bench case + browser mesh preview |
+| [`enclosure/`](enclosure/) | OpenSCAD bench case (CAD + mesh exports) |
+| [`site/`](site/) | Astro project site (GitHub Pages) |
 
 
-## Browser emulator
+## Project site (GitHub Pages)
+
+Public demos: enclosure 3D viewer, design HUD kit, WASM ride emulator.
+
+**https://lexwebb.github.io/moto-hud/**
+
+```bash
+cd site
+npm install
+npm run build:wasm   # optional locally; needs Go — CI builds it for Pages
+npm run dev          # http://localhost:4321/moto-hud/
+```
+
+Deploy: push to `main` (workflow `.github/workflows/pages.yml`). One-time: repo **Settings → Pages → Source: GitHub Actions**.
+
+Go-backed live `/preview` (frame.png / fonts) is still local-only via `./scripts/emu.sh`.
 
 Full ride simulation with Leaflet (OSM) + HUD driven by the same Go core (WASM preferred, HTTP fallback):
 

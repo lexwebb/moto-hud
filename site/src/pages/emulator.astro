@@ -1,0 +1,154 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import 'leaflet/dist/leaflet.css';
+
+const base = import.meta.env.BASE_URL;
+---
+<BaseLayout title="Emulator" description="Leaflet ride simulator with Go WASM HUD" fullBleed>
+  <div class="emu">
+    <section class="panel">
+      <h1>Route map</h1>
+      <p class="meta">Leaflet + OSM · fake ride feeds the HUD over the same nav protocol</p>
+      <div id="map"></div>
+      <p class="meta" style="margin-top:.75rem">© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a></p>
+    </section>
+
+    <section class="panel">
+      <h1>HUD</h1>
+      <p class="meta" id="backendMeta">Loading WASM backend…</p>
+      <div class="bezel">
+        <div class="screen"><canvas id="hud" width="250" height="122" aria-label="HUD"></canvas></div>
+      </div>
+      <div class="eink-row">
+        <label>
+          <input type="checkbox" id="einkToggle" checked />
+          E-ink emulation
+        </label>
+        <span class="hint" id="einkHint">flash on→off, then ~1s fade-in · ≈ 50 m steps</span>
+      </div>
+      <div class="row">
+        <button type="button" id="play" class="primary">Play route</button>
+        <button type="button" id="pause">Pause</button>
+        <button type="button" id="reset">Reset</button>
+      </div>
+      <div class="row">
+        <button type="button" data-btn="prev">Prev</button>
+        <button type="button" data-btn="action">Action</button>
+        <button type="button" data-btn="next">Next</button>
+      </div>
+      <div class="row">
+        <button type="button" data-btn="prev_long">Prev long</button>
+        <button type="button" data-btn="action_long">Home (long)</button>
+        <button type="button" data-btn="next_long">Next long</button>
+      </div>
+      <div class="stat" id="stats">—</div>
+      <p class="meta" style="margin-top:1rem">
+        First load downloads ~15MB WASM. For local Go HTTP preview use <code>./scripts/emu.sh</code>.
+      </p>
+    </section>
+  </div>
+</BaseLayout>
+
+<script is:inline define:vars={{ base }}>
+  window.__MOTO_HUD_BASE__ = base;
+</script>
+<script is:inline src="/moto-hud/emulator/wasm_exec.js"></script>
+<script>
+  import '../scripts/emulator.js';
+</script>
+
+<style>
+  .emu {
+    display: grid;
+    grid-template-columns: 1.2fr 0.8fr;
+    gap: 1.25rem;
+    padding: 1.25rem;
+    min-height: calc(100vh - 3.2rem);
+  }
+  .emu h1 { margin: 0 0 .25rem; font-size: 1.35rem; }
+  .emu .meta { color: var(--muted); font-size: .9rem; margin: 0 0 1rem; }
+  .emu .panel {
+    background: var(--panel);
+    border-radius: 4px;
+    padding: 1rem;
+    min-height: 0;
+  }
+  #map { height: min(70vh, 560px); border-radius: 3px; background: #111; }
+  .bezel {
+    background: #0d0e10;
+    padding: 1rem;
+    width: fit-content;
+    border-radius: 3px;
+    margin: 0 auto 1rem;
+  }
+  .screen {
+    width: 500px;
+    height: 244px;
+    background: #fff;
+    overflow: hidden;
+  }
+  .screen canvas {
+    width: 250px;
+    height: 122px;
+    display: block;
+    transform: scale(2);
+    transform-origin: top left;
+    image-rendering: pixelated;
+    image-rendering: crisp-edges;
+  }
+  .row { display: flex; gap: .5rem; flex-wrap: wrap; margin-top: .75rem; }
+  .emu button {
+    flex: 1;
+    min-width: 5rem;
+    padding: .55rem .7rem;
+    border: 1px solid #555;
+    border-radius: 3px;
+    background: #1e2124;
+    color: var(--text);
+    font: inherit;
+    font-weight: 600;
+    cursor: pointer;
+  }
+  .emu button.primary { background: var(--accent); color: #1a1c1e; border: none; }
+  .emu button:disabled { opacity: .45; cursor: wait; }
+  .stat {
+    font-family: ui-monospace, monospace;
+    font-size: .8rem;
+    color: var(--muted);
+    margin-top: .75rem;
+    line-height: 1.5;
+    white-space: pre-wrap;
+  }
+  .eink-row {
+    display: flex;
+    align-items: center;
+    gap: .75rem;
+    flex-wrap: wrap;
+    margin-top: .85rem;
+    padding: .65rem .75rem;
+    background: #1e2124;
+    border: 1px solid #3a3f44;
+    border-radius: 3px;
+    font-size: .9rem;
+  }
+  .eink-row label {
+    display: inline-flex;
+    align-items: center;
+    gap: .45rem;
+    cursor: pointer;
+    user-select: none;
+    font-weight: 600;
+  }
+  .eink-row input[type="checkbox"] {
+    width: 1rem;
+    height: 1rem;
+    accent-color: var(--accent);
+  }
+  .eink-row .hint { color: var(--muted); font-weight: 400; font-size: .8rem; }
+  .screen.wiping { outline: 1px solid var(--accent); }
+  @media (max-width: 960px) {
+    .emu { grid-template-columns: 1fr; }
+    .screen { width: 100%; max-width: 500px; height: auto; aspect-ratio: 250 / 122; }
+    .screen canvas { width: 100%; height: auto; transform: none; }
+  }
+</style>

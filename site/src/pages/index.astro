@@ -1,0 +1,32 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+const base = import.meta.env.BASE_URL;
+---
+<BaseLayout title="Home">
+  <h1>Moto HUD</h1>
+  <p class="lede">
+    Motorcycle e-ink turn-by-turn: Android companion scrapes Maps + media over BLE to a
+    Raspberry Pi Zero driving an Inky pHAT.
+  </p>
+
+  <div class="card-grid">
+    <a class="card" href={`${base}enclosure/`}>
+      <h2>Enclosure</h2>
+      <p>Orbit the parametric OpenSCAD bench case for Pi Zero + Inky.</p>
+    </a>
+    <a class="card" href={`${base}design/`}>
+      <h2>Design kit</h2>
+      <p>Interactive 1-bit HUD mock screens (browser monospace stand-in).</p>
+    </a>
+    <a class="card" href={`${base}emulator/`}>
+      <h2>Ride emulator</h2>
+      <p>Leaflet map + Go WASM HUD core with e-ink refresh emulation.</p>
+    </a>
+  </div>
+
+  <p class="note">
+    Live pixel preview (<code>/frame.png</code>) and font specimens still need a local
+    <code>motohud</code> process — run <code>./scripts/emu.sh</code> from the repo.
+    This site ships the static demos and the WASM ride sim for GitHub Pages.
+  </p>
+</BaseLayout>

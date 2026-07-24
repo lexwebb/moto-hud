@@ -7,8 +7,13 @@ Parametric OpenSCAD clamshell for a **Raspberry Pi Zero + Inky pHAT** stack. No 
 | Path | Purpose |
 |------|---------|
 | [`moto_hud_case.scad`](moto_hud_case.scad) | Parametric model (`part`: `assembly` / `base` / `lid`) |
-| [`preview.html`](preview.html) | Browser orbit viewer ([model-viewer](https://modelviewer.dev/)) |
-| [`exports/`](exports/) | STL meshes for print + preview |
+| [`preview.html`](preview.html) | Standalone Three.js orbit viewer (dev convenience) |
+| [`exports/`](exports/) | STL / GLB meshes for print + site |
+
+The project site hosts the enclosure viewer at
+**https://lexwebb.github.io/moto-hud/enclosure/** (copies `exports/assembly.glb` at build time).
+After regenerating meshes, commit the updated GLB so CI/Pages pick it up.
+
 
 ## Dimensions (defaults)
 
@@ -62,7 +67,9 @@ Or run [`export_meshes.ps1`](export_meshes.ps1) / [`export_meshes.sh`](export_me
 
 ## Browser preview
 
-The preview is a Three.js orbit viewer (directional key light + ground shadows, solid background — no HDR skybox). Serve over HTTP:
+Primary viewer: the Astro site page (`site/` → `/enclosure/` on Pages).
+
+Standalone convenience viewer ([`preview.html`](preview.html)) still works:
 
 ```bash
 # from repo root
@@ -70,7 +77,7 @@ python -m http.server 8765 --directory enclosure
 # open http://127.0.0.1:8765/preview.html
 ```
 
-After changing the `.scad`, re-export meshes and refresh the page.
+After changing the `.scad`, re-export meshes (including `assembly.glb`) and refresh / redeploy the site.
 
 ## Print notes
 

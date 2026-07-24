@@ -1,0 +1,39 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import EnclosureViewer from '../components/EnclosureViewer';
+---
+<BaseLayout title="Enclosure" description="3D preview of the Moto HUD bench enclosure" fullBleed>
+  <div class="enc-page">
+    <div class="enc-bar">
+      <h1>Enclosure</h1>
+      <p>Orbit drag · scroll zoom · OpenSCAD source in <code>enclosure/</code></p>
+    </div>
+    <EnclosureViewer client:only="react" />
+  </div>
+</BaseLayout>
+
+<style>
+  .enc-page {
+    display: flex;
+    flex-direction: column;
+    height: calc(100vh - 3.2rem);
+  }
+  .enc-bar {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: 0.5rem 1.25rem;
+    padding: 0.75rem 1.25rem;
+    background: var(--panel);
+    border-bottom: 1px solid #2c3036;
+  }
+  .enc-bar h1 {
+    margin: 0;
+    font-size: 1.05rem;
+  }
+  .enc-bar p {
+    margin: 0;
+    color: var(--muted);
+    font-size: 0.9rem;
+  }
+</style>

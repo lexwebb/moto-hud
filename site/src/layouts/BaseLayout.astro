@@ -1,0 +1,50 @@
+---
+import '../styles/global.css';
+
+interface Props {
+  title: string;
+  description?: string;
+  fullBleed?: boolean;
+}
+
+const { title, description = 'Motorcycle e-ink turn-by-turn HUD', fullBleed = false } = Astro.props;
+const base = import.meta.env.BASE_URL;
+const path = Astro.url.pathname.replace(/\/$/, '') || '/';
+const links = [
+  { href: `${base}`, label: 'Home', match: 'home' },
+  { href: `${base}enclosure/`, label: 'Enclosure', match: '/enclosure' },
+  { href: `${base}design/`, label: 'Design', match: '/design' },
+  { href: `${base}emulator/`, label: 'Emulator', match: '/emulator' },
+];
+
+function isCurrent(match: string) {
+  const p = path.replace(/\/$/, '');
+  if (match === 'home') {
+    return p === '/moto-hud' || p.endsWith('/moto-hud');
+  }
+  return p.endsWith(match) || p.includes(`${match}/`);
+}
+---
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="description" content={description} />
+    <title>{title} · Moto HUD</title>
+    <link rel="icon" href={`${base}favicon.svg`} type="image/svg+xml" />
+  </head>
+  <body>
+    <header class="site-header">
+      <a class="site-brand" href={base}>Moto HUD</a>
+      <nav class="site-nav" aria-label="Primary">
+        {links.map((l) => (
+          <a href={l.href} aria-current={isCurrent(l.match) ? 'page' : undefined}>{l.label}</a>
+        ))}
+      </nav>
+    </header>
+    <main class:list={['site-main', { 'full-bleed': fullBleed }]}>
+      <slot />
+    </main>
+  </body>
+</html>

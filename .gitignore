@@ -3,6 +3,7 @@
 /out/
 *.png
 *.wasm
+!site/public/**/*.png
 
 # Unused / abandoned font experiments
 assets/fonts/LiberationSans-Bold.ttf
@@ -17,6 +18,11 @@ android/app/build/
 android/local.properties
 android/.idea/
 *.iml
+
+# Site
+site/node_modules/
+site/dist/
+site/.astro/
 
 # OS / editor
 .DS_Store
