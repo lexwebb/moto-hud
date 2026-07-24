@@ -121,15 +121,15 @@ class BleClient(private val context: Context) : HudSink {
         connected = false
     }
 
-    fun writeNav(nav: NavState) {
+    override fun writeNav(nav: NavState) {
         write(navChar, nav.toJson())
     }
 
-    fun writeMedia(media: MediaState) {
+    override fun writeMedia(media: MediaState) {
         write(mediaChar, media.toJson())
     }
 
-    fun writeHeartbeat() {
+    override fun writeHeartbeat() {
         val body = JSONObject().put("type", "heartbeat").put("ts", System.currentTimeMillis() / 1000).toString()
         write(hbChar, body.toByteArray(Charsets.UTF_8))
     }
