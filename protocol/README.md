@@ -93,4 +93,6 @@ If nav fields are empty, disable Google Maps **Live Updates** / **Live info** no
 
 ## Road ribbon
 
-The design kit includes a `RoadRibbon` glyph for near-turn path preview. Production SVG layouts still use ProgressTicks / distance readouts — ribbon is **not** wired into `assets/hud/*.svg` yet.
+Active nav draws a schematic **RoadRibbon** (design kit) under the road name: a bold kinked corridor, not a map. Geometry is **synthetic from `maneuver`** on the Pi today (`schematicRibbonForManeuver`); unknown maneuver → dashed placeholder. Progress ticks are omitted while the ribbon is shown.
+
+Future: optional `ribbon_points` on `nav` from the phone for real upcoming geometry; drawer already accepts arbitrary points.

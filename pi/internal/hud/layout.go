@@ -156,41 +156,69 @@ func buildNavBody(nav protocol.NavMessage, bleLinked bool) map[string]string {
 		heroH = hero.Metrics.CellH
 	}
 	roadH := body.Metrics.CellH
-	footH := body.Metrics.CellH
-	stackH := heroH + gapLg + roadH + gapLg + footH
+	ribbonH := ribbonDefaultH
+	etaH := 0
+	if eta != "" {
+		etaH = body.Metrics.CellH
+	}
+	// hero + road + optional ETA + ribbon band (design NavActiveRibbon stretch)
+	stackH := heroH + gapLg + roadH + gapLg + ribbonH
+	if etaH > 0 {
+		stackH += etaH + gapSm
+	}
 	avail := contentBot - contentTop
 	extra := avail - stackH
 	if extra < 0 {
 		extra = 0
+		// Prefer shrinking ribbon over clipping hero/road.
+		shrink := stackH - avail
+		if shrink > 0 && ribbonH > 24 {
+			ribbonH -= shrink
+			if ribbonH < 24 {
+				ribbonH = 24
+			}
+		}
 	}
 
-	heroTop := contentTop + extra/5
-	roadTop := heroTop + heroH + gapLg + extra/5
-	footTop := roadTop + roadH + gapLg + extra*3/5
+	heroTop := contentTop + extra/6
+	roadTop := heroTop + heroH + gapLg + extra/6
+	y := roadTop + roadH + gapLg + extra/6
+	etaTop := y
+	if etaH > 0 {
+		y += etaH + gapSm
+	}
+	ribbonTop := contentBot - ribbonH
+	if y > ribbonTop {
+		ribbonTop = y
+		ribbonH = contentBot - ribbonTop
+		if ribbonH < 20 {
+			ribbonH = 20
+			ribbonTop = contentBot - ribbonH
+		}
+	}
 
 	dist = fit(hero, dist, mw-glyphSize-gapMd)
 	road = fit(body, road, mw)
-	eta = fit(body, eta, mw/2)
+	eta = fit(body, eta, mw)
 
 	glyphY := heroTop + (heroH-glyphSize)/2
 	distBaseline := heroTop + (heroH-hero.Metrics.CellH)/2 + hero.Metrics.Ascent
 	roadBaseline := roadTop + body.Metrics.Ascent
-	etaBaseline := footTop + body.Metrics.Ascent
-	ticksY := footTop + (body.Metrics.CellH-8)/2
+
+	pts, turnIdx := schematicRibbonForManeuver(nav.Maneuver)
 
 	var c strings.Builder
 	fmt.Fprintf(&c, `<g id="maneuver" transform="translate(-2,%d)" fill="#000" stroke="#000" stroke-width="3" stroke-linecap="square" stroke-linejoin="miter">%s</g>`,
 		glyphY, maneuverPaths(nav.Maneuver))
 	c.WriteString(textSVG("distance", hero, mw, distBaseline, "end", dist))
 	c.WriteString(textSVG("road", body, 0, roadBaseline, "start", road))
-	c.WriteString(textSVG("eta", body, 0, etaBaseline, "start", eta))
-	fmt.Fprintf(&c, `<g id="ticks" transform="translate(%d,%d)">%s</g>`, mw-progressTicksWidth(), ticksY, progressTicks(nav.DistanceM))
+	if etaH > 0 {
+		c.WriteString(textSVG("eta", body, 0, etaTop+body.Metrics.Ascent, "start", eta))
+	}
+	fmt.Fprintf(&c, `<g id="ribbon" transform="translate(0,%d)">%s</g>`,
+		ribbonTop, roadRibbonSVG(pts, turnIdx, mw, ribbonH))
 
 	return chromeShell("NAV", link, c.String(), "MODE", "-", "MODE")
-}
-
-func progressTicksWidth() int {
-	return 4*12 + 8
 }
 
 func buildMediaBody(media protocol.MediaMessage, bleLinked bool) map[string]string {
