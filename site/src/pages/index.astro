@@ -1,32 +1,90 @@
 ---
 import BaseLayout from '../layouts/BaseLayout.astro';
 const base = import.meta.env.BASE_URL;
+const repo = 'https://github.com/lexwebb/moto-hud';
 ---
-<BaseLayout title="Home">
-  <h1>Moto HUD</h1>
-  <p class="lede">
-    Motorcycle e-ink turn-by-turn: Android companion scrapes Maps + media over BLE to a
-    Raspberry Pi Zero driving an Inky pHAT.
-  </p>
+<BaseLayout title="Home" description="Motorcycle e-ink turn-by-turn HUD — sparse nav you can glance at">
+  <section class="hero">
+    <p class="eyebrow">Open hardware · Pi Zero · Inky pHAT</p>
+    <h1>Moto HUD</h1>
+    <p class="lede">
+      Turn-by-turn and media on a sunlight-readable e-ink panel — while Google Maps
+      and music stay on the phone where they belong.
+    </p>
+    <div class="cta-row">
+      <a class="cta primary" href={`${base}emulator/`}>Try the ride emulator</a>
+      <a class="cta" href={repo}>View on GitHub</a>
+    </div>
+  </section>
 
-  <div class="card-grid">
-    <a class="card" href={`${base}enclosure/`}>
-      <h2>Enclosure</h2>
-      <p>Orbit the parametric OpenSCAD bench case for Pi Zero + Inky.</p>
-    </a>
-    <a class="card" href={`${base}design/`}>
-      <h2>Design kit</h2>
-      <p>Interactive 1-bit HUD mock screens (browser monospace stand-in).</p>
-    </a>
-    <a class="card" href={`${base}emulator/`}>
-      <h2>Ride emulator</h2>
-      <p>Leaflet map + Go WASM HUD core with e-ink refresh emulation.</p>
-    </a>
-  </div>
+  <section class="section">
+    <h2>Why</h2>
+    <p>
+      Phones are great navigators and terrible motorcycle instruments. Bright LCDs wash out
+      in sun, notifications fight for attention, and glancing down at a mount is the opposite
+      of head-up riding. Moto HUD is a deliberately sparse secondary display: distance,
+      maneuver, road name, and optional media — 1-bit, slow to redraw, easy to read at speed.
+    </p>
+    <p>
+      The hard problems (routing, traffic, voice, playlist) stay in Maps and your music app.
+      The Pi only paints what you need between glances, and three physical buttons cover
+      mode / action without touchscreen theatre.
+    </p>
+  </section>
+
+  <section class="section">
+    <h2>How it works</h2>
+    <p>
+      An Android companion listens to Google Maps notifications and the media session, then
+      sends state over BLE to a Go service on a Raspberry Pi Zero. That service renders a
+      250×122 Terminus Bold layout onto a Pimoroni Inky pHAT. Prev / Next / Action on GPIO
+      change screens or skip / pause without unlocking the phone.
+    </p>
+    <pre class="flow" aria-label="System flow">{`Maps + media  →  Android companion  →  BLE  →  Go on Pi Zero  →  Inky pHAT
+Buttons (GPIO) ─────────────────────────────────────────────↗`}</pre>
+    <ul class="plain-list">
+      <li><strong>Phone</strong> — source of truth for nav and audio</li>
+      <li><strong>Companion app</strong> — NotificationListener + MediaController → BLE</li>
+      <li><strong>Pi Zero</strong> — Go HUD core, SPI display, button bridge</li>
+      <li><strong>E-ink</strong> — redraw gated (~50&nbsp;m / maneuver), not a video feed</li>
+    </ul>
+  </section>
+
+  <section class="section">
+    <h2>What’s next</h2>
+    <p>
+      The software stack and a bench enclosure are in place. On-bike hardening is the focus:
+    </p>
+    <ul class="plain-list">
+      <li>Bike mount geometry once handlebar / stem measurements are in</li>
+      <li>Weather sealing, lens, and a road-ready power scheme</li>
+      <li>Exact switch footprints and a tighter case fit from printed prototypes</li>
+      <li>Polish on the BLE protocol and companion UX for real rides</li>
+    </ul>
+  </section>
+
+  <section class="section">
+    <h2>Explore</h2>
+    <p class="section-lede">Static demos on this site — no Pi required.</p>
+    <div class="card-grid">
+      <a class="card" href={`${base}enclosure/`}>
+        <h3>Enclosure</h3>
+        <p>Orbit the parametric OpenSCAD bench case for Pi Zero + Inky.</p>
+      </a>
+      <a class="card" href={`${base}design/`}>
+        <h3>Design kit</h3>
+        <p>Interactive 1-bit HUD mock screens (browser monospace stand-in).</p>
+      </a>
+      <a class="card" href={`${base}emulator/`}>
+        <h3>Ride emulator</h3>
+        <p>Leaflet map + Go WASM HUD core with e-ink refresh emulation.</p>
+      </a>
+    </div>
+  </section>
 
   <p class="note">
     Live pixel preview (<code>/frame.png</code>) and font specimens still need a local
-    <code>motohud</code> process — run <code>./scripts/emu.sh</code> from the repo.
-    This site ships the static demos and the WASM ride sim for GitHub Pages.
+    <code>motohud</code> process — run <code>./scripts/emu.sh</code> from the
+    <a href={repo}>repo</a>. This site ships the static demos and the WASM ride sim.
   </p>
 </BaseLayout>
