@@ -1,10 +1,10 @@
 # Moto HUD
 
-Motorcycle e-ink turn-by-turn HUD: Android companion reads Google Maps notifications + media, sends them over BLE to a Go service on a Raspberry Pi Zero that renders a sparse UI on an [Inky pHAT](https://shop.pimoroni.com/products/inky-phat).
+Motorcycle e-ink turn-by-turn HUD: Android companion reads Google Maps notifications + media, sends them over BLE to a Go service on a Raspberry Pi Zero that renders a sparse UI on a 250×122 panel ([Inky pHAT](https://shop.pimoroni.com/products/inky-phat) or [Waveshare 2.13″ B/W e-Paper HAT](https://www.waveshare.com/2.13inch-e-paper-hat.htm); optional LCD).
 
 ```
 Google Maps ──► NotificationListener ──┐
-Music apps  ──► MediaController      ──┼─► Android app ──BLE──► Go (Pi) ──► Inky pHAT
+Music apps  ──► MediaController      ──┼─► Android app ──BLE──► Go (Pi) ──► display HAT
 Buttons (GPIO) ────────────────────────┘         ▲
                                                  │ cmd notify (play/pause, skip)
 ```
@@ -47,24 +47,28 @@ Full ride simulation with Leaflet (OSM) + HUD driven by the same Go core (WASM p
 - Map animates a real OSRM street route Whitehall → Farringdon (`web/emulator/routes/whitehall-farringdon.json`)
 - Each tick posts nav distance/maneuver into the HUD
 - Virtual Prev/Next/Action buttons
-- **E-ink emulation** toggle: flash all pixels on→off, then ~1s fade-in; distance as **≈ nearest 50 m**; redraws about every **50 m** (plus maneuver / road / screen changes)
+- **Device** picker: Inky 4-colour (~20s BWRY wipe), Waveshare B/W (partial ~0.3s, full ~2s every 5), or Display HAT Mini LCD (instant letterbox); e-ink modes use **≈ nearest 50 m** and redraw ~every **50 m**
 - Build WASM only: `./scripts/build-wasm.sh` → `web/emulator/motohud.wasm` (gitignored, ~15MB)
 
 ## Hardware hosts
 
-`motohud` talks to the panel/buttons/phone through `pi/internal/platform` ports so adapters can be swapped:
+`motohud` talks to the panel/buttons/phone through `pi/internal/platform` ports so adapters can be swapped. Canonical compose is always **250×122 gray**; backends map to hardware.
 
 | `-host` | Screen | Controls | Phone link |
 |---------|--------|----------|------------|
 | `auto` (default) | PNG, or Inky if `-inky` | keyboard / GPIO | BLE stub (or `-tags ble`) |
 | `png` | PNG file | keyboard / GPIO | BLE stub |
-| `inky` | Inky pHAT | GPIO | BLE |
+| `inky` | Inky pHAT (kept for existing boards) | GPIO | BLE |
+| `waveshare` | Waveshare 2.13″ B/W e-Paper | GPIO | BLE |
+| `lcd` | Display HAT Mini 320×240 (letterboxed) | GPIO (Action→16) | BLE |
 | `emu` | memory (+ optional PNG) | channel (injectable) | loopback linked |
 | `test` | memory | channel | loopback |
 
 ```bash
 ./bin/motohud -demo -host png -out out/hud.png -http :8787
-./bin/motohud -host inky -inky   # on the Pi
+./bin/motohud -host inky -inky          # existing Inky on the Pi
+./bin/motohud -host waveshare           # Waveshare 2.13 B/W
+./bin/motohud -host lcd                 # Display HAT Mini (optional)
 ```
 
 The browser emulator uses Go WASM (`pi/cmd/motohud-wasm`) for the HUD core, with HTTP → `-host emu` as fallback.
@@ -109,17 +113,25 @@ HTTP injector (also used by `mock-nav`):
 - `POST /media` — JSON media message
 - `POST /button` — body `prev` \| `next` \| `prev_long` \| `next_long` \| `action` \| `action_long` \| `skip_prev` \| `skip_next`
 
-## Pi Zero + Inky
+## Pi Zero + display HATs
 
-1. Enable SPI: `sudo raspi-config` → Interface → SPI. Add to `/boot/firmware/config.txt`:
+### Recommended boards
+
+| Role | Board | Notes |
+|------|-------|-------|
+| **Preferred new e-ink** | [Waveshare 2.13″ e-Paper HAT (black/white)](https://www.waveshare.com/2.13inch-e-paper-hat.htm) or [HAT+](https://www.waveshare.com/2.13inch-e-paper-hat-plus.htm) | Same 250×122 canvas; ~2s full / ~0.3s partial. **Do not** buy colour (B/G) variants — ~15s+ refresh. |
+| Existing / regression | Inky pHAT **black/white** | Still supported via `-host inky`. B/W Inky is discontinued; 4-colour Inky is too slow for nav (~15–20s). |
+| Optional LCD | [Pimoroni Display HAT Mini](https://shop.pimoroni.com/products/display-hat-mini) | 320×240 IPS; HUD letterboxed. Instant refresh; backlight + sun glare trade-offs. |
+
+1. Enable SPI: `sudo raspi-config` → Interface → SPI. For Inky / Waveshare (CE0) add to `/boot/firmware/config.txt`:
 
    ```
    dtoverlay=spi0-0cs
    ```
 
-2. Prefer a **black/white** Inky pHAT (~1–2s refresh). Colour panels take ~15–20s; there is no supported partial update.
+   Display HAT Mini uses **SPI0 CE1**; ensure `dtparam=spi=on` (default overlay is fine).
 
-3. Build on the Pi (or cross-compile):
+2. Build on the Pi (or cross-compile):
 
    ```bash
    cd pi
@@ -128,23 +140,36 @@ HTTP injector (also used by `mock-nav`):
    go build -tags ble -o ../bin/motohud ./cmd/motohud
    ```
 
-4. Run with hardware display:
+3. Run with hardware display:
 
    ```bash
-   ./bin/motohud -inky -out /tmp/hud.png -http :8787
+   ./bin/motohud -host waveshare -out /tmp/hud.png -http :8787
+   # or: -host inky    /  -host lcd
    ```
 
-5. Install systemd unit from [`pi/systemd/motohud.service`](pi/systemd/motohud.service) (adjust paths/user).
+4. Install systemd unit from [`pi/systemd/motohud.service`](pi/systemd/motohud.service) (adjust paths/user).
+
+### Display pin maps (BCM)
+
+Avoid these for buttons:
+
+| Backend | DC | RST | BUSY / other | SPI |
+|---------|----|-----|--------------|-----|
+| Inky | 22 | 27 | BUSY 17 | SPI0.0 |
+| Waveshare 2.13 | 25 | 17 | BUSY 24 | SPI0.0 |
+| Display HAT Mini | 9 | — | BL **13**, CE1 | SPI0.1 |
 
 ### Button wiring (BCM)
 
-Active-low with internal pull-ups. Avoid Inky pins **17** (BUSY), **27** (RESET), **22** (DC).
+Active-low with internal pull-ups.
 
-| Button | BCM GPIO | Role |
-|--------|----------|------|
-| Prev | 5 | Previous screen / prev track on Media |
-| Next | 6 | Next screen / next track on Media |
-| Action | 13 | Context action; **long-press** → Nav home |
+| Button | BCM (inky / waveshare) | BCM (`-host lcd`) | Role |
+|--------|------------------------|-------------------|------|
+| Prev | 5 | 5 (HAT A) | Previous screen / prev track on Media |
+| Next | 6 | 6 (HAT B) | Next screen / next track on Media |
+| Action | 13 | **16** (HAT X) | Context action; **long-press** → Nav home |
+
+On Display HAT Mini, BCM 13 is the backlight, so Action automatically remaps to button X (16).
 
 Screens: **Nav** → **Media** → **Status**.
 
@@ -174,5 +199,5 @@ Unit tests: `ManeuverParser` — from Android Studio or CI (`gradle :app:testDeb
 
 ## Notes
 
-- Inky refresh is always full-frame; the Go compositor only redraws on maneuver/road changes, coarse distance thresholds, screen changes, or force.
+- Panel refresh is full-frame on Inky (~20s). Waveshare uses partial updates (~0.3s, no flicker) with a full refresh (~2s) every 5 frames to clear ghosting. The Go compositor only redraws on maneuver/road changes, coarse distance thresholds, screen changes, or force.
 - Audio stays on the phone → helmet Bluetooth; the Pi is display + button bridge only.

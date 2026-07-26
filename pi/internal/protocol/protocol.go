@@ -32,17 +32,26 @@ type RibbonPoint struct {
 	Y float64 `json:"y"`
 }
 
+// MinimapMessage is a top-down junction snapshot in meters.
+// Origin ≈ next turn; +Y along the inbound approach (rider usually at negative Y).
+type MinimapMessage struct {
+	Route   []RibbonPoint   `json:"route,omitempty"`
+	Context [][]RibbonPoint `json:"context,omitempty"`
+	Rider   *RibbonPoint    `json:"rider,omitempty"`
+}
+
 type NavMessage struct {
-	Type         string        `json:"type"`
-	Active       bool          `json:"active"`
-	Instruction  string        `json:"instruction"`
-	DistanceM    int           `json:"distance_m"`
-	DistanceText string        `json:"distance_text"`
-	Road         string        `json:"road"`
-	EtaMin       int           `json:"eta_min"`
-	Maneuver     Maneuver      `json:"maneuver"`
-	RibbonPoints []RibbonPoint `json:"ribbon_points,omitempty"`
-	RibbonTurn   int           `json:"ribbon_turn,omitempty"`
+	Type         string          `json:"type"`
+	Active       bool            `json:"active"`
+	Instruction  string          `json:"instruction"`
+	DistanceM    int             `json:"distance_m"`
+	DistanceText string          `json:"distance_text"`
+	Road         string          `json:"road"`
+	EtaMin       int             `json:"eta_min"`
+	Maneuver     Maneuver        `json:"maneuver"`
+	RibbonPoints []RibbonPoint   `json:"ribbon_points,omitempty"`
+	RibbonTurn   int             `json:"ribbon_turn,omitempty"`
+	Minimap      *MinimapMessage `json:"minimap,omitempty"`
 }
 
 type MediaMessage struct {

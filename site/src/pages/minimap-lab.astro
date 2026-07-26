@@ -1,0 +1,266 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import 'leaflet/dist/leaflet.css';
+
+const base = import.meta.env.BASE_URL;
+---
+<BaseLayout title="Minimap lab" description="Junction compare + dual-layer labeler" fullBleed>
+  <div class="lab">
+    <header class="lab-head">
+      <div>
+        <h1>Minimap lab</h1>
+        <p class="meta">
+          Compare the current guess, then label a better glyph: <strong>route</strong> (solid) and
+          <strong>context</strong> (dashes) are separate layers — both matter for the rider.
+        </p>
+      </div>
+      <div class="mode-tabs" role="tablist">
+        <button type="button" class="active" data-mode="compare" role="tab">Compare</button>
+        <button type="button" data-mode="label" role="tab">Label</button>
+      </div>
+      <p class="meta links"><a href={`${base}emulator/`}>← Emulator</a></p>
+    </header>
+
+    <aside class="panel fixtures">
+      <h2>Fixtures</h2>
+      <div id="fixtureList" class="fixture-list">Loading…</div>
+      <p class="meta" id="fixtureMeta">—</p>
+      <ul class="accept" id="acceptance"></ul>
+    </aside>
+
+    <section class="panel compare-pane" id="comparePane">
+      <div class="col">
+        <h2>Meter truth</h2>
+        <p class="meta">Raw projected geometry</p>
+        <canvas id="truth" width="70" height="80" aria-label="Meter-space truth"></canvas>
+      </div>
+      <div class="col">
+        <h2>Go WASM (current)</h2>
+        <p class="meta">Auto rasterizer guess</p>
+        <canvas id="wasmPane" width="70" height="80" aria-label="WASM minimap"></canvas>
+      </div>
+      <div class="col">
+        <h2>Full HUD</h2>
+        <p class="meta">Live layout</p>
+        <div class="bezel">
+          <div class="screen"><canvas id="hud" width="250" height="122" aria-label="HUD"></canvas></div>
+        </div>
+      </div>
+    </section>
+
+    <section class="panel label-pane" id="labelPane" hidden>
+      <div class="label-grid">
+        <div class="map-wrap">
+          <h2>Heading-up map</h2>
+          <p class="meta">
+            Map is rotated so approach is ↑ — same frame as the HUD.
+            Gold line is the ride route (same as the emulator). Click vertices on a
+            <strong>5&nbsp;m grid</strong> — legs snap to up/down/left/right or diagonal.
+            Double-click or Enter finishes a stroke.
+          </p>
+          <div class="label-map-shell" id="labelMapShell">
+            <div class="label-map-rotator" id="labelMapRotator">
+              <div id="labelMap" class="label-map"></div>
+            </div>
+            <canvas id="vectorPad" class="vector-pad" aria-label="Vector draw pad"></canvas>
+            <div class="heading-hint" aria-hidden="true">↑ approach</div>
+          </div>
+        </div>
+        <div class="editor-wrap">
+          <h2>Vector layers</h2>
+          <div class="tool-row" role="group" aria-label="Draw layer">
+            <button type="button" data-layer="route" class="active">Route</button>
+            <button type="button" data-layer="context">Context</button>
+          </div>
+          <div class="tool-row">
+            <button type="button" id="undoVertex">Undo vertex</button>
+            <button type="button" id="finishStroke">Finish stroke</button>
+            <button type="button" id="deleteLastStroke">Delete last stroke</button>
+          </div>
+          <div class="preview-row">
+            <div>
+              <p class="meta">Route</p>
+              <canvas id="layerRoute" width="70" height="80"></canvas>
+            </div>
+            <div>
+              <p class="meta">Context</p>
+              <canvas id="layerContext" width="70" height="80"></canvas>
+            </div>
+            <div>
+              <p class="meta">Composite</p>
+              <canvas id="layerComposite" width="70" height="80"></canvas>
+            </div>
+          </div>
+          <div class="tool-row">
+            <button type="button" id="seedGuess">Seed from geometry</button>
+            <button type="button" id="clearLayer">Clear layer</button>
+            <button type="button" id="clearAll">Clear both</button>
+          </div>
+          <div class="tool-row">
+            <button type="button" id="acceptLabel" class="primary">Accept &amp; download</button>
+            <button type="button" id="saveDraft">Save draft (browser)</button>
+            <button type="button" id="loadDraft">Load draft</button>
+          </div>
+          <label class="notes-label">Label notes
+            <textarea id="labelNotes" rows="3" placeholder="Why this glyph works / what you changed"></textarea>
+          </label>
+        </div>
+      </div>
+    </section>
+
+    <section class="panel notes">
+      <div class="row">
+        <button type="button" id="copyFixture">Copy fixture JSON</button>
+        <button type="button" id="copySvg">Copy WASM SVG</button>
+        <span class="meta" id="status">—</span>
+      </div>
+    </section>
+  </div>
+</BaseLayout>
+
+<script is:inline define:vars={{ base }}>
+  window.__MOTO_HUD_BASE__ = base;
+</script>
+<script is:inline src="/moto-hud/emulator/wasm_exec.js"></script>
+<script>
+  import '../scripts/minimap-lab.js';
+</script>
+
+<style>
+  .lab {
+    display: grid;
+    grid-template-columns: 15rem 1fr;
+    grid-template-areas:
+      "head head"
+      "fixtures main"
+      "notes notes";
+    gap: 1rem;
+    padding: 1.25rem;
+    min-height: calc(100vh - 3.2rem);
+  }
+  .lab-head {
+    grid-area: head;
+    display: flex;
+    justify-content: space-between;
+    gap: 1rem;
+    align-items: start;
+    flex-wrap: wrap;
+  }
+  .lab h1 { margin: 0 0 .35rem; font-size: 1.35rem; }
+  .lab h2 { margin: 0 0 .35rem; font-size: 1rem; }
+  .lab .meta { color: var(--muted); font-size: .88rem; margin: 0; line-height: 1.45; }
+  .lab .panel { background: var(--panel); border-radius: 4px; padding: 1rem; }
+  .fixtures { grid-area: fixtures; }
+  .compare-pane, .label-pane { grid-area: main; }
+  .compare-pane { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 1rem; }
+  .notes { grid-area: notes; }
+  .mode-tabs { display: flex; gap: .35rem; }
+  .mode-tabs button, .tool-row button, .fixture-list button, .row button {
+    padding: .45rem .65rem;
+    border: 1px solid #555;
+    border-radius: 3px;
+    background: #1e2124;
+    color: var(--text);
+    font: inherit;
+    font-size: .82rem;
+    font-weight: 600;
+    cursor: pointer;
+  }
+  .mode-tabs button.active, .tool-row button.active, .fixture-list button.active {
+    border-color: var(--accent);
+    color: var(--accent);
+  }
+  .tool-row button.primary { background: var(--accent); color: #1a1c1e; border: none; }
+  .fixture-list { display: flex; flex-direction: column; gap: .35rem; margin: .75rem 0; }
+  .fixture-list button { text-align: left; }
+  .accept { margin: .5rem 0 0; padding-left: 1.1rem; font-size: .8rem; color: var(--muted); }
+  .col canvas, .preview-row canvas {
+    image-rendering: pixelated;
+    image-rendering: crisp-edges;
+    width: 210px;
+    height: 240px;
+    background: #fff;
+    border: 1px solid #333;
+    display: block;
+  }
+  .bezel { background: #0d0e10; padding: .6rem; width: fit-content; border-radius: 3px; }
+  .screen { width: 250px; height: 122px; background: #fff; overflow: hidden; }
+  .screen canvas { width: 250px; height: 122px; display: block; image-rendering: pixelated; }
+  .row, .tool-row { display: flex; gap: .5rem; flex-wrap: wrap; align-items: center; margin-top: .65rem; }
+  .label-grid { display: grid; grid-template-columns: 1.2fr 1fr; gap: 1rem; min-height: 28rem; }
+  .label-map {
+    height: min(55vh, 480px);
+    border-radius: 3px;
+    background: #111;
+    border: 1px solid #333;
+  }
+  .label-map-shell {
+    position: relative;
+    height: min(55vh, 480px);
+    border-radius: 3px;
+    background: #111;
+    border: 1px solid #333;
+    overflow: hidden;
+  }
+  .label-map-rotator {
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    width: 150%;
+    height: 150%;
+    transform: translate(-50%, -50%);
+    transform-origin: center center;
+    pointer-events: none;
+  }
+  .label-map-rotator .label-map {
+    width: 100%;
+    height: 100%;
+    border: none;
+    border-radius: 0;
+  }
+  .vector-pad {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    cursor: crosshair;
+    touch-action: none;
+    z-index: 2;
+  }
+  .heading-hint {
+    position: absolute;
+    top: .4rem;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 3;
+    font-size: .72rem;
+    font-weight: 700;
+    letter-spacing: .04em;
+    color: #c4a35a;
+    text-shadow: 0 1px 2px #000;
+    pointer-events: none;
+  }
+  .preview-row { display: flex; gap: .75rem; flex-wrap: wrap; margin-top: .75rem; }
+  .preview-row canvas { width: 140px; height: 160px; }
+  .notes-label {
+    display: block;
+    margin-top: .75rem;
+    font-size: .85rem;
+    color: var(--muted);
+  }
+  textarea {
+    width: 100%;
+    margin-top: .35rem;
+    background: #121416;
+    color: var(--text);
+    border: 1px solid #3a3f44;
+    border-radius: 3px;
+    padding: .55rem;
+    font: inherit;
+    resize: vertical;
+  }
+  @media (max-width: 1100px) {
+    .lab { grid-template-columns: 1fr; grid-template-areas: "head" "fixtures" "main" "notes"; }
+    .compare-pane, .label-grid { grid-template-columns: 1fr; }
+  }
+</style>

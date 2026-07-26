@@ -43,7 +43,21 @@ See [uuids.json](uuids.json). Shared constants also live in:
 
 `maneuver` enum: `left`, `right`, `straight`, `slight_left`, `slight_right`, `u_turn`, `roundabout`, `arrive`, `depart`, `unknown`
 
-Optional `ribbon_points` / `ribbon_turn`: local-unit corridor vertices (Y ahead, X right). When present (≥2 points), the Pi draws that corridor; otherwise it falls back to a synthetic kink from `maneuver`. The Android companion fills these from a short public-OSRM probe using GPS + the Maps notification distance/maneuver (no Maps polyline API). Omit or leave empty when GPS/OSRM is unavailable.
+Optional `ribbon_points` / `ribbon_turn`: local-unit corridor vertices (Y ahead, X right). When present (≥2 points) and `minimap` is absent, the Pi draws that corridor in the live two-column layout; otherwise it falls back to a synthetic kink from `maneuver`. The Android companion fills these from a short public-OSRM probe.
+
+Optional `minimap` (preferred when available): top-down **junction snapshot** in meters. Origin ≈ next turn; +Y along the inbound approach (rider usually at negative Y). The Pi fits orthographically (no perspective): dashed `context`, solid `route`, turn mark at origin, `rider` blob.
+
+```json
+"minimap": {
+  "route": [{"x": 0, "y": -40}, {"x": 0, "y": 0}, {"x": 18, "y": 25}],
+  "context": [
+    [{"x": -20, "y": -30}, {"x": -18, "y": 40}]
+  ],
+  "rider": {"x": 0, "y": -35}
+}
+```
+
+The browser emulator builds this from the ride polyline + baked OSM highways around the next maneuver; Android does not send it yet.
 
 ### `media`
 
@@ -99,8 +113,12 @@ Payload size: keep messages small (notification-sized). BLE writes use no-respon
 
 If nav fields are empty, disable Google Maps **Live Updates** / **Live info** notification categories in Android system settings for Maps, then restart navigation.
 
-## Road ribbon
+## Road ribbon / minimap
 
-Active nav draws a **RoadRibbon** under the road name: a bold kinked corridor, not a map. Prefer optional `ribbon_points` from the phone (OSRM corridor guess + GPS). If missing, geometry is **synthetic from `maneuver`** on the Pi (`schematicRibbonForManeuver`); unknown maneuver → dashed placeholder. Progress ticks are omitted while the ribbon is shown.
+Active nav with live geometry uses a **two-column** layout: left = corridor or turn snapshot, right = compacted hero distance + road + ETA (no maneuver arrows).
 
-OSRM uses the public demo server (`router.project-osrm.org`) with no API key — rate-limited and fine for personal use; revisit if it becomes a problem (self-host or another provider).
+- Prefer optional `minimap`: top-down orthographic snapshot of the **next turn** (dashed OSM context, solid route, rider + turn marks). Frame stays locked to the junction; the rider blob moves as you approach.
+- Else `ribbon_points` schematic corridor.
+- Else synthetic kink from `maneuver` in the classic stack (glyph + distance + road + bottom ribbon); unknown → dashed placeholder.
+
+OSRM (phone) uses the public demo server for `ribbon_points` only today. The emulator proves `minimap` offline via a baked OSM extract beside the Whitehall route.

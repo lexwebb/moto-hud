@@ -68,8 +68,53 @@ func TestBuildNavBodyIncludesRibbon(t *testing.T) {
 	if !strings.Contains(body, `id="ribbon"`) {
 		t.Fatalf("missing ribbon in body: %s", body)
 	}
+	if !strings.Contains(body, `id="maneuver"`) {
+		t.Fatal("synthetic ribbon layout should keep maneuver glyph")
+	}
 	if strings.Contains(body, `id="ticks"`) {
 		t.Fatal("progress ticks should be replaced by ribbon on active nav")
+	}
+}
+
+func TestBuildNavBodyLiveTwoColumn(t *testing.T) {
+	vars := buildNavBody(protocol.NavMessage{
+		Active:       true,
+		DistanceText: "≈ 120 m",
+		Road:         "Ridge Rd",
+		Maneuver:     protocol.ManeuverRight,
+		EtaMin:       8,
+		RibbonPoints: []protocol.RibbonPoint{
+			{X: 0, Y: 0}, {X: 0, Y: 40}, {X: 20, Y: 60},
+		},
+		RibbonTurn: 1,
+	}, true)
+	body := vars["body"]
+	if !strings.Contains(body, `id="ribbon"`) {
+		t.Fatalf("missing ribbon in live body: %s", body)
+	}
+	if strings.Contains(body, `id="maneuver"`) {
+		t.Fatal("live ribbon layout should not include maneuver glyph")
+	}
+	if !strings.Contains(body, "≈120m") {
+		t.Fatalf("expected compacted distance ≈120m, got: %s", body)
+	}
+	if !strings.Contains(body, "Ridge Rd") {
+		t.Fatal("expected road name in live layout")
+	}
+}
+
+func TestCompactDistanceText(t *testing.T) {
+	cases := map[string]string{
+		"≈ 120 m":   "≈120m",
+		"≈ 1.2 km":  "≈1.2km",
+		"120 m":     "120m",
+		"≈120m":     "≈120m",
+		"":          "",
+	}
+	for in, want := range cases {
+		if got := compactDistanceText(in); got != want {
+			t.Fatalf("compactDistanceText(%q)=%q want %q", in, got, want)
+		}
 	}
 }
 

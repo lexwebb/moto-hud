@@ -19,10 +19,10 @@ import (
 func main() {
 	out := flag.String("out", "out/hud.png", "PNG output path (also Inky fallback)")
 	httpAddr := flag.String("http", ":8787", "HTTP injector listen address")
-	useInky := flag.Bool("inky", false, "Prefer Inky pHAT when available (Linux)")
+	useInky := flag.Bool("inky", false, "Prefer Inky pHAT when available (Linux; -host auto)")
 	demo := flag.Bool("demo", false, "Show a static demo nav frame on start")
 	assets := flag.String("assets", "", "Path to assets/hud (auto-detected if empty)")
-	hostKind := flag.String("host", "auto", "Hardware host: auto|png|inky|emu|test")
+	hostKind := flag.String("host", "auto", "Hardware host: auto|png|inky|waveshare|lcd|emu|test")
 	flag.Parse()
 
 	if *assets != "" {

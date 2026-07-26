@@ -138,6 +138,10 @@ func buildNavBody(nav protocol.NavMessage, bleLinked bool) map[string]string {
 		return chromeShell("NAV", link, c.String(), "MEDIA", "-", "STATUS")
 	}
 
+	if hasMinimap(nav) || len(nav.RibbonPoints) >= 2 {
+		return buildNavBodyLive(nav, bleLinked, contentTop, contentBot)
+	}
+
 	dist := nav.DistanceText
 	if dist == "" {
 		dist = formatDistance(nav.DistanceM)
@@ -146,6 +150,7 @@ func buildNavBody(nav protocol.NavMessage, bleLinked bool) map[string]string {
 	if road == "" {
 		road = nav.Instruction
 	}
+	road = abbreviateRoad(road)
 	eta := ""
 	if nav.EtaMin > 0 {
 		eta = formatETA(nav.EtaMin)
@@ -155,13 +160,17 @@ func buildNavBody(nav protocol.NavMessage, bleLinked bool) map[string]string {
 	if hero.Metrics.CellH > heroH {
 		heroH = hero.Metrics.CellH
 	}
-	roadH := body.Metrics.CellH
-	ribbonH := ribbonDefaultH
 	etaH := 0
 	if eta != "" {
 		etaH = body.Metrics.CellH
 	}
-	// hero + road + optional ETA + ribbon band (design NavActiveRibbon stretch)
+	ribbonH := ribbonDefaultH
+
+	// Prefer 2 road lines when vertical space allows; shrink ribbon first if needed.
+	roadMaxLines := 2
+	roadLines := wrapLines(body, road, mw, roadMaxLines)
+	roadH := roadBlockHeight(body, len(roadLines))
+
 	stackH := heroH + gapLg + roadH + gapLg + ribbonH
 	if etaH > 0 {
 		stackH += etaH + gapSm
@@ -170,13 +179,30 @@ func buildNavBody(nav protocol.NavMessage, bleLinked bool) map[string]string {
 	extra := avail - stackH
 	if extra < 0 {
 		extra = 0
-		// Prefer shrinking ribbon over clipping hero/road.
 		shrink := stackH - avail
 		if shrink > 0 && ribbonH > 24 {
 			ribbonH -= shrink
 			if ribbonH < 24 {
 				ribbonH = 24
 			}
+			stackH = heroH + gapLg + roadH + gapLg + ribbonH
+			if etaH > 0 {
+				stackH += etaH + gapSm
+			}
+		}
+		// Still short on space: collapse road to one line.
+		if avail < stackH && roadMaxLines > 1 {
+			roadMaxLines = 1
+			roadLines = wrapLines(body, road, mw, 1)
+			roadH = roadBlockHeight(body, len(roadLines))
+			stackH = heroH + gapLg + roadH + gapLg + ribbonH
+			if etaH > 0 {
+				stackH += etaH + gapSm
+			}
+		}
+		extra = avail - stackH
+		if extra < 0 {
+			extra = 0
 		}
 	}
 
@@ -198,12 +224,10 @@ func buildNavBody(nav protocol.NavMessage, bleLinked bool) map[string]string {
 	}
 
 	dist = fit(hero, dist, mw-glyphSize-gapMd)
-	road = fit(body, road, mw)
 	eta = fit(body, eta, mw)
 
 	glyphY := heroTop + (heroH-glyphSize)/2
 	distBaseline := heroTop + (heroH-hero.Metrics.CellH)/2 + hero.Metrics.Ascent
-	roadBaseline := roadTop + body.Metrics.Ascent
 
 	pts, turnIdx := ribbonForNav(nav)
 
@@ -211,7 +235,7 @@ func buildNavBody(nav protocol.NavMessage, bleLinked bool) map[string]string {
 	fmt.Fprintf(&c, `<g id="maneuver" transform="translate(-2,%d)" fill="#000" stroke="#000" stroke-width="3" stroke-linecap="square" stroke-linejoin="miter">%s</g>`,
 		glyphY, maneuverPaths(nav.Maneuver))
 	c.WriteString(textSVG("distance", hero, mw, distBaseline, "end", dist))
-	c.WriteString(textSVG("road", body, 0, roadBaseline, "start", road))
+	c.WriteString(roadLinesSVG("road", body, 0, roadTop, "start", roadLines))
 	if etaH > 0 {
 		c.WriteString(textSVG("eta", body, 0, etaTop+body.Metrics.Ascent, "start", eta))
 	}
@@ -219,6 +243,95 @@ func buildNavBody(nav protocol.NavMessage, bleLinked bool) map[string]string {
 		ribbonTop, roadRibbonSVG(pts, turnIdx, mw, ribbonH))
 
 	return chromeShell("NAV", link, c.String(), "MODE", "-", "MODE")
+}
+
+// buildNavBodyLive: left corridor minimap, right distance + road + ETA (no arrow glyph).
+func buildNavBodyLive(nav protocol.NavMessage, bleLinked bool, contentTop, contentBot int) map[string]string {
+	body := mustFace(pixelfont.Size8x16)
+	hero := mustFace(pixelfont.Size16x32)
+	mw := mainWidth()
+	link := linkMarkSVG(bleLinked)
+
+	dist := nav.DistanceText
+	if dist == "" {
+		dist = formatDistance(nav.DistanceM)
+	}
+	dist = compactDistanceText(dist)
+	road := nav.Road
+	if road == "" {
+		road = nav.Instruction
+	}
+	road = abbreviateRoad(road)
+	eta := ""
+	if nav.EtaMin > 0 {
+		eta = formatETA(nav.EtaMin)
+	}
+
+	leftW := (mw * 44) / 100
+	if leftW < 72 {
+		leftW = 72
+	}
+	rightX := leftW + gapMd
+	rightW := mw - rightX
+	if rightW < 60 {
+		rightW = 60
+		rightX = mw - rightW
+		leftW = rightX - gapMd
+	}
+	ribbonH := contentBot - contentTop
+	if ribbonH < 20 {
+		ribbonH = 20
+	}
+
+	dist = fit(hero, dist, rightW)
+	eta = fit(body, eta, rightW)
+
+	// Live layout has spare vertical room under the hero distance.
+	roadMaxLines := 3
+	roadLines := wrapLines(body, road, rightW, roadMaxLines)
+	roadH := roadBlockHeight(body, len(roadLines))
+
+	pts, turnIdx := ribbonForNav(nav)
+
+	distTop := contentTop
+	distBaseline := distTop + hero.Metrics.Ascent
+	roadTop := distTop + hero.Metrics.CellH + gapMd
+	etaTop := roadTop + roadH + gapSm
+	if eta != "" {
+		// Keep ETA inside content if road wrapped deep.
+		if etaTop+body.Metrics.CellH > contentBot {
+			roadMaxLines = 2
+			roadLines = wrapLines(body, road, rightW, roadMaxLines)
+			roadH = roadBlockHeight(body, len(roadLines))
+			etaTop = roadTop + roadH + gapSm
+		}
+	}
+
+	leftDraw := roadRibbonSVG(pts, turnIdx, leftW, ribbonH)
+	if hasMinimap(nav) {
+		leftDraw = minimapSVG(nav.Minimap, leftW, ribbonH)
+	}
+
+	var c strings.Builder
+	fmt.Fprintf(&c, `<g id="ribbon" transform="translate(0,%d)">%s</g>`,
+		contentTop, leftDraw)
+	c.WriteString(textSVG("distance", hero, mw, distBaseline, "end", dist))
+	c.WriteString(roadLinesSVG("road", body, rightX, roadTop, "start", roadLines))
+	if eta != "" {
+		c.WriteString(textSVG("eta", body, rightX, etaTop+body.Metrics.Ascent, "start", eta))
+	}
+
+	return chromeShell("NAV", link, c.String(), "MODE", "-", "MODE")
+}
+
+// compactDistanceText drops spaces around ≈ and units: "≈ 120 m" → "≈120m".
+func compactDistanceText(s string) string {
+	return strings.Map(func(r rune) rune {
+		if r == ' ' || r == '\t' {
+			return -1
+		}
+		return r
+	}, s)
 }
 
 func buildMediaBody(media protocol.MediaMessage, bleLinked bool) map[string]string {

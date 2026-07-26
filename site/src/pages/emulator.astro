@@ -16,20 +16,37 @@ const base = import.meta.env.BASE_URL;
     <section class="panel">
       <h1>HUD</h1>
       <p class="meta" id="backendMeta">Loading WASM backend (~15MB)…</p>
-      <div class="bezel">
-        <div class="screen"><canvas id="hud" width="250" height="122" aria-label="HUD"></canvas></div>
+      <div class="bezel" data-device="waveshare">
+        <div class="screen" data-device="waveshare"><canvas id="hud" width="250" height="122" aria-label="HUD"></canvas></div>
       </div>
-      <div class="eink-row">
-        <label>
-          <input type="checkbox" id="einkToggle" checked />
-          E-ink emulation
-        </label>
-        <span class="hint" id="einkHint">flash on→off, then ~1s fade-in · ≈ 50 m steps</span>
+      <div class="device-row">
+        <label for="deviceSelect">Device</label>
+        <select id="deviceSelect" aria-label="Emulated display device"></select>
+        <span class="hint" id="deviceHint">—</span>
       </div>
       <div class="row">
         <button type="button" id="play" class="primary">Play route</button>
         <button type="button" id="pause">Pause</button>
         <button type="button" id="reset">Reset</button>
+      </div>
+      <div class="timeline" id="timeline">
+        <div class="timeline-meta">
+          <span id="timelinePos">0 m</span>
+          <span id="timelineTime">0:00 / —</span>
+        </div>
+        <div class="timeline-track">
+          <input
+            type="range"
+            id="scrub"
+            min="0"
+            max="1000"
+            value="0"
+            step="1"
+            aria-label="Scrub along route"
+          />
+          <div class="timeline-marks" id="timelineMarks" hidden></div>
+        </div>
+        <div class="timeline-turns" id="timelineTurns"></div>
       </div>
       <div class="row">
         <button type="button" data-btn="prev">Prev</button>
@@ -44,6 +61,7 @@ const base = import.meta.env.BASE_URL;
       <div class="stat" id="stats">—</div>
       <p class="meta" style="margin-top:1rem">
         First load downloads ~15MB WASM. For local Go HTTP preview use <code>./scripts/emu.sh</code>.
+        Junction rendering: <a href={`${base}minimap-lab/`}>minimap lab</a>.
       </p>
     </section>
   </div>
@@ -96,6 +114,24 @@ const base = import.meta.env.BASE_URL;
     image-rendering: pixelated;
     image-rendering: crisp-edges;
   }
+  .screen[data-device="lcd"] {
+    width: 500px;
+    height: calc(500px * 240 / 320);
+    background: #0a0c10;
+  }
+  .screen[data-device="lcd"] canvas {
+    width: 320px;
+    height: 240px;
+    transform: scale(calc(500 / 320));
+  }
+  .bezel[data-device="inky"] {
+    background: #121014;
+    box-shadow: inset 0 0 0 1px #5a3040;
+  }
+  .bezel[data-device="lcd"] {
+    background: #151820;
+    box-shadow: inset 0 0 0 1px #3a4250;
+  }
   .row { display: flex; gap: .5rem; flex-wrap: wrap; margin-top: .75rem; }
   .emu button {
     flex: 1;
@@ -111,6 +147,65 @@ const base = import.meta.env.BASE_URL;
   }
   .emu button.primary { background: var(--accent); color: #1a1c1e; border: none; }
   .emu button:disabled { opacity: .45; cursor: wait; }
+  .timeline {
+    margin-top: .85rem;
+    padding: .7rem .75rem .65rem;
+    background: #1e2124;
+    border: 1px solid #3a3f44;
+    border-radius: 3px;
+  }
+  .timeline-meta {
+    display: flex;
+    justify-content: space-between;
+    gap: .75rem;
+    font-family: ui-monospace, monospace;
+    font-size: .78rem;
+    color: var(--muted);
+    margin-bottom: .45rem;
+  }
+  .timeline-track { position: relative; padding: .35rem 0 .55rem; }
+  .timeline-track input[type="range"] {
+    width: 100%;
+    margin: 0;
+    accent-color: var(--accent);
+    cursor: pointer;
+  }
+  .timeline-marks {
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: 0;
+    bottom: .2rem;
+    pointer-events: none;
+  }
+  .timeline-marks span {
+    position: absolute;
+    top: 0;
+    width: 2px;
+    height: 100%;
+    background: #c4a35a;
+    opacity: .55;
+    transform: translateX(-50%);
+  }
+  .timeline-turns {
+    display: flex;
+    flex-wrap: wrap;
+    gap: .35rem;
+    margin-top: .35rem;
+  }
+  .timeline-turns button {
+    flex: 0 1 auto;
+    min-width: 0;
+    padding: .3rem .5rem;
+    font-size: .72rem;
+    font-weight: 600;
+    border-color: #4a5056;
+    background: #16191b;
+  }
+  .timeline-turns button.active {
+    border-color: var(--accent);
+    color: var(--accent);
+  }
   .stat {
     font-family: ui-monospace, monospace;
     font-size: .8rem;
@@ -119,7 +214,7 @@ const base = import.meta.env.BASE_URL;
     line-height: 1.5;
     white-space: pre-wrap;
   }
-  .eink-row {
+  .device-row {
     display: flex;
     align-items: center;
     gap: .75rem;
@@ -131,24 +226,26 @@ const base = import.meta.env.BASE_URL;
     border-radius: 3px;
     font-size: .9rem;
   }
-  .eink-row label {
-    display: inline-flex;
-    align-items: center;
-    gap: .45rem;
-    cursor: pointer;
-    user-select: none;
+  .device-row label {
     font-weight: 600;
+    user-select: none;
   }
-  .eink-row input[type="checkbox"] {
-    width: 1rem;
-    height: 1rem;
-    accent-color: var(--accent);
+  .device-row select {
+    font: inherit;
+    font-weight: 600;
+    padding: .35rem .5rem;
+    border-radius: 3px;
+    border: 1px solid #555;
+    background: #16191b;
+    color: var(--text);
+    min-width: 12rem;
   }
-  .eink-row .hint { color: var(--muted); font-weight: 400; font-size: .8rem; }
+  .device-row .hint { color: var(--muted); font-weight: 400; font-size: .8rem; flex: 1 1 12rem; }
   .screen.wiping { outline: 1px solid var(--accent); }
   @media (max-width: 960px) {
     .emu { grid-template-columns: 1fr; }
     .screen { width: 100%; max-width: 500px; height: auto; aspect-ratio: 250 / 122; }
     .screen canvas { width: 100%; height: auto; transform: none; }
+    .screen[data-device="lcd"] { aspect-ratio: 320 / 240; }
   }
 </style>

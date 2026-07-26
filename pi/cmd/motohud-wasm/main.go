@@ -23,13 +23,15 @@ var (
 func main() {
 	state.SetBLELinked(true)
 	js.Global().Set("MotoHUD", js.ValueOf(map[string]any{
-		"applyNav":   js.FuncOf(applyNav),
-		"applyMedia": js.FuncOf(applyMedia),
-		"button":     js.FuncOf(button),
-		"renderPNG":  js.FuncOf(renderPNG),
-		"screen":     js.FuncOf(screenName),
-		"width":      hud.Width,
-		"height":     hud.Height,
+		"applyNav":          js.FuncOf(applyNav),
+		"applyMedia":        js.FuncOf(applyMedia),
+		"button":            js.FuncOf(button),
+		"renderPNG":         js.FuncOf(renderPNG),
+		"renderMinimapPNG":  js.FuncOf(renderMinimapPNG),
+		"minimapSVG":        js.FuncOf(minimapSVGJS),
+		"screen":            js.FuncOf(screenName),
+		"width":             hud.Width,
+		"height":            hud.Height,
 	}))
 	select {}
 }
@@ -92,6 +94,74 @@ func renderPNG(this js.Value, args []js.Value) any {
 	dst := js.Global().Get("Uint8Array").New(len(data))
 	js.CopyBytesToJS(dst, data)
 	return dst
+}
+
+func renderMinimapPNG(this js.Value, args []js.Value) any {
+	if len(args) < 1 {
+		return errVal("missing minimap json")
+	}
+	var mm protocol.MinimapMessage
+	if err := json.Unmarshal([]byte(args[0].String()), &mm); err != nil {
+		return errVal(err.Error())
+	}
+	w, h := 70, 80
+	if len(args) >= 3 {
+		if args[1].Truthy() {
+			w = args[1].Int()
+		}
+		if args[2].Truthy() {
+			h = args[2].Int()
+		}
+	}
+	context, route, marks := true, true, true
+	if len(args) >= 4 && args[3].Type() == js.TypeString {
+		switch args[3].String() {
+		case "context":
+			route, marks = false, false
+		case "route":
+			context, marks = false, false
+		case "marks":
+			context, route = false, false
+		case "route+marks":
+			context = false
+		case "all", "":
+			// defaults
+		default:
+			return errVal("layer must be all|context|route|marks|route+marks")
+		}
+	}
+	img, err := hud.RenderMinimapLayers(&mm, w, h, context, route, marks)
+	if err != nil {
+		return errVal(err.Error())
+	}
+	var buf bytes.Buffer
+	if err := png.Encode(&buf, img); err != nil {
+		return errVal(err.Error())
+	}
+	data := buf.Bytes()
+	dst := js.Global().Get("Uint8Array").New(len(data))
+	js.CopyBytesToJS(dst, data)
+	return dst
+}
+
+func minimapSVGJS(this js.Value, args []js.Value) any {
+	if len(args) < 1 {
+		return errVal("missing minimap json")
+	}
+	var mm protocol.MinimapMessage
+	if err := json.Unmarshal([]byte(args[0].String()), &mm); err != nil {
+		return errVal(err.Error())
+	}
+	w, h := 70, 80
+	if len(args) >= 3 {
+		if args[1].Truthy() {
+			w = args[1].Int()
+		}
+		if args[2].Truthy() {
+			h = args[2].Int()
+		}
+	}
+	return hud.MinimapSVGFragment(&mm, w, h)
 }
 
 func screenName(this js.Value, args []js.Value) any {

@@ -213,13 +213,24 @@ func maneuverPaths(m protocol.Maneuver) string {
 // RasterizeSVG renders a pixel SVG (shapes + Terminus rect glyphs) via canvas,
 // then hard-thresholds to 1-bit so stroked glyphs (arrows) don't keep AA gray.
 func RasterizeSVG(svg []byte) (*image.Gray, error) {
+	return RasterizeSVGAt(svg, Width, Height)
+}
+
+// RasterizeSVGAt is RasterizeSVG at an arbitrary pane size (e.g. minimap lab).
+func RasterizeSVGAt(svg []byte, w, h int) (*image.Gray, error) {
+	if w <= 0 {
+		w = Width
+	}
+	if h <= 0 {
+		h = Height
+	}
 	c, err := canvas.ParseSVG(bytes.NewReader(svg))
 	if err != nil {
 		return nil, err
 	}
 	const scale = 1.0
 	rgba := rasterizer.Draw(c, canvas.DPMM(scale), canvas.DefaultColorSpace)
-	return toGray1Bit(rgba, Width, Height), nil
+	return toGray1Bit(rgba, w, h), nil
 }
 
 func toGray1Bit(src image.Image, w, h int) *image.Gray {

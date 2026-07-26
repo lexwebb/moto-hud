@@ -41,11 +41,13 @@ type Host struct {
 type Kind string
 
 const (
-	KindAuto  Kind = "auto"  // Inky on Linux if requested, else PNG+keyboard+stub BLE
-	KindPNG   Kind = "png"   // desktop bring-up
-	KindInky  Kind = "inky"  // real panel (Linux)
-	KindEmu   Kind = "emu"   // in-process: memory screen + channel buttons + loopback link
-	KindTest  Kind = "test"  // silent memory screen; no auto button source
+	KindAuto      Kind = "auto"      // Inky on Linux if requested, else PNG+keyboard+stub BLE
+	KindPNG       Kind = "png"       // desktop bring-up
+	KindInky      Kind = "inky"      // Inky pHAT (Linux)
+	KindWaveshare Kind = "waveshare" // Waveshare 2.13" B/W e-Paper HAT (Linux)
+	KindLCD       Kind = "lcd"       // Display HAT Mini ST7789 320×240 letterbox (Linux)
+	KindEmu       Kind = "emu"       // in-process: memory screen + channel buttons + loopback link
+	KindTest      Kind = "test"      // silent memory screen; no auto button source
 )
 
 // Config configures Open.
@@ -74,12 +76,14 @@ func Open(cfg Config) (*Host, error) {
 	}
 	switch kind {
 	case KindPNG:
+		buttons.SetActionGPIO(buttons.GPIOAction)
 		return &Host{
 			Screen:   display.NewPNG(cfg.PNGPath),
 			Controls: StdControls{},
 			Phone:    blehub.New(cfg.Hub),
 		}, nil
 	case KindInky:
+		buttons.SetActionGPIO(buttons.GPIOAction)
 		scr, err := display.NewInky(cfg.PNGPath)
 		if err != nil {
 			return nil, err
@@ -89,7 +93,31 @@ func Open(cfg Config) (*Host, error) {
 			Controls: StdControls{},
 			Phone:    blehub.New(cfg.Hub),
 		}, nil
+	case KindWaveshare:
+		buttons.SetActionGPIO(buttons.GPIOAction)
+		scr, err := display.NewWaveshare(cfg.PNGPath)
+		if err != nil {
+			return nil, err
+		}
+		return &Host{
+			Screen:   scr,
+			Controls: StdControls{},
+			Phone:    blehub.New(cfg.Hub),
+		}, nil
+	case KindLCD:
+		// Display HAT Mini backlight uses BCM 13; map Action to HAT button X (16).
+		buttons.SetActionGPIO(buttons.GPIOActionLCD)
+		scr, err := display.NewLCD(cfg.PNGPath)
+		if err != nil {
+			return nil, err
+		}
+		return &Host{
+			Screen:   scr,
+			Controls: StdControls{},
+			Phone:    blehub.New(cfg.Hub),
+		}, nil
 	case KindEmu:
+		buttons.SetActionGPIO(buttons.GPIOAction)
 		mem := NewMemoryScreen(cfg.PNGPath)
 		return &Host{
 			Screen:   mem,
@@ -97,6 +125,7 @@ func Open(cfg Config) (*Host, error) {
 			Phone:    NewLoopbackLink(cfg.Hub),
 		}, nil
 	case KindTest:
+		buttons.SetActionGPIO(buttons.GPIOAction)
 		return &Host{
 			Screen:   NewMemoryScreen(""),
 			Controls: NewChannelControls(),

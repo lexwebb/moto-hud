@@ -26,4 +26,18 @@ const (
 	GPIOPrev   = 5
 	GPIONext   = 6
 	GPIOAction = 13
+	// GPIOActionLCD is Display HAT Mini button X — BCM 13 is the LCD backlight.
+	GPIOActionLCD = 16
 )
+
+var actionGPIO = GPIOAction
+
+// SetActionGPIO overrides the Action button BCM pin (e.g. LCD host → 16).
+func SetActionGPIO(bcm int) {
+	actionGPIO = bcm
+}
+
+// ActionGPIO returns the BCM pin currently used for Action.
+func ActionGPIO() int {
+	return actionGPIO
+}

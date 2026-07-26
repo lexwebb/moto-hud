@@ -13,6 +13,40 @@ import (
 	"moto-hud/pi/internal/transport"
 )
 
+func TestOpenWaveshareAndLCDKinds(t *testing.T) {
+	state := hud.NewState()
+	gate := &hud.RefreshGate{}
+	hub := transport.NewHub(state, gate, func() {})
+
+	for _, kind := range []platform.Kind{platform.KindWaveshare, platform.KindLCD, platform.KindInky} {
+		host, err := platform.Open(platform.Config{
+			Kind:    kind,
+			PNGPath: "",
+			Hub:     hub,
+		})
+		if err != nil {
+			t.Fatalf("%s: %v", kind, err)
+		}
+		if host.Screen == nil {
+			t.Fatalf("%s: nil screen", kind)
+		}
+		_ = host.Screen.Close()
+	}
+	if buttons.ActionGPIO() != buttons.GPIOAction {
+		// Last open was inky; Action should be default 13.
+		t.Fatalf("action gpio=%d want %d", buttons.ActionGPIO(), buttons.GPIOAction)
+	}
+
+	host, err := platform.Open(platform.Config{Kind: platform.KindLCD, Hub: hub})
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer host.Screen.Close()
+	if buttons.ActionGPIO() != buttons.GPIOActionLCD {
+		t.Fatalf("lcd action gpio=%d want %d", buttons.ActionGPIO(), buttons.GPIOActionLCD)
+	}
+}
+
 func TestOpenEmuAndPushButton(t *testing.T) {
 	state := hud.NewState()
 	gate := &hud.RefreshGate{}

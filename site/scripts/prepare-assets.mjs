@@ -11,8 +11,10 @@ const glbDstDir = join(siteRoot, 'public', 'enclosure');
 const glbDst = join(glbDstDir, 'assembly.glb');
 
 const routeSrc = join(repoRoot, 'web', 'emulator', 'routes', 'whitehall-farringdon.json');
+const roadsSrc = join(repoRoot, 'web', 'emulator', 'routes', 'whitehall-farringdon-roads.json');
 const routeDstDir = join(siteRoot, 'public', 'emulator', 'routes');
 const routeDst = join(routeDstDir, 'whitehall-farringdon.json');
+const roadsDst = join(routeDstDir, 'whitehall-farringdon-roads.json');
 
 const execSrc = join(repoRoot, 'web', 'emulator', 'wasm_exec.js');
 const execDst = join(siteRoot, 'public', 'emulator', 'wasm_exec.js');
@@ -34,6 +36,11 @@ if (existsSync(glbSrc)) {
 if (existsSync(routeSrc)) {
   copyFileSync(routeSrc, routeDst);
   console.log('copied', routeDst);
+}
+
+if (existsSync(roadsSrc)) {
+  copyFileSync(roadsSrc, roadsDst);
+  console.log('copied', roadsDst);
 }
 
 if (existsSync(execSrc)) {

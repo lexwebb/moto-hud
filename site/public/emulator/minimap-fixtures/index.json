@@ -1,0 +1,23 @@
+{
+  "route": "Whitehall → Farringdon",
+  "fixtures": [
+    {
+      "id": "northumberland-ave-near",
+      "title": "Whitehall Place → Northumberland Avenue (near)",
+      "along_m": 421.7,
+      "file": "northumberland-ave-near.json"
+    },
+    {
+      "id": "northumberland-ave-mid",
+      "title": "Whitehall Place → Northumberland Avenue (~95 m)",
+      "along_m": 329.7,
+      "file": "northumberland-ave-mid.json"
+    },
+    {
+      "id": "victoria-embankment-near",
+      "title": "Northumberland Avenue → Victoria Embankment (near)",
+      "along_m": 496.9,
+      "file": "victoria-embankment-near.json"
+    }
+  ]
+}

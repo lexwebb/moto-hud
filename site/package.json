@@ -8,6 +8,7 @@
     "build": "astro build",
     "preview": "astro preview",
     "build:wasm": "node scripts/prepare-wasm.mjs",
+    "capture:minimap": "node scripts/capture-minimap-fixtures.mjs",
     "prebuild": "node scripts/prepare-assets.mjs"
   },
   "dependencies": {

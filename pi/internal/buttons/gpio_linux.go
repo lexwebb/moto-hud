@@ -34,7 +34,7 @@ func Start(ctx context.Context, on Handler) error {
 	}{
 		{fmt.Sprintf("GPIO%d", GPIOPrev), "prev", Prev, PrevLong},
 		{fmt.Sprintf("GPIO%d", GPIONext), "next", Next, NextLong},
-		{fmt.Sprintf("GPIO%d", GPIOAction), "action", Action, ActionLong},
+		{fmt.Sprintf("GPIO%d", actionGPIO), "action", Action, ActionLong},
 	}
 
 	var btns []pinBtn

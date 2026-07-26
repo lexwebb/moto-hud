@@ -1,0 +1,345 @@
+{
+  "id": "northumberland-ave-near",
+  "status": "accepted",
+  "title": "Whitehall Place → Northumberland Avenue (near)",
+  "along_m": 421.7,
+  "notes": "",
+  "turn_lat": 51.506652,
+  "turn_lng": -0.123377,
+  "inbound_bearing_deg": 18.944698488417146,
+  "view_radius_m": 50,
+  "vectors": {
+    "route": [
+      [
+        {
+          "x": -10,
+          "y": -28
+        },
+        {
+          "x": 1.0453610171872612,
+          "y": -16.95463898281274
+        },
+        {
+          "x": 1.0453610171872627,
+          "y": 10.161453180560006
+        },
+        {
+          "x": 61.00586381968052,
+          "y": 10.161453180560006
+        }
+      ]
+    ],
+    "context": [
+      [
+        {
+          "x": -54.784111010127454,
+          "y": 2.3814500625163446
+        },
+        {
+          "x": 54.149255528462284,
+          "y": 2.3814500625163446
+        }
+      ],
+      [
+        {
+          "x": -30.729233176570855,
+          "y": 2.3814500625163446
+        },
+        {
+          "x": -20.987979689904897,
+          "y": 12.122703549182305
+        },
+        {
+          "x": 55.24251311365061,
+          "y": 12.122703549182305
+        }
+      ],
+      [
+        {
+          "x": -0.6083426719434589,
+          "y": 1.9630400206753449
+        },
+        {
+          "x": 9.29475022062136,
+          "y": 11.866132913240165
+        }
+      ],
+      [
+        {
+          "x": 14.033756878917092,
+          "y": 31.251742949545633
+        },
+        {
+          "x": 14.033756878917094,
+          "y": -0.9665092932557364
+        }
+      ],
+      [
+        {
+          "x": -30.520060325844277,
+          "y": 2.3814500625163446
+        },
+        {
+          "x": -55.33073608517138,
+          "y": 27.192125821843447
+        }
+      ]
+    ]
+  },
+  "glyph": {
+    "w": 70,
+    "h": 80,
+    "route_bits": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAIAAAAAAAAAABwAAAAAAAAAAHAAAAAAAAAAAcAAAAAAAAAABwAAAAAAAAAAHAAAAAAAAAAB8AAAAAAAAAAHwAAAAAAAAAAfAAAAAAAAAAB8AAAAAAAAAAHwAAAAAAAAAAfAAAAAAAAAAB8AAAAAAAAAABwAAAAAAAAAAHAAAAAAAAAAAcAAAAAAAAAABwAAAAAAAAAAHAAAAAAAAAAAcAAAAAAAAAABwAAAAAAAAAAOAAAAAAAAAABwAAAAAAAAAAOAAAAAAAAAABwAAAAAAAAAAOAAAAAAAAAABwAAAAAAAAAAOAAAAAAAAAAAQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
+    "context_bits": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAACAAAAAAAAAAAIAAAAAAAAAAAgAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAACAAAAAAAAAAAIAAAAAAAAAAAgAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAABxxxzxxxxAAAAAABIAAAAAAAAAAAgAAAAAAAAAAAAAAAAABAAAAAAAAAAAIAAAAAAAAOOPOOOCOOOOOAAAAAAAIAAAAAAAAAAAgAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=="
+  },
+  "minimap": {
+    "route": [
+      {
+        "x": -10,
+        "y": -28
+      },
+      {
+        "x": -8,
+        "y": -27
+      },
+      {
+        "x": -3,
+        "y": -22
+      },
+      {
+        "x": 0,
+        "y": -16
+      },
+      {
+        "x": 0,
+        "y": -6
+      },
+      {
+        "x": 0,
+        "y": -5
+      },
+      {
+        "x": 0,
+        "y": -3
+      },
+      {
+        "x": 0,
+        "y": 0
+      },
+      {
+        "x": 4,
+        "y": 10
+      },
+      {
+        "x": 12,
+        "y": 11
+      },
+      {
+        "x": 17,
+        "y": 11
+      },
+      {
+        "x": 21,
+        "y": 11
+      },
+      {
+        "x": 25,
+        "y": 11
+      },
+      {
+        "x": 42,
+        "y": 10
+      },
+      {
+        "x": 51,
+        "y": 10
+      },
+      {
+        "x": 61,
+        "y": 11
+      }
+    ],
+    "context": [
+      [
+        {
+          "x": -35,
+          "y": 17
+        },
+        {
+          "x": -32,
+          "y": 15
+        },
+        {
+          "x": -31,
+          "y": 13
+        },
+        {
+          "x": -30,
+          "y": 13
+        },
+        {
+          "x": -29,
+          "y": 9
+        },
+        {
+          "x": -29,
+          "y": 2
+        }
+      ],
+      [
+        {
+          "x": 12,
+          "y": 28
+        },
+        {
+          "x": 12,
+          "y": 22
+        },
+        {
+          "x": 12,
+          "y": 17
+        },
+        {
+          "x": 12,
+          "y": 12
+        },
+        {
+          "x": 12,
+          "y": 11
+        },
+        {
+          "x": 13,
+          "y": 1
+        }
+      ],
+      [
+        {
+          "x": -8,
+          "y": -27
+        },
+        {
+          "x": -3,
+          "y": -22
+        },
+        {
+          "x": 0,
+          "y": -16
+        },
+        {
+          "x": 0,
+          "y": -6
+        },
+        {
+          "x": 0,
+          "y": -5
+        },
+        {
+          "x": 0,
+          "y": -3
+        },
+        {
+          "x": 0,
+          "y": 0
+        }
+      ],
+      [
+        {
+          "x": 47,
+          "y": 1
+        },
+        {
+          "x": 27,
+          "y": 1
+        },
+        {
+          "x": 13,
+          "y": 1
+        },
+        {
+          "x": 0,
+          "y": 0
+        }
+      ],
+      [
+        {
+          "x": -10,
+          "y": -28
+        },
+        {
+          "x": -8,
+          "y": -27
+        }
+      ],
+      [
+        {
+          "x": 0,
+          "y": 0
+        },
+        {
+          "x": -17,
+          "y": -1
+        },
+        {
+          "x": -29,
+          "y": 2
+        }
+      ],
+      [
+        {
+          "x": -29,
+          "y": 2
+        },
+        {
+          "x": -18,
+          "y": 8
+        },
+        {
+          "x": 4,
+          "y": 10
+        },
+        {
+          "x": 12,
+          "y": 11
+        },
+        {
+          "x": 17,
+          "y": 11
+        },
+        {
+          "x": 21,
+          "y": 11
+        },
+        {
+          "x": 25,
+          "y": 11
+        }
+      ],
+      [
+        {
+          "x": 0,
+          "y": 0
+        },
+        {
+          "x": 4,
+          "y": 10
+        }
+      ],
+      [
+        {
+          "x": 25,
+          "y": 11
+        },
+        {
+          "x": 42,
+          "y": 10
+        }
+      ]
+    ],
+    "rider": {
+      "x": 0,
+      "y": -3
+    }
+  },
+  "source_fixture": "northumberland-ave-near",
+  "saved_at": "2026-07-25T00:14:41.218Z"
+}
