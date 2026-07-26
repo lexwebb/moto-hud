@@ -11,14 +11,17 @@ class NavNotificationListener : NotificationListenerService() {
         sbn ?: return
         if (sbn.packageName != MAPS_PACKAGE && sbn.packageName != MAPS_PACKAGE_GO) return
         val nav = parse(sbn.notification) ?: return
-        Log.d(TAG, "nav update: $nav")
-        HudBus.publishNav(nav)
+        Log.d(TAG, "maps nav update: $nav")
+        HudBus.publishNav(nav, NavSource.MAPS)
     }
 
     override fun onNotificationRemoved(sbn: StatusBarNotification?) {
         sbn ?: return
         if (sbn.packageName != MAPS_PACKAGE && sbn.packageName != MAPS_PACKAGE_GO) return
-        HudBus.publishNav(NavState(active = false, instruction = "Navigation ended"))
+        HudBus.publishNav(
+            NavState(active = false, instruction = "Navigation ended"),
+            NavSource.MAPS,
+        )
     }
 
     private fun parse(n: Notification): NavState? {

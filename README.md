@@ -1,12 +1,12 @@
 # Moto HUD
 
-Motorcycle e-ink turn-by-turn HUD: Android companion reads Google Maps notifications + media, sends them over BLE to a Go service on a Raspberry Pi Zero that renders a sparse UI on a 250×122 panel ([Inky pHAT](https://shop.pimoroni.com/products/inky-phat) or [Waveshare 2.13″ B/W e-Paper HAT](https://www.waveshare.com/2.13inch-e-paper-hat.htm); optional LCD).
+Motorcycle e-ink turn-by-turn HUD: Android companion reads turn-by-turn from **OsmAnd (AIDL)** or Google Maps notifications + media, sends them over BLE to a Go service on a Raspberry Pi Zero that renders a sparse UI on a 250×122 panel ([Inky pHAT](https://shop.pimoroni.com/products/inky-phat) or [Waveshare 2.13″ B/W e-Paper HAT](https://www.waveshare.com/2.13inch-e-paper-hat.htm); optional LCD).
 
 ```
-Google Maps ──► NotificationListener ──┐
-Music apps  ──► MediaController      ──┼─► Android app ──BLE──► Go (Pi) ──► display HAT
-Buttons (GPIO) ────────────────────────┘         ▲
-                                                 │ cmd notify (play/pause, skip)
+OsmAnd      ──► AIDL nav updates ────────┐
+Google Maps ──► NotificationListener ──┼─► Android app ──BLE──► Go (Pi) ──► display HAT
+Music apps  ──► MediaController      ──┘         ▲
+Buttons (GPIO) ──────────────────────────────────┘  cmd notify (play/pause, skip)
 ```
 
 ## Repo layout
@@ -18,6 +18,8 @@ Buttons (GPIO) ─────────────────────�
 | [`android/`](android/) | Kotlin companion app |
 | [`enclosure/`](enclosure/) | OpenSCAD bench case (CAD + mesh exports) |
 | [`site/`](site/) | Astro project site (GitHub Pages) |
+| [`docs/adr/`](docs/adr/) | Architecture Decision Records |
+| [`CONTEXT.md`](CONTEXT.md) | Domain language / glossary |
 
 
 ## Project site (GitHub Pages)
@@ -184,10 +186,13 @@ Screens: **Nav** → **Media** → **Status**.
 
 Open [`android/`](android/) in Android Studio, sync Gradle, side-load on a phone (or emulator).
 
-1. Grant **notification access** (required for Maps + media sessions).
-2. Start Google Maps navigation; if fields are empty, disable Maps **Live Updates** / **Live info** notification categories.
-3. Tap **Start HUD link** — scans for BLE device **MotoHUD**.
-4. Keep the foreground notification running while riding.
+1. Install **[OsmAnd](https://play.google.com/store/apps/details?id=net.osmand)** (free) or OsmAnd+ — preferred nav source via typed AIDL (`distance` + `turnType`). Longer-term: OsmAnd Full Library on Android; MapKit on iOS ([ADR 0006](docs/adr/0006-engine-agnostic-nav-android-osmand-ios-mapkit.md)).
+2. Grant **notification access** (still required for media sessions, and as Maps fallback).
+3. Start navigation in OsmAnd (motorcycle profile works well). Google Maps still works as a fallback scrape if OsmAnd is not bound / not navigating.
+4. Tap **Start HUD link** — binds OsmAnd AIDL if present, scans for BLE device **MotoHUD**.
+5. Keep the foreground notification running while riding.
+
+If using Maps and fields are empty, disable Maps **Live Updates** / **Live info** notification categories.
 
 **Dev HTTP (no Pi BLE):** enable **Also POST nav/media over HTTP** and set the base URL (emulator → host is `http://10.0.2.2:8787`). Run `motohud -host png -http :8787` on the PC. BLE scan still runs; HTTP posts happen whenever nav/media update. See [`protocol/README.md`](protocol/README.md).
 

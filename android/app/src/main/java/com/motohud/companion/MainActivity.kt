@@ -49,10 +49,11 @@ class MainActivity : AppCompatActivity() {
         }
         lifecycleScope.launch {
             HudBus.nav.collect {
+                val src = if (HudBus.isOsmandBound()) "OsmAnd" else "Maps?"
                 navText.text = if (it.active) {
-                    "${it.maneuver} ${it.distanceText}\n${it.instruction}"
+                    "[$src] ${it.maneuver} ${it.distanceText}\n${it.instruction}"
                 } else {
-                    "Nav idle"
+                    "Nav idle · ${if (HudBus.isOsmandBound()) "OsmAnd bound" else "OsmAnd not bound (Maps scrape)"}"
                 }
             }
         }

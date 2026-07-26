@@ -39,6 +39,9 @@ dependencies {
     implementation("androidx.constraintlayout:constraintlayout:2.2.0")
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.9.0")
 
+    // Typed OsmAnd AIDL (registerForNavigationUpdates, ADirectionInfo, …)
+    implementation("net.osmand:android-aidl-lib:5.3@aar")
+
     testImplementation("junit:junit:4.13.2")
     testImplementation("org.json:json:20240303")
 }

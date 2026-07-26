@@ -109,7 +109,24 @@ The Android companion can **also** POST `/nav` and `/media` to this base URL (em
 
 Payload size: keep messages small (notification-sized). BLE writes use no-response; aim well under a single ATT MTU (~20–180 bytes typical without negotiation).
 
-## Google Maps tips
+## Nav sources (companions)
+
+Wire format is **engine-agnostic** ([ADR 0006](../docs/adr/0006-engine-agnostic-nav-android-osmand-ios-mapkit.md)): Android → OsmAnd (AIDL now; Full Library planned); iOS → MapKit; optional fields like `lanes` omitted when unavailable.
+
+| Priority | Source | How | Notes |
+|----------|--------|-----|--------|
+| 1 | **OsmAnd** (free or +) | AIDL `registerForNavigationUpdates` → `ADirectionInfo` | Typed `turnType` + `distanceTo`; no text scrape. Road name / ETA not in this callback yet. |
+| 2 | Google Maps / Maps Go | `NotificationListenerService` text scrape | Fallback when OsmAnd is absent or not actively navigating. |
+
+While OsmAnd reports `active` navigation, Maps notification updates are ignored.
+
+### OsmAnd tips
+
+- Install [OsmAnd](https://play.google.com/store/apps/details?id=net.osmand) (`net.osmand`) or OsmAnd+ (`net.osmand.plus`).
+- Start HUD link after OsmAnd is installed so the companion can bind `net.osmand.aidl.OsmandAidlServiceV2`.
+- `TurnType` ints map to protocol `maneuver` (e.g. TL→`left`, TSLL/KL→`slight_left`, RNDB→`roundabout`).
+
+### Google Maps tips
 
 If nav fields are empty, disable Google Maps **Live Updates** / **Live info** notification categories in Android system settings for Maps, then restart navigation.
 

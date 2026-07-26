@@ -25,6 +25,7 @@ class HudForegroundService : Service() {
     private lateinit var ble: BleClient
     private lateinit var media: MediaWatcher
     private lateinit var ribbon: RibbonEnricher
+    private lateinit var osmand: OsmandNavClient
     private var http: HttpHudSink? = null
     private var jobs: Job? = null
 
@@ -34,11 +35,13 @@ class HudForegroundService : Service() {
         ble = BleClient(this)
         media = MediaWatcher(this)
         ribbon = RibbonEnricher(this)
+        osmand = OsmandNavClient(this)
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         startForeground(NOTIF_ID, buildNotification("Connecting…"))
         media.start()
+        osmand.start()
         ble.startScan()
         http = if (LinkPrefs.httpEnabled(this)) {
             HttpHudSink(LinkPrefs.httpBaseUrl(this)).also {
@@ -116,6 +119,7 @@ class HudForegroundService : Service() {
     override fun onDestroy() {
         jobs?.cancel()
         scope.cancel()
+        osmand.stop()
         media.stop()
         ble.close()
         http = null
