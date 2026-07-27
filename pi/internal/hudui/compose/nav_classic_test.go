@@ -23,9 +23,10 @@ func TestNavClassicPlanLayers(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	for _, frag := range []string{`id="maneuver"`, `id="distance"`, `id="ribbon"`} {
-		if !strings.Contains(sp.BodySVG, frag) {
-			t.Fatalf("body missing %s: %s", frag, sp.BodySVG)
+	markup := compose.FrameBodyForTest(in, sp)
+	for _, frag := range []string{`id="maneuver"`, `id="distance"`, `id="ribbon"`, `id="mode"`} {
+		if !strings.Contains(markup, frag) {
+			t.Fatalf("frame body missing %s", frag)
 		}
 	}
 	if len(sp.Layers) < 4 {

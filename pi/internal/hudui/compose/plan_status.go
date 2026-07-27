@@ -45,10 +45,7 @@ func statusLayoutGeom(linked, navActive bool) statusLayout {
 
 func planStatus(in Input) (plan.ScreenPlan, error) {
 	geom := statusLayoutGeom(in.Linked, in.Nav.Active)
-	body, err := StatusBodySVG(in.Linked, in.Nav.Active)
-	if err != nil {
-		return plan.ScreenPlan{}, err
-	}
+	body := statusBodyScene(in.Linked, in.Nav.Active)
 	k := Keys{}
 	deps := in.NavSVG
 	linked := in.Linked

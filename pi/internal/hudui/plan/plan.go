@@ -16,11 +16,11 @@ type Layer struct {
 	Patch func() (scene.Document, error)
 }
 
-// ScreenPlan is the output of a screen compose pass (layout + SVG body + refresh metadata).
+// ScreenPlan is the output of a screen compose pass (layout + scene body + refresh metadata).
 type ScreenPlan struct {
-	BodySVG    string // main-column fragment (inside chrome translate)
+	Body        []scene.Node // main column (inside chrome main group)
 	Descriptors []hudui.Descriptor
-	Layers     []Layer
+	Layers      []Layer
 }
 
 // LayerByID finds a layer for spatial patching.

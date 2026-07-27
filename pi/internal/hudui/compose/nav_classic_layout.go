@@ -1,12 +1,9 @@
 package compose
 
 import (
-	"bytes"
-	"context"
 	"fmt"
 	"image"
 
-	"moto-hud/pi/internal/hudui/screens"
 	"moto-hud/pi/internal/hudui/scene"
 	"moto-hud/pi/internal/hudui/token"
 	"moto-hud/pi/internal/pixelfont"
@@ -155,25 +152,31 @@ func layoutNavClassic(nav protocol.NavMessage, deps DrawDeps) navClassicLayout {
 	}
 }
 
-// NavClassicBodySVG renders the classic nav main column via templ.
-func NavClassicBodySVG(l navClassicLayout, deps DrawDeps) (string, error) {
+// NavClassicBodyScene builds the classic nav main column as a scene list.
+func NavClassicBodyScene(l navClassicLayout, deps DrawDeps) []scene.Node {
 	body, _ := pixelfont.Load(pixelfont.Size8x16)
-	roadHTML := roadLinesSVG(deps, body, 0, l.roadTop, l.roadLines)
-	etaHTML := ""
-	if l.etaH > 0 {
-		etaHTML = deps.TextSVG("eta", "8x16", 0, l.etaTop+body.Metrics.Ascent, "start", l.eta)
-	}
+	var b scene.Builder
 	paths := ""
 	if deps.ManeuverPaths != nil {
 		paths = deps.ManeuverPaths(l.maneuver)
 	}
-	var buf bytes.Buffer
-	err := screens.NavClassicBody(
-		l.glyphY, paths, l.dist, l.distBaseline, l.mw,
-		roadHTML, etaHTML, l.laneHTML, l.ribbonTop, l.ribbonInner,
-	).Render(context.Background(), &buf)
-	if err != nil {
-		return "", err
+	if paths != "" {
+		b.Raw(fmt.Sprintf(
+			`<g id="maneuver" transform="translate(-2,%d)" fill="#000" stroke="#000" stroke-width="3" stroke-linecap="square" stroke-linejoin="miter">%s</g>`,
+			l.glyphY, paths))
 	}
-	return buf.String(), nil
+	b.Text("distance", scene.Face16x32, l.mw, l.distBaseline, "end", l.dist)
+	appendRoadLines(&b, 0, l.roadTop, l.roadLines)
+	if l.etaH > 0 {
+		b.Text("eta", scene.Face8x16, 0, l.etaTop+body.Metrics.Ascent, "start", l.eta)
+	}
+	if l.laneHTML != "" {
+		b.Raw(l.laneHTML)
+	}
+	b.Group("ribbon", 0, l.ribbonTop, func(b *scene.Builder) {
+		if l.ribbonInner != "" {
+			b.Raw(l.ribbonInner)
+		}
+	})
+	return b.Nodes()
 }

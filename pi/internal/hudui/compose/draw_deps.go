@@ -16,7 +16,7 @@ type DrawDeps struct {
 	MinimapSVG    func(mm *protocol.MinimapMessage, w, h int) string
 	HasLanes      func(protocol.NavMessage) bool
 	LaneStripSVG  func(lanes []protocol.LaneInfo, maxW int) string
-	// TextSVG emits SVG for full-frame / templ bodies until BodySVG migrates to scene.
+	// TextSVG remains for DrawDeps escape hatch (ribbon/minimap vector helpers in hud).
 	TextSVG func(id string, faceSize string, x, baseline int, anchor, s string) string
 }
 

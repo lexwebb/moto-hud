@@ -50,6 +50,13 @@ type RawSVG struct {
 
 func (RawSVG) node() {}
 
+// Line is a 1px stroke segment (chrome rules, link mark lines).
+type Line struct {
+	X1, Y1, X2, Y2 int
+}
+
+func (Line) node() {}
+
 // Builder collects nodes for a document.
 type Builder struct {
 	nodes []Node
@@ -76,6 +83,15 @@ func (b *Builder) Raw(markup string) {
 		return
 	}
 	b.nodes = append(b.nodes, RawSVG{Markup: markup})
+}
+
+func (b *Builder) Line(x1, y1, x2, y2 int) {
+	b.nodes = append(b.nodes, Line{X1: x1, Y1: y1, X2: x2, Y2: y2})
+}
+
+// Append copies nodes from another builder.
+func (b *Builder) Append(nodes ...Node) {
+	b.nodes = append(b.nodes, nodes...)
 }
 
 func (b *Builder) Nodes() []Node {

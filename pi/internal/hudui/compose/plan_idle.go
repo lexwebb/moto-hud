@@ -5,10 +5,7 @@ import (
 )
 
 func planNavIdle(in Input) (plan.ScreenPlan, error) {
-	body, err := NavIdleBodySVG()
-	if err != nil {
-		return plan.ScreenPlan{}, err
-	}
 	k := Keys{}
+	body := navIdleBodyScene()
 	return finalizePlan(in, k.NavScreen(in.Nav), staticChromeKey(), body, nil), nil
 }

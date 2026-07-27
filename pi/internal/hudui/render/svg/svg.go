@@ -49,6 +49,8 @@ func writeNode(b *strings.Builder, n scene.Node) {
 		b.WriteString(`</g>`)
 	case scene.RawSVG:
 		b.WriteString(v.Markup)
+	case scene.Line:
+		fmt.Fprintf(b, `<line x1="%d" y1="%d" x2="%d" y2="%d" stroke="#000" stroke-width="1"/>`, v.X1, v.Y1, v.X2, v.Y2)
 	}
 }
 

@@ -23,10 +23,7 @@ func planMedia(in Input) (plan.ScreenPlan, error) {
 	if in.NavSVG.Fit != nil {
 		title = in.NavSVG.Fit(scene.Face12x24, title, geom.mw)
 	}
-	body, err := MediaBodySVG(playing, title, in.Media.Artist)
-	if err != nil {
-		return plan.ScreenPlan{}, err
-	}
+	body := mediaBodyScene(playing, title, in.Media.Artist)
 	k := Keys{}
 	deps := in.NavSVG
 	media := in.Media

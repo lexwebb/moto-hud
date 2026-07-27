@@ -37,13 +37,13 @@ func linkLayer(in Input) plan.Layer {
 }
 
 // finalizePlan attaches refresh metadata and the shared BLE link layer.
-func finalizePlan(in Input, screenKey, chromeKey hudui.ChangeKey, body string, layers []plan.Layer) plan.ScreenPlan {
+func finalizePlan(in Input, screenKey, chromeKey hudui.ChangeKey, body []scene.Node, layers []plan.Layer) plan.ScreenPlan {
 	if layers == nil {
 		layers = []plan.Layer{}
 	}
 	layers = append(layers, linkLayer(in))
 	return plan.ScreenPlan{
-		BodySVG:     body,
+		Body:        body,
 		Layers:      layers,
 		Descriptors: plan.BuildDescriptors(screenKey, chromeKey, layers),
 	}

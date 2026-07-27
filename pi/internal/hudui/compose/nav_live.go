@@ -100,17 +100,23 @@ func planNavLive(in Input) (plan.ScreenPlan, error) {
 		etaSlot = image.Rect(mainX+rightX, etaTop, mainX+mw, etaTop+body.Metrics.CellH)
 	}
 
-	var b strings.Builder
-	fmt.Fprintf(&b, `<g id="ribbon" transform="translate(0,%d)">%s</g>`, contentTop, leftDraw)
-	b.WriteString(deps.TextSVG("distance", "16x32", mw, distBaseline, "end", dist))
-	b.WriteString(liveRoadLinesSVG(deps, rightX, roadTop, roadLines))
+	var bodyNodes []scene.Node
+	var b scene.Builder
+	if leftDraw != "" {
+		b.Group("ribbon", 0, contentTop, func(b *scene.Builder) {
+			b.Raw(leftDraw)
+		})
+	}
+	b.Text("distance", scene.Face16x32, mw, distBaseline, "end", dist)
+	appendRoadLines(&b, rightX, roadTop, roadLines)
 	if eta != "" {
-		b.WriteString(deps.TextSVG("eta", "8x16", rightX, etaTop+body.Metrics.Ascent, "start", eta))
+		b.Text("eta", scene.Face8x16, rightX, etaTop+body.Metrics.Ascent, "start", eta)
 	}
 	if deps.HasLanes != nil && deps.HasLanes(nav) && deps.LaneStripSVG != nil {
 		laneY := contentBot - laneStripH - 2
-		fmt.Fprintf(&b, `<g transform="translate(%d,%d)">%s</g>`, rightX, laneY, deps.LaneStripSVG(nav.Lanes, rightW))
+		b.Raw(fmt.Sprintf(`<g transform="translate(%d,%d)">%s</g>`, rightX, laneY, deps.LaneStripSVG(nav.Lanes, rightW)))
 	}
+	bodyNodes = b.Nodes()
 
 	navCopy := nav
 	layers := []plan.Layer{
@@ -137,16 +143,7 @@ func planNavLive(in Input) (plan.ScreenPlan, error) {
 		})
 	}
 
-	return finalizePlan(in, k.NavScreen(nav), staticChromeKey(), b.String(), layers), nil
-}
-
-func liveRoadLinesSVG(deps DrawDeps, x, top int, lines []string) string {
-	body, _ := pixelfont.Load(pixelfont.Size8x16)
-	var b strings.Builder
-	for i, ln := range lines {
-		b.WriteString(deps.TextSVG("road", "8x16", x, top+i*body.Metrics.CellH+body.Metrics.Ascent, "start", ln))
-	}
-	return b.String()
+	return finalizePlan(in, k.NavScreen(nav), staticChromeKey(), bodyNodes, layers), nil
 }
 
 // CompactDistanceText drops spaces in distance strings for the live nav column.

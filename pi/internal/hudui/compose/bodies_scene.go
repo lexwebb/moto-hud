@@ -1,10 +1,7 @@
 package compose
 
 import (
-	"bytes"
-	"context"
-
-	"moto-hud/pi/internal/hudui/screens"
+	"moto-hud/pi/internal/hudui/scene"
 	"moto-hud/pi/internal/hudui/token"
 	"moto-hud/pi/internal/pixelfont"
 )
@@ -24,14 +21,13 @@ func mediaBodyLayout() (mw, yPlaying, yTitle, yArtist int) {
 		top + meta.Metrics.CellH + token.GapSm + title.Metrics.CellH + token.GapSm + body.Metrics.Ascent
 }
 
-// MediaBodySVG renders the media main column via templ.
-func MediaBodySVG(playing, title, artist string) (string, error) {
-	mw, y1, y2, y3 := mediaBodyLayout()
-	var buf bytes.Buffer
-	if err := screens.MediaBody(playing, title, artist, mw, y1, y2, y3).Render(context.Background(), &buf); err != nil {
-		return "", err
-	}
-	return buf.String(), nil
+func mediaBodyScene(playing, title, artist string) []scene.Node {
+	_, y1, y2, y3 := mediaBodyLayout()
+	var b scene.Builder
+	b.Text("playing", scene.Face6x12, 0, y1, "start", playing)
+	b.Text("title", scene.Face12x24, 0, y2, "start", title)
+	b.Text("artist", scene.Face8x16, 0, y3, "start", artist)
+	return b.Nodes()
 }
 
 func statusBodyLayout() (mw, y1, y2, y3 int) {
@@ -48,8 +44,7 @@ func statusBodyLayout() (mw, y1, y2, y3 int) {
 	return mw, top + body.Metrics.Ascent, top + rowH + body.Metrics.Ascent, top + 2*rowH + body.Metrics.Ascent
 }
 
-// StatusBodySVG renders status rows via templ.
-func StatusBodySVG(bleLinked, navActive bool) (string, error) {
+func statusBodyScene(bleLinked, navActive bool) []scene.Node {
 	ble, nav := "DOWN", "OFF"
 	if bleLinked {
 		ble = "UP"
@@ -58,9 +53,32 @@ func StatusBodySVG(bleLinked, navActive bool) (string, error) {
 		nav = "ON"
 	}
 	mw, y1, y2, y3 := statusBodyLayout()
-	var buf bytes.Buffer
-	if err := screens.StatusRows(ble, nav, "OK", mw, y1, y2, y3).Render(context.Background(), &buf); err != nil {
-		return "", err
-	}
-	return buf.String(), nil
+	var b scene.Builder
+	b.Text("", scene.Face8x16, 0, y1, "start", "LINK")
+	b.Text("status_link", scene.Face8x16, mw, y1, "end", ble)
+	b.Text("", scene.Face8x16, 0, y2, "start", "NAV")
+	b.Text("status_nav", scene.Face8x16, mw, y2, "end", nav)
+	b.Text("", scene.Face8x16, 0, y3, "start", "PKTS")
+	b.Text("status_pkts", scene.Face8x16, mw, y3, "end", "OK")
+	return b.Nodes()
+}
+
+func navIdleBodyScene() []scene.Node {
+	meta, _ := pixelfont.Load(pixelfont.Size6x12)
+	body, _ := pixelfont.Load(pixelfont.Size8x16)
+	mw := token.MainWidth()
+	pad := token.Pad
+	headerBottom := pad + meta.Metrics.CellH
+	divY := headerBottom + token.GapSm
+	contentTop := divY + token.GapMd
+	contentBot := token.Height - pad
+	blockH := body.Metrics.CellH*2 + token.GapMd
+	top := contentTop + (contentBot-contentTop-blockH)/2
+	b1 := top + body.Metrics.Ascent
+	b2 := top + body.Metrics.CellH + token.GapMd + body.Metrics.Ascent
+	mid := mw / 2
+	var b scene.Builder
+	b.Text("title", scene.Face8x16, mid, b1, "middle", "MOTO HUD")
+	b.Text("msg", scene.Face8x16, mid, b2, "middle", "Waiting for route...")
+	return b.Nodes()
 }
