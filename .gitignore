@@ -1,6 +1,31 @@
-# Binaries / build
+# Binaries / build (repo root)
 /bin/
 /out/
+
+# Go build & test artifacts
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+*.test
+/coverage.out
+
+# WASM (also listed in site/.gitignore for Pages copy)
+web/emulator/motohud.wasm
+
+# Android / Gradle
+android/.gradle/
+android/**/build/
+android/local.properties
+android/.cxx/
+android/captures/
+*.apk
+*.aab
+*.ap_
+*.dex
+
+# Images (generated); allow committed fixtures
 *.png
 *.wasm
 !site/public/**/*.png
