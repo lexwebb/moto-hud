@@ -48,6 +48,10 @@ func navSVGDeps() compose.NavSVGDeps {
 		},
 		HasMinimap: HasMinimap,
 		MinimapSVG: minimapSVG,
+		HasLanes:   hasLanes,
+		LaneStripSVG: func(lanes []protocol.LaneInfo, maxW int) string {
+			return laneStripSVG(lanes, maxW)
+		},
 	}
 }
 

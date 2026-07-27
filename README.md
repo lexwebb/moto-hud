@@ -1,12 +1,13 @@
 # Moto HUD
 
-Motorcycle e-ink turn-by-turn HUD: Android companion reads turn-by-turn from **OsmAnd (AIDL)** or Google Maps notifications + media, sends them over BLE to a Go service on a Raspberry Pi Zero that renders a sparse UI on a 250×122 panel ([Inky pHAT](https://shop.pimoroni.com/products/inky-phat) or [Waveshare 2.13″ B/W e-Paper HAT](https://www.waveshare.com/2.13inch-e-paper-hat.htm); optional LCD).
+Motorcycle e-ink turn-by-turn HUD: Android companion reads turn-by-turn from **OsmAnd** (AIDL or embedded Full Library) or Google Maps notifications + media, sends them over BLE to a Go service on a Raspberry Pi Zero that renders a sparse UI on a 250×122 panel ([Inky pHAT](https://shop.pimoroni.com/products/inky-phat) or [Waveshare 2.13″ B/W e-Paper HAT](https://www.waveshare.com/2.13inch-e-paper-hat.htm); optional LCD).
 
 ```
-OsmAnd      ──► AIDL nav updates ────────┐
-Google Maps ──► NotificationListener ──┼─► Android app ──BLE──► Go (Pi) ──► display HAT
-Music apps  ──► MediaController      ──┘         ▲
-Buttons (GPIO) ──────────────────────────────────┘  cmd notify (play/pause, skip)
+OsmAnd app  ──► AIDL (default) ───────────────┐
+:osmand DF  ──► RoutingHelper (on-demand) ────┼─► Android app ──BLE──► Go (Pi) ──► display HAT
+Google Maps ──► NotificationListener ─────────┤         ▲
+Music apps  ──► MediaController ──────────────┘         │
+Buttons (GPIO) ─────────────────────────────────────────┘  cmd notify
 ```
 
 ## Repo layout
@@ -109,7 +110,7 @@ go run ./cmd/mock-nav -scenario approach
 
 Keyboard buttons while `motohud` runs: `p`/`n`/`a` short, `P`/`N`/`A` long (+ Enter).
 
-**HUD UI layer** (`pi/internal/hudui`, ADR 0009–0010): [templ](https://templ.guide) screen components, integer flex layout helpers, and `hud.RenderEngine` for tier-aware draws (distance-only patches when the refresh orchestrator allows). Regenerate after editing `.templ` files: `./scripts/generate-hudui.sh`.
+**HUD UI layer** (`pi/internal/hudui`, ADR 0010–0011): [templ](https://templ.guide) screen components, integer flex layout helpers, and `hud.RenderEngine` for tier-aware draws (distance-only patches when the refresh orchestrator allows). Regenerate after editing `.templ` files: `./scripts/generate-hudui.sh`.
 
 HTTP injector (also used by `mock-nav`):
 
@@ -188,17 +189,38 @@ Screens: **Nav** → **Media** → **Status**.
 
 Open [`android/`](android/) in Android Studio, sync Gradle, side-load on a phone (or emulator).
 
-1. Install **[OsmAnd](https://play.google.com/store/apps/details?id=net.osmand)** (free) or OsmAnd+ — preferred nav source via typed AIDL (`distance` + `turnType`). Longer-term: OsmAnd Full Library on Android; MapKit on iOS ([ADR 0006](docs/adr/0006-engine-agnostic-nav-android-osmand-ios-mapkit.md)).
-2. Grant **notification access** (still required for media sessions, and as Maps fallback).
-3. Start navigation in OsmAnd (motorcycle profile works well). Google Maps still works as a fallback scrape if OsmAnd is not bound / not navigating.
-4. Tap **Start HUD link** — binds OsmAnd AIDL if present, scans for BLE device **MotoHUD**.
-5. Keep the foreground notification running while riding.
+**Delivery model** ([ADR 0006](docs/adr/0006-engine-agnostic-nav-android-osmand-ios-mapkit.md)):
 
-If using Maps and fields are empty, disable Maps **Live Updates** / **Live info** notification categories.
+| Piece | Size (approx) | Nav |
+|-------|----------------|-----|
+| Base APK | ~6.5 MB | External [OsmAnd](https://play.google.com/store/apps/details?id=net.osmand) via AIDL + Maps scrape fallback |
+| On-demand `:osmand` module | ~215 MB uncompressed (arm64-only, mini basemap stripped); Play compresses further | OsmAnd Full Library — lanes, then-next, ETA |
+| Full debug `.aab` (base+module) | ~100 MB | both modules packaged; Play still delivers base first |
+| Region maps | downloaded in OsmAnd UI | not bundled |
+
+```bash
+# base APK (AIDL)
+gradle :app:installDebug
+
+# Play / local module testing — build an App Bundle, then:
+gradle :app:bundleDebug
+# bundletool build-apks --bundle=app/build/outputs/bundle/debug/app-debug.aab \
+#   --output=/tmp/motohud.apks --local-testing
+# bundletool install-apks --apks=/tmp/motohud.apks
+```
+
+1. Install **OsmAnd** for the default AIDL path (or skip if you only use Maps scrape).
+2. Optional: tap **Download rich OsmAnd nav** → restart when prompted → **Open OsmAnd map** → download your region → navigate (lanes on the HUD).
+3. Grant **notification access** (media + Maps/OsmAnd enrichment).
+4. Tap **Start HUD link** — starts the nav engine, scans for BLE **MotoHUD**.
+
+Size knobs: arm64-only natives, Play Feature Delivery on-demand module, `World_basemap_mini.obf` stripped (maps stay dynamic), AAB ABI/language/density splits.
+
+If using Maps and fields are empty, disable Maps **Live Updates** / **Live info** notification categories. iOS will use MapKit later (no self-hosted Valhalla).
 
 **Dev HTTP (no Pi BLE):** enable **Also POST nav/media over HTTP** and set the base URL (emulator → host is `http://10.0.2.2:8787`). Run `motohud -host png -http :8787` on the PC. BLE scan still runs; HTTP posts happen whenever nav/media update. See [`protocol/README.md`](protocol/README.md).
 
-Unit tests: `ManeuverParser` — from Android Studio or CI (`gradle :app:testDebugUnitTest`).
+Unit tests: `gradle :app:testDebugUnitTest`.
 
 ## CI
 

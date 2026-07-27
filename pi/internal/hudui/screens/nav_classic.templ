@@ -3,13 +3,14 @@ package screens
 import "strconv"
 
 // NavClassicBody is active nav: maneuver glyph, hero distance, road lines, optional ETA, ribbon.
-templ NavClassicBody(glyphY int, maneuverPaths, dist string, distBaseline, mw int, roadHTML, etaHTML string, ribbonTop int, ribbonInner string) {
+templ NavClassicBody(glyphY int, maneuverPaths, dist string, distBaseline, mw int, roadHTML, etaHTML, laneHTML string, ribbonTop int, ribbonInner string) {
 	<g id="maneuver" transform={ "translate(-2," + strconv.Itoa(glyphY) + ")" } fill="#000" stroke="#000" stroke-width="3" stroke-linecap="square" stroke-linejoin="miter">
 		@templ.Raw(maneuverPaths)
 	</g>
 	<text id="distance" data-pixel="16x32" x={ strconv.Itoa(mw) } y={ strconv.Itoa(distBaseline) } text-anchor="end" font-size="32" fill="#000">{ dist }</text>
 	@templ.Raw(roadHTML)
 	@templ.Raw(etaHTML)
+	@templ.Raw(laneHTML)
 	<g id="ribbon" transform={ "translate(0," + strconv.Itoa(ribbonTop) + ")" }>
 		@templ.Raw(ribbonInner)
 	</g>

@@ -34,6 +34,8 @@ type NavSVGDeps struct {
 	RoadBlockH    func(lineCount int) int
 	HasMinimap    func(protocol.NavMessage) bool
 	MinimapSVG    func(mm *protocol.MinimapMessage, w, h int) string
+	HasLanes      func(protocol.NavMessage) bool
+	LaneStripSVG  func(lanes []protocol.LaneInfo, maxW int) string
 }
 
 // Keys builds change keys from protocol state (layout-agnostic).

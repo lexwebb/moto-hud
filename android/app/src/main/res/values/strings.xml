@@ -1,10 +1,21 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="app_name">Moto HUD</string>
+    <!-- Required in base resources for Play Feature Delivery module title -->
+    <string name="osmand_module_title">OsmAnd rich navigation</string>
     <string name="notification_access">Grant notification access</string>
+    <string name="open_osmand_map">Open OsmAnd map</string>
     <string name="start_hud">Start HUD link</string>
     <string name="stop_hud">Stop HUD link</string>
-    <string name="maps_tip">Nav sources: OsmAnd (preferred, typed AIDL) or Google Maps notifications (fallback). Install free OsmAnd for best results. If Maps fields are empty, disable Live Updates / Live info notification categories, then restart navigation.</string>
+    <string name="rich_nav_download">Download rich OsmAnd nav (~150 MB)</string>
+    <string name="rich_nav_progress">Downloading rich nav… %1$d%%</string>
+    <string name="rich_nav_installing">Installing rich nav…</string>
+    <string name="rich_nav_ready">Rich OsmAnd nav ready</string>
+    <string name="rich_nav_restart">Restart to enable rich nav</string>
+    <string name="rich_nav_restart_hint">Restart the app to enable lanes / then-next</string>
+    <string name="rich_nav_failed">Rich nav download failed (code %1$d). Sideload: use the App Bundle with bundletool --local-testing.</string>
+    <string name="rich_nav_map_unavailable">OsmAnd map unavailable — install rich nav and restart</string>
+    <string name="maps_tip">Default: external OsmAnd via AIDL (or Maps notifications). Optional: download the on-demand OsmAnd module for in-app lanes / then-next. Region maps still download inside OsmAnd. If Maps fields are empty, disable Live Updates / Live info, then restart navigation.</string>
     <string name="http_section">Dev HTTP injector</string>
     <string name="http_enable">Also POST nav/media over HTTP</string>
     <string name="http_url_hint">http://10.0.2.2:8787</string>

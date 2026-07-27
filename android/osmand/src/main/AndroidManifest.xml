@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:dist="http://schemas.android.com/apk/distribution">
+
+    <!--
+      On-demand from Play; fused into universal APKs for sideload / local testing.
+      Base APK stays ~AIDL-sized until the user downloads this module.
+    -->
+    <dist:module
+        dist:instant="false"
+        dist:title="@string/osmand_module_title">
+        <dist:delivery>
+            <dist:on-demand />
+        </dist:delivery>
+        <dist:fusing dist:include="true" />
+    </dist:module>
+
+    <application android:hasCode="true" />
+</manifest>

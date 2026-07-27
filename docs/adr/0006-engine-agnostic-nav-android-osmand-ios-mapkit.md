@@ -20,3 +20,4 @@ The BLE/`nav` JSON schema is **engine-agnostic**. Platform companions fill it fr
 - iOS will lag Android on lanes, motorcycle profiles, and offline routing; the Pi must tolerate missing optional fields.
 - Do not put OsmAnd `TurnType` ints or MapKit types on the wire — map to protocol `maneuver` / `lanes` in the companion.
 - Near-term Android work can deepen AIDL then move to Full Library without changing the Pi contract.
+- Full Library ships as an on-demand Play Feature Delivery module (see ADR 0009) so the base install stays AIDL-sized.

@@ -106,6 +106,10 @@ func planNavLive(in Input) (plan.ScreenPlan, error) {
 	if eta != "" {
 		b.WriteString(deps.TextSVG("eta", "8x16", rightX, etaTop+body.Metrics.Ascent, "start", eta))
 	}
+	if deps.HasLanes != nil && deps.HasLanes(nav) && deps.LaneStripSVG != nil {
+		laneY := contentBot - laneStripH - 2
+		fmt.Fprintf(&b, `<g transform="translate(%d,%d)">%s</g>`, rightX, laneY, deps.LaneStripSVG(nav.Lanes, rightW))
+	}
 
 	navCopy := nav
 	layers := []plan.Layer{

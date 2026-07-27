@@ -9,22 +9,41 @@ class NavNotificationListener : NotificationListenerService() {
 
     override fun onNotificationPosted(sbn: StatusBarNotification?) {
         sbn ?: return
-        if (sbn.packageName != MAPS_PACKAGE && sbn.packageName != MAPS_PACKAGE_GO) return
-        val nav = parse(sbn.notification) ?: return
-        Log.d(TAG, "maps nav update: $nav")
-        HudBus.publishNav(nav, NavSource.MAPS)
+        when (sbn.packageName) {
+            in OSMAND_PACKAGES -> handleOsmand(sbn.notification)
+            MAPS_PACKAGE, MAPS_PACKAGE_GO -> handleMaps(sbn.notification)
+        }
     }
 
     override fun onNotificationRemoved(sbn: StatusBarNotification?) {
         sbn ?: return
-        if (sbn.packageName != MAPS_PACKAGE && sbn.packageName != MAPS_PACKAGE_GO) return
-        HudBus.publishNav(
-            NavState(active = false, instruction = "Navigation ended"),
-            NavSource.MAPS,
-        )
+        when (sbn.packageName) {
+            MAPS_PACKAGE, MAPS_PACKAGE_GO -> {
+                HudBus.publishNav(
+                    NavState(active = false, instruction = "Navigation ended"),
+                    NavSource.MAPS,
+                )
+            }
+            in OSMAND_PACKAGES -> {
+                // OsmAnd AIDL owns active/inactive; notification remove is not authoritative.
+            }
+        }
     }
 
-    private fun parse(n: Notification): NavState? {
+    private fun handleMaps(n: Notification) {
+        val nav = parseCommon(n) ?: return
+        Log.d(TAG, "maps nav update: $nav")
+        HudBus.publishNav(nav, NavSource.MAPS)
+    }
+
+    private fun handleOsmand(n: Notification) {
+        val parsed = parseCommon(n) ?: return
+        // Soft enrichment while AIDL supplies typed turns.
+        Log.d(TAG, "osmand notif enrich: $parsed")
+        HudBus.publishNav(parsed, NavSource.OSMAND_ENRICH)
+    }
+
+    private fun parseCommon(n: Notification): NavState? {
         val extras = n.extras ?: return null
         val title = extras.getCharSequence(Notification.EXTRA_TITLE)?.toString().orEmpty()
         val text = extras.getCharSequence(Notification.EXTRA_TEXT)?.toString().orEmpty()
@@ -58,7 +77,7 @@ class NavNotificationListener : NotificationListenerService() {
             distanceM = ManeuverParser.parseDistanceMeters(distanceCandidate.ifBlank { blob }),
             distanceText = distanceCandidate.ifBlank { "" },
             road = road,
-            etaMin = 0,
+            etaMin = ManeuverParser.parseEtaMinutes(blob),
             maneuver = ManeuverParser.fromText(instruction),
         )
     }
@@ -67,5 +86,6 @@ class NavNotificationListener : NotificationListenerService() {
         private const val TAG = "NavListener"
         const val MAPS_PACKAGE = "com.google.android.apps.maps"
         const val MAPS_PACKAGE_GO = "com.google.android.apps.mapslite"
+        val OSMAND_PACKAGES = setOf("net.osmand", "net.osmand.plus")
     }
 }

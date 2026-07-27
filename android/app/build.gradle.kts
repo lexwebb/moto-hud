@@ -13,6 +13,9 @@ android {
         targetSdk = 35
         versionCode = 1
         versionName = "0.1.0"
+        multiDexEnabled = true
+        // Play Feature Delivery requires the on-demand module title in the *base* resource table.
+        resValue("string", "osmand_module_title", "OsmAnd rich navigation")
     }
 
     buildTypes {
@@ -23,12 +26,45 @@ android {
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_17
         targetCompatibility = JavaVersion.VERSION_17
+        isCoreLibraryDesugaringEnabled = true
     }
     kotlinOptions {
         jvmTarget = "17"
     }
     buildFeatures {
         viewBinding = true
+        buildConfig = true
+    }
+
+    // On-demand OsmAnd Full Library (lanes / then-next). Base APK stays small.
+    dynamicFeatures += setOf(":osmand")
+
+    bundle {
+        abi {
+            enableSplit = true
+        }
+        language {
+            enableSplit = true
+        }
+        density {
+            enableSplit = true
+        }
+    }
+
+    packaging {
+        resources {
+            pickFirsts += listOf(
+                "lib/armeabi-v7a/libc++_shared.so",
+                "lib/arm64-v8a/libc++_shared.so",
+                "lib/x86_64/libc++_shared.so",
+                "lib/x86/libc++_shared.so",
+            )
+            // Avoid AAB clashes with the :osmand feature module.
+            excludes += listOf(
+                "META-INF/androidx*.version",
+                "META-INF/*.version",
+            )
+        }
     }
 }
 
@@ -37,10 +73,17 @@ dependencies {
     implementation("androidx.appcompat:appcompat:1.7.0")
     implementation("com.google.android.material:material:1.12.0")
     implementation("androidx.constraintlayout:constraintlayout:2.2.0")
+    implementation("androidx.multidex:multidex:2.0.1")
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.9.0")
 
-    // Typed OsmAnd AIDL (registerForNavigationUpdates, ADirectionInfo, …)
+    // Play Feature Delivery — download `:osmand` on demand.
+    implementation("com.google.android.play:feature-delivery:2.1.0")
+    implementation("com.google.android.play:feature-delivery-ktx:2.1.0")
+
+    // Typed OsmAnd AIDL (external OsmAnd app) — always in base.
     implementation("net.osmand:android-aidl-lib:5.3@aar")
+
+    coreLibraryDesugaring("com.android.tools:desugar_jdk_libs:2.1.3")
 
     testImplementation("junit:junit:4.13.2")
     testImplementation("org.json:json:20240303")

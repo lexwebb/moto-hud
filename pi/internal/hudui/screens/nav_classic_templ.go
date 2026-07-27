@@ -11,7 +11,7 @@ import templruntime "github.com/a-h/templ/runtime"
 import "strconv"
 
 // NavClassicBody is active nav: maneuver glyph, hero distance, road lines, optional ETA, ribbon.
-func NavClassicBody(glyphY int, maneuverPaths, dist string, distBaseline, mw int, roadHTML, etaHTML string, ribbonTop int, ribbonInner string) templ.Component {
+func NavClassicBody(glyphY int, maneuverPaths, dist string, distBaseline, mw int, roadHTML, etaHTML, laneHTML string, ribbonTop int, ribbonInner string) templ.Component {
 	return templruntime.GeneratedTemplate(func(templ_7745c5c3_Input templruntime.GeneratedComponentInput) (templ_7745c5c3_Err error) {
 		templ_7745c5c3_W, ctx := templ_7745c5c3_Input.Writer, templ_7745c5c3_Input.Context
 		if templ_7745c5c3_CtxErr := ctx.Err(); templ_7745c5c3_CtxErr != nil {
@@ -104,6 +104,10 @@ func NavClassicBody(glyphY int, maneuverPaths, dist string, distBaseline, mw int
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
+		templ_7745c5c3_Err = templ.Raw(laneHTML).Render(ctx, templ_7745c5c3_Buffer)
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
 		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 7, "<g id=\"ribbon\" transform=\"")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
@@ -111,7 +115,7 @@ func NavClassicBody(glyphY int, maneuverPaths, dist string, distBaseline, mw int
 		var templ_7745c5c3_Var6 string
 		templ_7745c5c3_Var6, templ_7745c5c3_Err = templ.ResolveAttributeValue("translate(0," + strconv.Itoa(ribbonTop) + ")")
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `screens/nav_classic.templ`, Line: 13, Col: 74}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `screens/nav_classic.templ`, Line: 14, Col: 74}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var6)
 		if templ_7745c5c3_Err != nil {

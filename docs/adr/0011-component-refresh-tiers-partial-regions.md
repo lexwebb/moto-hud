@@ -80,7 +80,7 @@ The orchestrator **does not** infer dirtiness from SVG or raster diffs in v1; **
 
 ## Consequences
 
-- ADR 0009 layout layer must support **fixed slots** for PartialOK components; distance readout is the first candidate.
+- ADR 0010 layout layer must support **fixed slots** for PartialOK components; distance readout is the first candidate.
 - `RefreshGate` may shrink to coarse “any nav tick worth considering” while orchestrator handles Fast vs Static within an allowed redraw.
 - Tests: golden full frames plus unit tests on orchestrator decisions (dirty set → full vs partial).
 - Emulator gains optional “highlight dirty rect” mode for tuning `maxPartialPixels`.
@@ -89,4 +89,4 @@ The orchestrator **does not** infer dirtiness from SVG or raster diffs in v1; **
 
 - [0004](0004-waveshare-partial-refresh.md) — partial vs full **waveform** cadence
 - [0005](0005-eink-refresh-gating.md) — when updates are considered at all
-- [0009](0009-hud-ui-templ-component-layout.md) — templ components and layout
+- [0010](0010-hud-ui-templ-component-layout.md) — templ components and layout

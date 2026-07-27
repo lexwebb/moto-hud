@@ -3,6 +3,7 @@ package compose
 import (
 	"bytes"
 	"context"
+	"fmt"
 	"image"
 
 	"moto-hud/pi/internal/hudui/screens"
@@ -14,12 +15,15 @@ import (
 type navClassicLayout struct {
 	mw, mainX                                                                 int
 	glyphY, heroTop, roadTop, etaTop, ribbonTop, ribbonH, distBaseline, etaH int
-	dist, eta                                                                  string
+	stackBottom                                                                int
+	dist, eta, laneHTML                                                        string
 	roadLines                                                                  []string
 	maneuverSlot, distanceSlot, roadSlot, etaSlot, ribbonSlot                  image.Rectangle
 	ribbonInner                                                                string
 	maneuver                                                                   protocol.Maneuver
 }
+
+const laneStripH = 14
 
 func layoutNavClassic(nav protocol.NavMessage, deps NavSVGDeps) navClassicLayout {
 	mw := token.MainWidth()
@@ -130,11 +134,20 @@ func layoutNavClassic(nav protocol.NavMessage, deps NavSVGDeps) navClassicLayout
 		ribbonInner = deps.RibbonSVG(nav, mw, ribbonH)
 	}
 
+	laneHTML := ""
+	if deps.HasLanes != nil && deps.HasLanes(nav) && deps.LaneStripSVG != nil {
+		laneY := ribbonTop - laneStripH - token.GapSm - 4
+		if laneY < y {
+			laneY = y
+		}
+		laneHTML = fmt.Sprintf(`<g transform="translate(0,%d)">%s</g>`, laneY, deps.LaneStripSVG(nav.Lanes, mw))
+	}
+
 	return navClassicLayout{
 		mw: mw, mainX: mainX,
 		glyphY: glyphY, heroTop: heroTop, roadTop: roadTop, etaTop: etaTop,
 		ribbonTop: ribbonTop, ribbonH: ribbonH, distBaseline: distBaseline, etaH: etaH,
-		dist: dist, eta: eta, roadLines: roadLines,
+		stackBottom: y, dist: dist, eta: eta, laneHTML: laneHTML, roadLines: roadLines,
 		maneuverSlot: maneuverSlot, distanceSlot: distanceSlot, roadSlot: roadSlot,
 		etaSlot: etaSlot, ribbonSlot: ribbonSlot,
 		ribbonInner: ribbonInner, maneuver: nav.Maneuver,
@@ -156,7 +169,7 @@ func NavClassicBodySVG(l navClassicLayout, deps NavSVGDeps) (string, error) {
 	var buf bytes.Buffer
 	err := screens.NavClassicBody(
 		l.glyphY, paths, l.dist, l.distBaseline, l.mw,
-		roadHTML, etaHTML, l.ribbonTop, l.ribbonInner,
+		roadHTML, etaHTML, l.laneHTML, l.ribbonTop, l.ribbonInner,
 	).Render(context.Background(), &buf)
 	if err != nil {
 		return "", err
