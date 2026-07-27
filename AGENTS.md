@@ -12,7 +12,7 @@ Standard build/run/test commands live in `README.md` and `.github/workflows/ci.y
 
 ### Environment notes (non-obvious)
 
-- **Go 1.25 is required** and is installed at `/usr/local/go` with `go`/`gofmt` symlinked into `/usr/local/bin` (which precedes the pre-existing system Go 1.22 on `PATH`). This persists in the VM snapshot; the update script does not reinstall it. If `go version` ever reports < 1.25 in a fresh pod, re-point those symlinks.
+- **Go 1.25 is required** (`pi/go.mod`). Cloud agents get it from `.cursor/Dockerfile` (referenced by `.cursor/environment.json`); the update/`install` script only refreshes modules (`go mod download` + `npm install`), it does not install the toolchain. If `go version` reports < 1.25, rebuild/repair the environment from that Dockerfile rather than patching the running VM.
 - The WASM emulator artifact (`web/emulator/motohud.wasm`, ~15 MB) is gitignored and must be built before the browser emulator will work. Build it with `cd site && npm run build:wasm` (or `./scripts/build-wasm.sh`); it requires Go. It is not part of `npm install`, so rebuild after Go/core changes.
 - `scripts/build-wasm.sh` and `scripts/emu.sh` prepend `/opt/homebrew/bin` to `PATH` (macOS-oriented) but still work on Linux since the real `go` is found later on `PATH`.
 
