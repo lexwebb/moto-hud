@@ -14,7 +14,7 @@ import (
 )
 
 // NavClassicBody is active nav: maneuver glyph, hero distance, road lines, optional ETA, ribbon.
-func NavClassicBody(glyphY int, maneuverPaths, dist string, distBaseline, mw int, roadLines []string, roadBaselines []int, eta string, etaBaseline int, showEta bool, laneHTML string, ribbonTop int, ribbonInner string) templ.Component {
+func NavClassicBody(dist string, distBaseline, mw int, roadLines []string, roadBaselines []int, eta string, etaBaseline int, showEta bool, maneuver, lanes, ribbon templ.Component, ribbonTop int) templ.Component {
 	return templruntime.GeneratedTemplate(func(templ_7745c5c3_Input templruntime.GeneratedComponentInput) (templ_7745c5c3_Err error) {
 		templ_7745c5c3_W, ctx := templ_7745c5c3_Input.Writer, templ_7745c5c3_Input.Context
 		if templ_7745c5c3_CtxErr := ctx.Err(); templ_7745c5c3_CtxErr != nil {
@@ -35,7 +35,7 @@ func NavClassicBody(glyphY int, maneuverPaths, dist string, distBaseline, mw int
 			templ_7745c5c3_Var1 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		templ_7745c5c3_Err = scenetempl.Maneuver(glyphY, maneuverPaths).Render(ctx, templ_7745c5c3_Buffer)
+		templ_7745c5c3_Err = maneuver.Render(ctx, templ_7745c5c3_Buffer)
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -55,11 +55,9 @@ func NavClassicBody(glyphY int, maneuverPaths, dist string, distBaseline, mw int
 				return templ_7745c5c3_Err
 			}
 		}
-		if laneHTML != "" {
-			templ_7745c5c3_Err = scenetempl.Raw(laneHTML).Render(ctx, templ_7745c5c3_Buffer)
-			if templ_7745c5c3_Err != nil {
-				return templ_7745c5c3_Err
-			}
+		templ_7745c5c3_Err = lanes.Render(ctx, templ_7745c5c3_Buffer)
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
 		}
 		templ_7745c5c3_Var2 := templruntime.GeneratedTemplate(func(templ_7745c5c3_Input templruntime.GeneratedComponentInput) (templ_7745c5c3_Err error) {
 			templ_7745c5c3_W, ctx := templ_7745c5c3_Input.Writer, templ_7745c5c3_Input.Context
@@ -73,11 +71,9 @@ func NavClassicBody(glyphY int, maneuverPaths, dist string, distBaseline, mw int
 				}()
 			}
 			ctx = templ.InitializeContext(ctx)
-			if ribbonInner != "" {
-				templ_7745c5c3_Err = scenetempl.Raw(ribbonInner).Render(ctx, templ_7745c5c3_Buffer)
-				if templ_7745c5c3_Err != nil {
-					return templ_7745c5c3_Err
-				}
+			templ_7745c5c3_Err = ribbon.Render(ctx, templ_7745c5c3_Buffer)
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
 			}
 			return nil
 		})

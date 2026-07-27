@@ -15,7 +15,7 @@ func ComposeInput(screen Screen, nav protocol.NavMessage, media protocol.MediaMe
 		Media:   media,
 		Linked:  linked,
 		NavSVG:  drawDeps(),
-		LinkSVG: compose.LinkMarkFragment,
+		LinkNodes: compose.LinkMarkNodes,
 	}
 }
 
@@ -32,10 +32,9 @@ func composeScreenKind(s Screen) compose.ScreenKind {
 
 func drawDeps() compose.DrawDeps {
 	return compose.DrawDeps{
-		ManeuverPaths: maneuverPaths,
-		RibbonSVG: func(nav protocol.NavMessage, w, h int) string {
-			pts, turnIdx := ribbonForNav(nav)
-			return roadRibbonSVG(pts, turnIdx, w, h)
+		ManeuverNodes: ManeuverNodes,
+		RibbonNodes: func(nav protocol.NavMessage, w, h int) []scene.Node {
+			return RibbonNodesForNav(nav, w, h)
 		},
 		TextSVG: textSVGFromFaceSize,
 		Fit:     fitFromSceneFace,
@@ -48,11 +47,9 @@ func drawDeps() compose.DrawDeps {
 			return roadBlockHeight(body, lineCount)
 		},
 		HasMinimap: HasMinimap,
-		MinimapSVG: minimapSVG,
+		MinimapNodes: MinimapNodes,
 		HasLanes:   hasLanes,
-		LaneStripSVG: func(lanes []protocol.LaneInfo, maxW int) string {
-			return laneStripSVG(lanes, maxW)
-		},
+		LaneStripNodes: LaneStripNodes,
 	}
 }
 

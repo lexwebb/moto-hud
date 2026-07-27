@@ -2,6 +2,7 @@ package compose
 
 import (
 	"moto-hud/pi/internal/hudui"
+	"moto-hud/pi/internal/hudui/scene"
 	"moto-hud/pi/internal/protocol"
 )
 
@@ -21,7 +22,7 @@ type Input struct {
 	Media  protocol.MediaMessage
 	Linked bool
 	NavSVG DrawDeps // set by hud when building nav plans
-	LinkSVG func(linked bool) string
+	LinkNodes func(linked bool) []scene.Node
 }
 
 // Keys builds change keys from protocol state (layout-agnostic).

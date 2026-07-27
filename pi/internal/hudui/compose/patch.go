@@ -73,12 +73,12 @@ func patchMediaArtistDoc(artist string, w, h int, deps mediaPatchDeps) (scene.Do
 	return doc, nil
 }
 
-func patchLinkDoc(linked bool, w, h int, linkFn func(bool) string) (scene.Document, error) {
+func patchLinkDoc(linked bool, w, h int, linkFn func(bool) []scene.Node) (scene.Document, error) {
 	if linkFn == nil {
-		linkFn = LinkMarkFragment
+		linkFn = LinkMarkNodes
 	}
 	doc := scene.Patch(w, h, func(b *scene.Builder) {
-		b.Raw(linkFn(linked))
+		b.Append(linkFn(linked)...)
 	})
 	return doc, nil
 }

@@ -1,8 +1,9 @@
 package compose
 
 import (
-	"fmt"
 	"image"
+
+	"github.com/a-h/templ"
 
 	"moto-hud/pi/internal/hudui/scene"
 	"moto-hud/pi/internal/hudui/scenetempl"
@@ -16,10 +17,11 @@ type navClassicLayout struct {
 	mw, mainX                                                                 int
 	glyphY, heroTop, roadTop, etaTop, ribbonTop, ribbonH, distBaseline, etaH int
 	stackBottom                                                                int
-	dist, eta, laneHTML                                                        string
+	dist, eta                                                                 string
 	roadLines                                                                  []string
 	maneuverSlot, distanceSlot, roadSlot, etaSlot, ribbonSlot                  image.Rectangle
-	ribbonInner                                                                string
+	ribbonNodes, laneNodes                                                     []scene.Node
+	laneY                                                                      int
 	maneuver                                                                   protocol.Maneuver
 }
 
@@ -129,43 +131,60 @@ func layoutNavClassic(nav protocol.NavMessage, deps DrawDeps) navClassicLayout {
 	etaSlot := image.Rect(mainX, ribbonTop-token.GapLg-16, mainX+mw, ribbonTop)
 	ribbonSlot := image.Rect(mainX, ribbonTop, mainX+mw, contentBot)
 
-	ribbonInner := ""
-	if deps.RibbonSVG != nil {
-		ribbonInner = deps.RibbonSVG(nav, mw, ribbonH)
+	var ribbonNodes []scene.Node
+	if deps.RibbonNodes != nil {
+		ribbonNodes = deps.RibbonNodes(nav, mw, ribbonH)
 	}
 
-	laneHTML := ""
-	if deps.HasLanes != nil && deps.HasLanes(nav) && deps.LaneStripSVG != nil {
-		laneY := ribbonTop - laneStripH - token.GapSm - 4
+	var laneNodes []scene.Node
+	laneY := 0
+	if deps.HasLanes != nil && deps.HasLanes(nav) && deps.LaneStripNodes != nil {
+		laneY = ribbonTop - laneStripH - token.GapSm - 4
 		if laneY < y {
 			laneY = y
 		}
-		laneHTML = fmt.Sprintf(`<g transform="translate(0,%d)">%s</g>`, laneY, deps.LaneStripSVG(nav.Lanes, mw))
+		laneNodes = deps.LaneStripNodes(nav.Lanes, mw)
 	}
 
 	return navClassicLayout{
 		mw: mw, mainX: mainX,
 		glyphY: glyphY, heroTop: heroTop, roadTop: roadTop, etaTop: etaTop,
 		ribbonTop: ribbonTop, ribbonH: ribbonH, distBaseline: distBaseline, etaH: etaH,
-		stackBottom: y, dist: dist, eta: eta, laneHTML: laneHTML, roadLines: roadLines,
+		stackBottom: y, dist: dist, eta: eta, roadLines: roadLines,
 		maneuverSlot: maneuverSlot, distanceSlot: distanceSlot, roadSlot: roadSlot,
 		etaSlot: etaSlot, ribbonSlot: ribbonSlot,
-		ribbonInner: ribbonInner, maneuver: nav.Maneuver,
+		ribbonNodes: ribbonNodes, laneNodes: laneNodes, laneY: laneY, maneuver: nav.Maneuver,
 	}
 }
 
 // navClassicBodyNodes builds the classic nav main column via screens/nav_classic.templ.
 func navClassicBodyNodes(l navClassicLayout, deps DrawDeps) []scene.Node {
-	paths := ""
-	if deps.ManeuverPaths != nil {
-		paths = deps.ManeuverPaths(l.maneuver)
-	}
 	body, _ := pixelfont.Load(pixelfont.Size8x16)
 	etaBaseline := l.etaTop + body.Metrics.Ascent
 	roadBaselines := roadLineBaselines(0, l.roadTop, l.roadLines)
+
+	var maneuverComp templ.Component = templ.NopComponent
+	if deps.ManeuverNodes != nil {
+		if nodes := deps.ManeuverNodes(l.maneuver); len(nodes) > 0 {
+			maneuverComp = scenetempl.ManeuverAt(l.glyphY, nodes)
+		}
+	}
+	var lanesComp templ.Component = templ.NopComponent
+	if len(l.laneNodes) > 0 {
+		lanesComp = scenetempl.Nodes([]scene.Node{sceneGroupAt(0, l.laneY, l.laneNodes)})
+	}
+	var ribbonComp templ.Component = templ.NopComponent
+	if len(l.ribbonNodes) > 0 {
+		ribbonComp = scenetempl.Nodes(l.ribbonNodes)
+	}
+
 	return scenetempl.Render(screens.NavClassicBody(
-		l.glyphY, paths, l.dist, l.distBaseline, l.mw,
+		l.dist, l.distBaseline, l.mw,
 		l.roadLines, roadBaselines, l.eta, etaBaseline, l.etaH > 0,
-		l.laneHTML, l.ribbonTop, l.ribbonInner,
+		maneuverComp, lanesComp, ribbonComp, l.ribbonTop,
 	))
+}
+
+func sceneGroupAt(dx, dy int, children []scene.Node) scene.Group {
+	return scene.Group{DX: dx, DY: dy, Children: children}
 }

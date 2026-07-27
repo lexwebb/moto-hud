@@ -6,8 +6,8 @@ import (
 )
 
 // NavClassicBody is active nav: maneuver glyph, hero distance, road lines, optional ETA, ribbon.
-templ NavClassicBody(glyphY int, maneuverPaths, dist string, distBaseline, mw int, roadLines []string, roadBaselines []int, eta string, etaBaseline int, showEta bool, laneHTML string, ribbonTop int, ribbonInner string) {
-	@scenetempl.Maneuver(glyphY, maneuverPaths)
+templ NavClassicBody(dist string, distBaseline, mw int, roadLines []string, roadBaselines []int, eta string, etaBaseline int, showEta bool, maneuver, lanes, ribbon templ.Component, ribbonTop int) {
+	@maneuver
 	@scenetempl.Text("distance", scene.Face16x32, mw, distBaseline, "end", dist)
 	for i, ln := range roadLines {
 		@scenetempl.Text("road", scene.Face8x16, 0, roadBaselines[i], "start", ln)
@@ -15,12 +15,8 @@ templ NavClassicBody(glyphY int, maneuverPaths, dist string, distBaseline, mw in
 	if showEta {
 		@scenetempl.Text("eta", scene.Face8x16, 0, etaBaseline, "start", eta)
 	}
-	if laneHTML != "" {
-		@scenetempl.Raw(laneHTML)
-	}
+	@lanes
 	@scenetempl.Group("ribbon", 0, ribbonTop) {
-		if ribbonInner != "" {
-			@scenetempl.Raw(ribbonInner)
-		}
+		@ribbon
 	}
 }

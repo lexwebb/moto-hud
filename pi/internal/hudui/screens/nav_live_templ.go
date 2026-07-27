@@ -14,7 +14,7 @@ import (
 )
 
 // NavLiveBody is live nav: left ribbon/minimap column and right stacked distance/road/ETA.
-func NavLiveBody(contentTop int, leftDraw string, dist string, distBaseline, mw, rightX int, roadLines []string, roadBaselines []int, eta string, etaBaseline int, showEta bool, laneHTML string) templ.Component {
+func NavLiveBody(leftCol, lanes templ.Component, dist string, distBaseline, mw, rightX int, roadLines []string, roadBaselines []int, eta string, etaBaseline int, showEta bool) templ.Component {
 	return templruntime.GeneratedTemplate(func(templ_7745c5c3_Input templruntime.GeneratedComponentInput) (templ_7745c5c3_Err error) {
 		templ_7745c5c3_W, ctx := templ_7745c5c3_Input.Writer, templ_7745c5c3_Input.Context
 		if templ_7745c5c3_CtxErr := ctx.Err(); templ_7745c5c3_CtxErr != nil {
@@ -35,29 +35,9 @@ func NavLiveBody(contentTop int, leftDraw string, dist string, distBaseline, mw,
 			templ_7745c5c3_Var1 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		if leftDraw != "" {
-			templ_7745c5c3_Var2 := templruntime.GeneratedTemplate(func(templ_7745c5c3_Input templruntime.GeneratedComponentInput) (templ_7745c5c3_Err error) {
-				templ_7745c5c3_W, ctx := templ_7745c5c3_Input.Writer, templ_7745c5c3_Input.Context
-				templ_7745c5c3_Buffer, templ_7745c5c3_IsBuffer := templruntime.GetBuffer(templ_7745c5c3_W)
-				if !templ_7745c5c3_IsBuffer {
-					defer func() {
-						templ_7745c5c3_BufErr := templruntime.ReleaseBuffer(templ_7745c5c3_Buffer)
-						if templ_7745c5c3_Err == nil {
-							templ_7745c5c3_Err = templ_7745c5c3_BufErr
-						}
-					}()
-				}
-				ctx = templ.InitializeContext(ctx)
-				templ_7745c5c3_Err = scenetempl.Raw(leftDraw).Render(ctx, templ_7745c5c3_Buffer)
-				if templ_7745c5c3_Err != nil {
-					return templ_7745c5c3_Err
-				}
-				return nil
-			})
-			templ_7745c5c3_Err = scenetempl.Group("ribbon", 0, contentTop).Render(templ.WithChildren(ctx, templ_7745c5c3_Var2), templ_7745c5c3_Buffer)
-			if templ_7745c5c3_Err != nil {
-				return templ_7745c5c3_Err
-			}
+		templ_7745c5c3_Err = leftCol.Render(ctx, templ_7745c5c3_Buffer)
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
 		}
 		templ_7745c5c3_Err = scenetempl.Text("distance", scene.Face16x32, mw, distBaseline, "end", dist).Render(ctx, templ_7745c5c3_Buffer)
 		if templ_7745c5c3_Err != nil {
@@ -75,11 +55,9 @@ func NavLiveBody(contentTop int, leftDraw string, dist string, distBaseline, mw,
 				return templ_7745c5c3_Err
 			}
 		}
-		if laneHTML != "" {
-			templ_7745c5c3_Err = scenetempl.Raw(laneHTML).Render(ctx, templ_7745c5c3_Buffer)
-			if templ_7745c5c3_Err != nil {
-				return templ_7745c5c3_Err
-			}
+		templ_7745c5c3_Err = lanes.Render(ctx, templ_7745c5c3_Buffer)
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
 		}
 		return nil
 	})

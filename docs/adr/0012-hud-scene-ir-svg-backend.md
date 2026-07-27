@@ -16,7 +16,7 @@ Compose, refresh plans, and patches must not build SVG tags or depend on `<text>
 
 ## Consequences
 
-- Rename `NavSVGDeps` toward **`DrawDeps`** (fit/wrap/maneuver/ribbon helpers); text in patches uses `scene.Builder`, not `TextSVG`.
+- Rename `NavSVGDeps` toward **`DrawDeps`** (fit/wrap/maneuver/ribbon/minimap/lane helpers); patches and nav chrome use `scene.Builder` / `DrawDeps.*Nodes`.
 - Engine `PatchLayer` serializes `scene.Document` only inside `render/svg`.
-- Migration order: patches → chrome/body on scene; bodies and chrome frame authored in templ → `scenetempl.Render`; remaining **RawSVG** for ribbon, minimap, lanes, maneuver paths until native scene vector nodes.
+- Compose no longer uses **RawSVG** for nav chrome or link; keep the type only for legacy/tests until removed.
 - Related: [0010](0010-hud-ui-templ-component-layout.md), [0011](0011-component-refresh-tiers-partial-regions.md).

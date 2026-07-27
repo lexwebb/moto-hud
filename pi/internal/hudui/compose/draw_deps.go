@@ -5,19 +5,18 @@ import (
 	"moto-hud/pi/internal/protocol"
 )
 
-// DrawDeps supplies layout helpers for compose (ADR 0012). Vector fragments not yet on scene use RawSVG call sites.
+// DrawDeps supplies layout helpers and vector draw funcs for compose (ADR 0012).
 type DrawDeps struct {
-	ManeuverPaths func(protocol.Maneuver) string
-	RibbonSVG     func(nav protocol.NavMessage, w, h int) string
+	ManeuverNodes func(protocol.Maneuver) []scene.Node
+	RibbonNodes   func(nav protocol.NavMessage, w, h int) []scene.Node
 	Fit           func(face scene.Face, s string, maxW int) string
 	WrapRoad      func(s string, maxW, maxLines int) []string
 	RoadBlockH    func(lineCount int) int
 	HasMinimap    func(protocol.NavMessage) bool
-	MinimapSVG    func(mm *protocol.MinimapMessage, w, h int) string
+	MinimapNodes  func(mm *protocol.MinimapMessage, w, h int) []scene.Node
 	HasLanes      func(protocol.NavMessage) bool
-	LaneStripSVG  func(lanes []protocol.LaneInfo, maxW int) string
-	// TextSVG remains for DrawDeps escape hatch (ribbon/minimap vector helpers in hud).
-	TextSVG func(id string, faceSize string, x, baseline int, anchor, s string) string
+	LaneStripNodes func(lanes []protocol.LaneInfo, maxW int) []scene.Node
+	TextSVG       func(id string, faceSize string, x, baseline int, anchor, s string) string
 }
 
 // NavSVGDeps is deprecated; use DrawDeps.

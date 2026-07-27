@@ -48,8 +48,10 @@ func TestNavClassicPlanLayers(t *testing.T) {
 
 func stubDrawDeps() compose.DrawDeps {
 	return compose.DrawDeps{
-		ManeuverPaths: func(protocol.Maneuver) string { return `<path d="M0,0"/>` },
-		RibbonSVG:     func(protocol.NavMessage, int, int) string { return "" },
+		ManeuverNodes: func(protocol.Maneuver) []scene.Node {
+			return []scene.Node{scene.Path{D: "M0,0", Filled: false, StrokeWidth: 1}}
+		},
+		RibbonNodes: func(protocol.NavMessage, int, int) []scene.Node { return nil },
 		TextSVG: func(id, faceSize string, x, baseline int, anchor, s string) string {
 			return "<text id=\"" + id + "\">" + s + "</text>"
 		},

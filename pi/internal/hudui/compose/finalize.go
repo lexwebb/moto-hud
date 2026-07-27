@@ -21,9 +21,9 @@ func linkSlot() image.Rectangle {
 func linkLayer(in Input) plan.Layer {
 	slot := linkSlot()
 	linked := in.Linked
-	linkFn := in.LinkSVG
+	linkFn := in.LinkNodes
 	if linkFn == nil {
-		linkFn = LinkMarkFragment
+		linkFn = LinkMarkNodes
 	}
 	return plan.Layer{
 		ID:   hudui.NodeLink,

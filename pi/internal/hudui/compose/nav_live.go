@@ -5,6 +5,8 @@ import (
 	"image"
 	"strings"
 
+	"github.com/a-h/templ"
+
 	"moto-hud/pi/internal/hudui"
 	"moto-hud/pi/internal/hudui/plan"
 	"moto-hud/pi/internal/hudui/scene"
@@ -83,14 +85,28 @@ func planNavLive(in Input) (plan.ScreenPlan, error) {
 		}
 	}
 
-	leftDraw := ""
-	if deps.HasMinimap != nil && deps.HasMinimap(nav) && deps.MinimapSVG != nil {
-		leftDraw = deps.MinimapSVG(nav.Minimap, leftW, ribbonH)
-	} else if deps.RibbonSVG != nil {
-		leftDraw = deps.RibbonSVG(nav, leftW, ribbonH)
+	var leftNodes []scene.Node
+	if deps.HasMinimap != nil && deps.HasMinimap(nav) && deps.MinimapNodes != nil {
+		leftNodes = deps.MinimapNodes(nav.Minimap, leftW, ribbonH)
+	} else if deps.RibbonNodes != nil {
+		leftNodes = deps.RibbonNodes(nav, leftW, ribbonH)
+	}
+	var leftCol templ.Component = templ.NopComponent
+	if len(leftNodes) > 0 {
+		leftCol = scenetempl.Nodes([]scene.Node{scene.Group{ID: "ribbon", DY: contentTop, Children: leftNodes}})
 	}
 
-	ribbonSlot := image.Rect(mainX, contentTop, mainX+leftW, contentTop+ribbonH)
+	var lanesCol templ.Component = templ.NopComponent
+	if deps.HasLanes != nil && deps.HasLanes(nav) && deps.LaneStripNodes != nil {
+		laneY := contentBot - laneStripH - 2
+		lanesCol = scenetempl.Nodes([]scene.Node{scene.Group{DX: rightX, DY: laneY, Children: deps.LaneStripNodes(nav.Lanes, rightW)}})
+	}
+	roadBaselines := roadLineBaselines(rightX, roadTop, roadLines)
+	etaBaseline := etaTop + body.Metrics.Ascent
+	bodyNodes := scenetempl.Render(screens.NavLiveBody(
+		leftCol, lanesCol, dist, distBaseline, mw, rightX,
+		roadLines, roadBaselines, eta, etaBaseline, eta != "",
+	))
 	distanceSlot := image.Rect(mainX+rightX, distTop, mainX+mw, distTop+hero.Metrics.CellH)
 	roadBottom := contentBot
 	if eta != "" {
@@ -102,18 +118,7 @@ func planNavLive(in Input) (plan.ScreenPlan, error) {
 		etaSlot = image.Rect(mainX+rightX, etaTop, mainX+mw, etaTop+body.Metrics.CellH)
 	}
 
-	laneHTML := ""
-	if deps.HasLanes != nil && deps.HasLanes(nav) && deps.LaneStripSVG != nil {
-		laneY := contentBot - laneStripH - 2
-		laneHTML = fmt.Sprintf(`<g transform="translate(%d,%d)">%s</g>`, rightX, laneY, deps.LaneStripSVG(nav.Lanes, rightW))
-	}
-	roadBaselines := roadLineBaselines(rightX, roadTop, roadLines)
-	etaBaseline := etaTop + body.Metrics.Ascent
-	bodyNodes := scenetempl.Render(screens.NavLiveBody(
-		contentTop, leftDraw, dist, distBaseline, mw, rightX,
-		roadLines, roadBaselines, eta, etaBaseline, eta != "", laneHTML,
-	))
-
+	ribbonSlot := image.Rect(mainX, contentTop, mainX+leftW, contentTop+ribbonH)
 	navCopy := nav
 	layers := []plan.Layer{
 		{ID: hudui.NodeRibbon, Tier: hudui.TierSlow, Key: k.Ribbon(nav), Slot: ribbonSlot},

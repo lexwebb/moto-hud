@@ -82,7 +82,15 @@ func Group(id string, dx, dy int) templ.Component {
 	})
 }
 
-// Maneuver emits the nav glyph group when paths markup is non-empty.
+// ManeuverAt wraps maneuver glyph nodes in the design-kit group offset.
+func ManeuverAt(glyphY int, nodes []scene.Node) templ.Component {
+	if len(nodes) == 0 {
+		return templ.NopComponent
+	}
+	return Nodes([]scene.Node{scene.Group{ID: "maneuver", DX: -2, DY: glyphY, Children: nodes}})
+}
+
+// Maneuver emits the nav glyph group when paths markup is non-empty (deprecated).
 func Maneuver(glyphY int, paths string) templ.Component {
 	if paths == "" {
 		return templ.NopComponent

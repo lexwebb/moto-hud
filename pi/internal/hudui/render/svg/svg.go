@@ -50,8 +50,73 @@ func writeNode(b *strings.Builder, n scene.Node) {
 	case scene.RawSVG:
 		b.WriteString(v.Markup)
 	case scene.Line:
-		fmt.Fprintf(b, `<line x1="%d" y1="%d" x2="%d" y2="%d" stroke="#000" stroke-width="1"/>`, v.X1, v.Y1, v.X2, v.Y2)
+		fmt.Fprintf(b, `<line x1="%d" y1="%d" x2="%d" y2="%d" stroke="#000" stroke-width="%s"`, v.X1, v.Y1, v.X2, v.Y2, formatStrokeWidth(v.StrokeWidth))
+		if v.Dash != "" {
+			fmt.Fprintf(b, ` stroke-dasharray="%s"`, escapeAttr(v.Dash))
+		}
+		b.WriteString(` stroke-linecap="square"/>`)
+	case scene.Rect:
+		fmt.Fprintf(b, `<rect`)
+		if v.ID != "" {
+			fmt.Fprintf(b, ` id="%s"`, escapeAttr(v.ID))
+		}
+		fmt.Fprintf(b, ` x="%d" y="%d" width="%d" height="%d"`, v.X, v.Y, v.W, v.H)
+		if v.Filled {
+			b.WriteString(` fill="#000"/>`)
+		} else {
+			b.WriteString(` fill="none" stroke="#000" stroke-width="1" stroke-linecap="square"/>`)
+		}
+	case scene.Polyline:
+		fmt.Fprintf(b, `<polyline fill="none" stroke="#000" stroke-width="%s" points="`, formatStrokeWidth(v.StrokeWidth))
+		for i, p := range v.Points {
+			if i > 0 {
+				b.WriteByte(' ')
+			}
+			fmt.Fprintf(b, "%d,%d", p[0], p[1])
+		}
+		b.WriteString(`"/>`)
+	case scene.Polygon:
+		fmt.Fprintf(b, `<polygon points="`)
+		for i, p := range v.Points {
+			if i > 0 {
+				b.WriteByte(' ')
+			}
+			fmt.Fprintf(b, "%.1f,%.1f", p[0], p[1])
+		}
+		if v.Filled {
+			b.WriteString(`" fill="#000" stroke="none"/>`)
+		} else {
+			b.WriteString(`" fill="none" stroke="#000" stroke-width="1"/>`)
+		}
+	case scene.Path:
+		fmt.Fprintf(b, `<path d="%s"`, escapeAttr(v.D))
+		if v.Filled {
+			b.WriteString(` fill="#000" stroke="none"/>`)
+		} else {
+			fmt.Fprintf(b, ` fill="none" stroke="#000" stroke-width="%s" stroke-linejoin="miter" stroke-linecap="square"/>`, formatStrokeWidth(v.StrokeWidth))
+		}
+	case scene.Circle:
+		fmt.Fprintf(b, `<circle`)
+		if v.ID != "" {
+			fmt.Fprintf(b, ` id="%s"`, escapeAttr(v.ID))
+		}
+		fmt.Fprintf(b, ` cx="%.1f" cy="%.1f" r="%.1f"`, v.CX, v.CY, v.R)
+		if v.Filled {
+			b.WriteString(` fill="#000" stroke="none"/>`)
+		} else {
+			fmt.Fprintf(b, ` fill="none" stroke="#000" stroke-width="%s"/>`, formatStrokeWidth(v.StrokeWidth))
+		}
 	}
+}
+
+func formatStrokeWidth(w float64) string {
+	if w <= 0 {
+		w = 1
+	}
+	if w == float64(int(w)) {
+		return fmt.Sprintf("%d", int(w))
+	}
+	return fmt.Sprintf("%.1f", w)
 }
 
 func writeText(b *strings.Builder, t scene.Text) {
