@@ -5,6 +5,8 @@ import (
 	"image"
 
 	"moto-hud/pi/internal/hudui/scene"
+	"moto-hud/pi/internal/hudui/scenetempl"
+	"moto-hud/pi/internal/hudui/screens"
 	"moto-hud/pi/internal/hudui/token"
 	"moto-hud/pi/internal/pixelfont"
 	"moto-hud/pi/internal/protocol"
@@ -152,31 +154,18 @@ func layoutNavClassic(nav protocol.NavMessage, deps DrawDeps) navClassicLayout {
 	}
 }
 
-// NavClassicBodyScene builds the classic nav main column as a scene list.
-func NavClassicBodyScene(l navClassicLayout, deps DrawDeps) []scene.Node {
-	body, _ := pixelfont.Load(pixelfont.Size8x16)
-	var b scene.Builder
+// navClassicBodyNodes builds the classic nav main column via screens/nav_classic.templ.
+func navClassicBodyNodes(l navClassicLayout, deps DrawDeps) []scene.Node {
 	paths := ""
 	if deps.ManeuverPaths != nil {
 		paths = deps.ManeuverPaths(l.maneuver)
 	}
-	if paths != "" {
-		b.Raw(fmt.Sprintf(
-			`<g id="maneuver" transform="translate(-2,%d)" fill="#000" stroke="#000" stroke-width="3" stroke-linecap="square" stroke-linejoin="miter">%s</g>`,
-			l.glyphY, paths))
-	}
-	b.Text("distance", scene.Face16x32, l.mw, l.distBaseline, "end", l.dist)
-	appendRoadLines(&b, 0, l.roadTop, l.roadLines)
-	if l.etaH > 0 {
-		b.Text("eta", scene.Face8x16, 0, l.etaTop+body.Metrics.Ascent, "start", l.eta)
-	}
-	if l.laneHTML != "" {
-		b.Raw(l.laneHTML)
-	}
-	b.Group("ribbon", 0, l.ribbonTop, func(b *scene.Builder) {
-		if l.ribbonInner != "" {
-			b.Raw(l.ribbonInner)
-		}
-	})
-	return b.Nodes()
+	body, _ := pixelfont.Load(pixelfont.Size8x16)
+	etaBaseline := l.etaTop + body.Metrics.Ascent
+	roadBaselines := roadLineBaselines(0, l.roadTop, l.roadLines)
+	return scenetempl.Render(screens.NavClassicBody(
+		l.glyphY, paths, l.dist, l.distBaseline, l.mw,
+		l.roadLines, roadBaselines, l.eta, etaBaseline, l.etaH > 0,
+		l.laneHTML, l.ribbonTop, l.ribbonInner,
+	))
 }

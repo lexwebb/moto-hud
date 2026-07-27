@@ -1,18 +1,21 @@
 package screens
 
-import "strconv"
+import (
+	"moto-hud/pi/internal/hudui/scene"
+	"moto-hud/pi/internal/hudui/scenetempl"
+)
 
-// ChromeShell is the shared HUD frame: header rule, legend column, mode, and main column slot.
-// BLE link is drawn via plan layer ble_link (not embedded here).
-templ ChromeShell(mode, legPrev, legAction, legNext string, pad, mw, divY, ruleX, headerBaseline, legTop, legMid, legBot, linkX, linkY, canvasW, canvasH int, content string) {
-	<line x1={ strconv.Itoa(pad) } y1={ strconv.Itoa(divY) } x2={ strconv.Itoa(ruleX) } y2={ strconv.Itoa(divY) } stroke="#000" stroke-width="1"></line>
-	<line x1={ strconv.Itoa(ruleX) } y1={ strconv.Itoa(pad) } x2={ strconv.Itoa(ruleX) } y2={ strconv.Itoa(canvasH - pad) } stroke="#000" stroke-width="1"></line>
-	<g id="main" transform={ "translate(" + strconv.Itoa(pad) + ",0)" }>
-		<text id="mode" data-pixel="6x12" x="0" y={ strconv.Itoa(headerBaseline) } font-size="12" fill="#000">{ mode }</text>
-		<g id="link" transform={ "translate(" + strconv.Itoa(linkX) + "," + strconv.Itoa(linkY) + ")" }></g>
-		@templ.Raw(content)
-	</g>
-	<text id="leg_prev" data-pixel="6x12" x={ strconv.Itoa(canvasW - pad) } y={ strconv.Itoa(legTop) } text-anchor="end" font-size="12" fill="#000">{ legPrev }</text>
-	<text id="leg_action" data-pixel="6x12" x={ strconv.Itoa(canvasW - pad) } y={ strconv.Itoa(legMid) } text-anchor="end" font-size="12" fill="#000">{ legAction }</text>
-	<text id="leg_next" data-pixel="6x12" x={ strconv.Itoa(canvasW - pad) } y={ strconv.Itoa(legBot) } text-anchor="end" font-size="12" fill="#000">{ legNext }</text>
+// ChromeFrameBody is the shared HUD frame: header rule, legend column, mode, and main column slot.
+// BLE link is drawn via plan layer ble_link (empty link group placeholder).
+templ ChromeFrameBody(mode, legPrev, legAction, legNext string, pad, divY, ruleX, headerBaseline, legTop, legMid, legBot, linkX, linkY, canvasW, canvasH int, main templ.Component) {
+	@scenetempl.Line(pad, divY, ruleX, divY)
+	@scenetempl.Line(ruleX, pad, ruleX, canvasH-pad)
+	@scenetempl.Group("main", pad, 0) {
+		@scenetempl.Text("mode", scene.Face6x12, 0, headerBaseline, "start", mode)
+		@scenetempl.EmptyGroup("link", linkX, linkY)
+		@main
+	}
+	@scenetempl.Text("leg_prev", scene.Face6x12, canvasW-pad, legTop, "end", legPrev)
+	@scenetempl.Text("leg_action", scene.Face6x12, canvasW-pad, legMid, "end", legAction)
+	@scenetempl.Text("leg_next", scene.Face6x12, canvasW-pad, legBot, "end", legNext)
 }

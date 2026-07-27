@@ -17,7 +17,7 @@ func planNavClassic(in Input) (plan.ScreenPlan, error) {
 	nav := in.Nav
 	k := Keys{}
 	lay := layoutNavClassic(nav, deps)
-	body := NavClassicBodyScene(lay, deps)
+	body := navClassicBodyNodes(lay, deps)
 
 	navCopy := nav
 	layers := []plan.Layer{

@@ -1,20 +1,23 @@
 package screens
 
-import "strconv"
+import (
+	"moto-hud/pi/internal/hudui/scene"
+	"moto-hud/pi/internal/hudui/scenetempl"
+)
 
 // MediaBody is the centered now-playing block (design MediaFocus).
 templ MediaBody(playing string, title, artist string, mw, yPlaying, yTitle, yArtist int) {
-	<text id="playing" data-pixel="6x12" x="0" y={ strconv.Itoa(yPlaying) } font-size="12" fill="#000">{ playing }</text>
-	<text id="title" data-pixel="12x24" x="0" y={ strconv.Itoa(yTitle) } font-size="24" fill="#000">{ title }</text>
-	<text id="artist" data-pixel="8x16" x="0" y={ strconv.Itoa(yArtist) } font-size="16" fill="#000">{ artist }</text>
+	@scenetempl.Text("playing", scene.Face6x12, 0, yPlaying, "start", playing)
+	@scenetempl.Text("title", scene.Face12x24, 0, yTitle, "start", title)
+	@scenetempl.Text("artist", scene.Face8x16, 0, yArtist, "start", artist)
 }
 
 // StatusRows is link/nav/pkts diagnostics (design StatusDiagnostics).
 templ StatusRows(link, nav, pkts string, mw, y1, y2, y3 int) {
-	<text data-pixel="8x16" x="0" y={ strconv.Itoa(y1) } font-size="16" fill="#000">LINK</text>
-	<text id="status_link" data-pixel="8x16" x={ strconv.Itoa(mw) } y={ strconv.Itoa(y1) } text-anchor="end" font-size="16" fill="#000">{ link }</text>
-	<text data-pixel="8x16" x="0" y={ strconv.Itoa(y2) } font-size="16" fill="#000">NAV</text>
-	<text id="status_nav" data-pixel="8x16" x={ strconv.Itoa(mw) } y={ strconv.Itoa(y2) } text-anchor="end" font-size="16" fill="#000">{ nav }</text>
-	<text data-pixel="8x16" x="0" y={ strconv.Itoa(y3) } font-size="16" fill="#000">PKTS</text>
-	<text id="status_pkts" data-pixel="8x16" x={ strconv.Itoa(mw) } y={ strconv.Itoa(y3) } text-anchor="end" font-size="16" fill="#000">{ pkts }</text>
+	@scenetempl.Text("", scene.Face8x16, 0, y1, "start", "LINK")
+	@scenetempl.Text("status_link", scene.Face8x16, mw, y1, "end", link)
+	@scenetempl.Text("", scene.Face8x16, 0, y2, "start", "NAV")
+	@scenetempl.Text("status_nav", scene.Face8x16, mw, y2, "end", nav)
+	@scenetempl.Text("", scene.Face8x16, 0, y3, "start", "PKTS")
+	@scenetempl.Text("status_pkts", scene.Face8x16, mw, y3, "end", pkts)
 }

@@ -13,8 +13,8 @@ import (
 	"moto-hud/pi/internal/hudui/scenetempl"
 )
 
-// NavClassicBody is active nav: maneuver glyph, hero distance, road lines, optional ETA, ribbon.
-func NavClassicBody(glyphY int, maneuverPaths, dist string, distBaseline, mw int, roadLines []string, roadBaselines []int, eta string, etaBaseline int, showEta bool, laneHTML string, ribbonTop int, ribbonInner string) templ.Component {
+// NavLiveBody is live nav: left ribbon/minimap column and right stacked distance/road/ETA.
+func NavLiveBody(contentTop int, leftDraw string, dist string, distBaseline, mw, rightX int, roadLines []string, roadBaselines []int, eta string, etaBaseline int, showEta bool, laneHTML string) templ.Component {
 	return templruntime.GeneratedTemplate(func(templ_7745c5c3_Input templruntime.GeneratedComponentInput) (templ_7745c5c3_Err error) {
 		templ_7745c5c3_W, ctx := templ_7745c5c3_Input.Writer, templ_7745c5c3_Input.Context
 		if templ_7745c5c3_CtxErr := ctx.Err(); templ_7745c5c3_CtxErr != nil {
@@ -35,22 +35,42 @@ func NavClassicBody(glyphY int, maneuverPaths, dist string, distBaseline, mw int
 			templ_7745c5c3_Var1 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		templ_7745c5c3_Err = scenetempl.Maneuver(glyphY, maneuverPaths).Render(ctx, templ_7745c5c3_Buffer)
-		if templ_7745c5c3_Err != nil {
-			return templ_7745c5c3_Err
+		if leftDraw != "" {
+			templ_7745c5c3_Var2 := templruntime.GeneratedTemplate(func(templ_7745c5c3_Input templruntime.GeneratedComponentInput) (templ_7745c5c3_Err error) {
+				templ_7745c5c3_W, ctx := templ_7745c5c3_Input.Writer, templ_7745c5c3_Input.Context
+				templ_7745c5c3_Buffer, templ_7745c5c3_IsBuffer := templruntime.GetBuffer(templ_7745c5c3_W)
+				if !templ_7745c5c3_IsBuffer {
+					defer func() {
+						templ_7745c5c3_BufErr := templruntime.ReleaseBuffer(templ_7745c5c3_Buffer)
+						if templ_7745c5c3_Err == nil {
+							templ_7745c5c3_Err = templ_7745c5c3_BufErr
+						}
+					}()
+				}
+				ctx = templ.InitializeContext(ctx)
+				templ_7745c5c3_Err = scenetempl.Raw(leftDraw).Render(ctx, templ_7745c5c3_Buffer)
+				if templ_7745c5c3_Err != nil {
+					return templ_7745c5c3_Err
+				}
+				return nil
+			})
+			templ_7745c5c3_Err = scenetempl.Group("ribbon", 0, contentTop).Render(templ.WithChildren(ctx, templ_7745c5c3_Var2), templ_7745c5c3_Buffer)
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
 		}
 		templ_7745c5c3_Err = scenetempl.Text("distance", scene.Face16x32, mw, distBaseline, "end", dist).Render(ctx, templ_7745c5c3_Buffer)
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
 		for i, ln := range roadLines {
-			templ_7745c5c3_Err = scenetempl.Text("road", scene.Face8x16, 0, roadBaselines[i], "start", ln).Render(ctx, templ_7745c5c3_Buffer)
+			templ_7745c5c3_Err = scenetempl.Text("road", scene.Face8x16, rightX, roadBaselines[i], "start", ln).Render(ctx, templ_7745c5c3_Buffer)
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 		}
 		if showEta {
-			templ_7745c5c3_Err = scenetempl.Text("eta", scene.Face8x16, 0, etaBaseline, "start", eta).Render(ctx, templ_7745c5c3_Buffer)
+			templ_7745c5c3_Err = scenetempl.Text("eta", scene.Face8x16, rightX, etaBaseline, "start", eta).Render(ctx, templ_7745c5c3_Buffer)
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
@@ -60,30 +80,6 @@ func NavClassicBody(glyphY int, maneuverPaths, dist string, distBaseline, mw int
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-		}
-		templ_7745c5c3_Var2 := templruntime.GeneratedTemplate(func(templ_7745c5c3_Input templruntime.GeneratedComponentInput) (templ_7745c5c3_Err error) {
-			templ_7745c5c3_W, ctx := templ_7745c5c3_Input.Writer, templ_7745c5c3_Input.Context
-			templ_7745c5c3_Buffer, templ_7745c5c3_IsBuffer := templruntime.GetBuffer(templ_7745c5c3_W)
-			if !templ_7745c5c3_IsBuffer {
-				defer func() {
-					templ_7745c5c3_BufErr := templruntime.ReleaseBuffer(templ_7745c5c3_Buffer)
-					if templ_7745c5c3_Err == nil {
-						templ_7745c5c3_Err = templ_7745c5c3_BufErr
-					}
-				}()
-			}
-			ctx = templ.InitializeContext(ctx)
-			if ribbonInner != "" {
-				templ_7745c5c3_Err = scenetempl.Raw(ribbonInner).Render(ctx, templ_7745c5c3_Buffer)
-				if templ_7745c5c3_Err != nil {
-					return templ_7745c5c3_Err
-				}
-			}
-			return nil
-		})
-		templ_7745c5c3_Err = scenetempl.Group("ribbon", 0, ribbonTop).Render(templ.WithChildren(ctx, templ_7745c5c3_Var2), templ_7745c5c3_Buffer)
-		if templ_7745c5c3_Err != nil {
-			return templ_7745c5c3_Err
 		}
 		return nil
 	})

@@ -8,6 +8,8 @@ import (
 	"moto-hud/pi/internal/hudui"
 	"moto-hud/pi/internal/hudui/plan"
 	"moto-hud/pi/internal/hudui/scene"
+	"moto-hud/pi/internal/hudui/scenetempl"
+	"moto-hud/pi/internal/hudui/screens"
 	"moto-hud/pi/internal/hudui/token"
 	"moto-hud/pi/internal/pixelfont"
 )
@@ -100,23 +102,17 @@ func planNavLive(in Input) (plan.ScreenPlan, error) {
 		etaSlot = image.Rect(mainX+rightX, etaTop, mainX+mw, etaTop+body.Metrics.CellH)
 	}
 
-	var bodyNodes []scene.Node
-	var b scene.Builder
-	if leftDraw != "" {
-		b.Group("ribbon", 0, contentTop, func(b *scene.Builder) {
-			b.Raw(leftDraw)
-		})
-	}
-	b.Text("distance", scene.Face16x32, mw, distBaseline, "end", dist)
-	appendRoadLines(&b, rightX, roadTop, roadLines)
-	if eta != "" {
-		b.Text("eta", scene.Face8x16, rightX, etaTop+body.Metrics.Ascent, "start", eta)
-	}
+	laneHTML := ""
 	if deps.HasLanes != nil && deps.HasLanes(nav) && deps.LaneStripSVG != nil {
 		laneY := contentBot - laneStripH - 2
-		b.Raw(fmt.Sprintf(`<g transform="translate(%d,%d)">%s</g>`, rightX, laneY, deps.LaneStripSVG(nav.Lanes, rightW)))
+		laneHTML = fmt.Sprintf(`<g transform="translate(%d,%d)">%s</g>`, rightX, laneY, deps.LaneStripSVG(nav.Lanes, rightW))
 	}
-	bodyNodes = b.Nodes()
+	roadBaselines := roadLineBaselines(rightX, roadTop, roadLines)
+	etaBaseline := etaTop + body.Metrics.Ascent
+	bodyNodes := scenetempl.Render(screens.NavLiveBody(
+		contentTop, leftDraw, dist, distBaseline, mw, rightX,
+		roadLines, roadBaselines, eta, etaBaseline, eta != "", laneHTML,
+	))
 
 	navCopy := nav
 	layers := []plan.Layer{

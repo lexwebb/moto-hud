@@ -6,6 +6,8 @@ import (
 	"moto-hud/pi/internal/hudui"
 	"moto-hud/pi/internal/hudui/plan"
 	"moto-hud/pi/internal/hudui/scene"
+	"moto-hud/pi/internal/hudui/scenetempl"
+	"moto-hud/pi/internal/hudui/screens"
 	"moto-hud/pi/internal/hudui/token"
 	"moto-hud/pi/internal/pixelfont"
 )
@@ -19,10 +21,19 @@ type statusLayout struct {
 
 func statusLayoutGeom(linked, navActive bool) statusLayout {
 	body, _ := pixelfont.Load(pixelfont.Size8x16)
-	mw, y1, y2, y3 := statusBodyLayout()
-	mainX := token.Pad
+	meta, _ := pixelfont.Load(pixelfont.Size6x12)
+	mw := token.MainWidth()
+	headerBottom := token.Pad + meta.Metrics.CellH
+	contentTop := headerBottom + token.GapSm + token.GapMd
+	contentBot := token.Height - token.Pad
 	rowH := body.Metrics.CellH + token.GapMd
-	top := y1 - body.Metrics.Ascent
+	rows := 3
+	blockH := rowH*rows - token.GapMd
+	top := contentTop + (contentBot-contentTop-blockH)/2
+	y1 := top + body.Metrics.Ascent
+	y2 := top + rowH + body.Metrics.Ascent
+	y3 := top + 2*rowH + body.Metrics.Ascent
+	mainX := token.Pad
 	linkVal, navVal := "DOWN", "OFF"
 	if linked {
 		linkVal = "UP"
@@ -45,7 +56,7 @@ func statusLayoutGeom(linked, navActive bool) statusLayout {
 
 func planStatus(in Input) (plan.ScreenPlan, error) {
 	geom := statusLayoutGeom(in.Linked, in.Nav.Active)
-	body := statusBodyScene(in.Linked, in.Nav.Active)
+	body := scenetempl.Render(screens.StatusRows(geom.linkVal, geom.navVal, geom.pktsVal, geom.mw, geom.y1, geom.y2, geom.y3))
 	k := Keys{}
 	deps := in.NavSVG
 	linked := in.Linked

@@ -6,6 +6,8 @@ import (
 	"moto-hud/pi/internal/hudui"
 	"moto-hud/pi/internal/hudui/plan"
 	"moto-hud/pi/internal/hudui/scene"
+	"moto-hud/pi/internal/hudui/scenetempl"
+	"moto-hud/pi/internal/hudui/screens"
 	"moto-hud/pi/internal/hudui/token"
 	"moto-hud/pi/internal/pixelfont"
 )
@@ -23,7 +25,7 @@ func planMedia(in Input) (plan.ScreenPlan, error) {
 	if in.NavSVG.Fit != nil {
 		title = in.NavSVG.Fit(scene.Face12x24, title, geom.mw)
 	}
-	body := mediaBodyScene(playing, title, in.Media.Artist)
+	body := scenetempl.Render(screens.MediaBody(playing, title, in.Media.Artist, geom.mw, geom.yPlaying, geom.yTitle, geom.yArtist))
 	k := Keys{}
 	deps := in.NavSVG
 	media := in.Media

@@ -1,17 +1,26 @@
 package screens
 
-import "strconv"
+import (
+	"moto-hud/pi/internal/hudui/scene"
+	"moto-hud/pi/internal/hudui/scenetempl"
+)
 
 // NavClassicBody is active nav: maneuver glyph, hero distance, road lines, optional ETA, ribbon.
-templ NavClassicBody(glyphY int, maneuverPaths, dist string, distBaseline, mw int, roadHTML, etaHTML, laneHTML string, ribbonTop int, ribbonInner string) {
-	<g id="maneuver" transform={ "translate(-2," + strconv.Itoa(glyphY) + ")" } fill="#000" stroke="#000" stroke-width="3" stroke-linecap="square" stroke-linejoin="miter">
-		@templ.Raw(maneuverPaths)
-	</g>
-	<text id="distance" data-pixel="16x32" x={ strconv.Itoa(mw) } y={ strconv.Itoa(distBaseline) } text-anchor="end" font-size="32" fill="#000">{ dist }</text>
-	@templ.Raw(roadHTML)
-	@templ.Raw(etaHTML)
-	@templ.Raw(laneHTML)
-	<g id="ribbon" transform={ "translate(0," + strconv.Itoa(ribbonTop) + ")" }>
-		@templ.Raw(ribbonInner)
-	</g>
+templ NavClassicBody(glyphY int, maneuverPaths, dist string, distBaseline, mw int, roadLines []string, roadBaselines []int, eta string, etaBaseline int, showEta bool, laneHTML string, ribbonTop int, ribbonInner string) {
+	@scenetempl.Maneuver(glyphY, maneuverPaths)
+	@scenetempl.Text("distance", scene.Face16x32, mw, distBaseline, "end", dist)
+	for i, ln := range roadLines {
+		@scenetempl.Text("road", scene.Face8x16, 0, roadBaselines[i], "start", ln)
+	}
+	if showEta {
+		@scenetempl.Text("eta", scene.Face8x16, 0, etaBaseline, "start", eta)
+	}
+	if laneHTML != "" {
+		@scenetempl.Raw(laneHTML)
+	}
+	@scenetempl.Group("ribbon", 0, ribbonTop) {
+		if ribbonInner != "" {
+			@scenetempl.Raw(ribbonInner)
+		}
+	}
 }
