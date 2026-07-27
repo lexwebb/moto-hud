@@ -8,7 +8,7 @@ pluginManagement {
 dependencyResolutionManagement {
     repositoriesMode.set(RepositoriesMode.FAIL_ON_PROJECT_REPOS)
     repositories {
-        // OsmAnd AIDL stubs (android-aidl-lib) — same Ivy repo as osmand-api-demo
+        // OsmAnd AIDL stubs + Full Library AARs — same Ivy repo as osmand-api-demo
         ivy {
             name = "OsmAndBinariesIvy"
             url = uri("https://builder.osmand.net")
@@ -21,7 +21,9 @@ dependencyResolutionManagement {
         }
         google()
         mavenCentral()
+        maven { url = uri("https://jitpack.io") }
     }
 }
 rootProject.name = "MotoHUD"
 include(":app")
+include(":osmand")

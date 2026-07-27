@@ -8,6 +8,20 @@ data class RibbonPoint(
     val y: Double,
 )
 
+/** One lane, left-to-right. Directions use protocol maneuver strings. */
+data class LaneInfo(
+    val directions: List<String>,
+    val active: Boolean,
+)
+
+data class ThenNext(
+    val maneuver: String = "unknown",
+    val distanceM: Int = 0,
+    val distanceText: String = "",
+    val instruction: String = "",
+    val road: String = "",
+)
+
 data class NavState(
     val active: Boolean = false,
     val instruction: String = "",
@@ -15,7 +29,10 @@ data class NavState(
     val distanceText: String = "",
     val road: String = "",
     val etaMin: Int = 0,
+    val remainingM: Int = 0,
     val maneuver: String = "unknown",
+    val lanes: List<LaneInfo> = emptyList(),
+    val thenNext: ThenNext? = null,
     val ribbonPoints: List<RibbonPoint> = emptyList(),
     val ribbonTurn: Int = -1,
 ) {
@@ -27,7 +44,27 @@ data class NavState(
         put("distance_text", distanceText)
         put("road", road)
         put("eta_min", etaMin)
+        if (remainingM > 0) put("remaining_m", remainingM)
         put("maneuver", maneuver)
+        if (lanes.isNotEmpty()) {
+            put("lanes", JSONArray().also { arr ->
+                lanes.forEach { lane ->
+                    arr.put(JSONObject().apply {
+                        put("directions", JSONArray(lane.directions))
+                        put("active", lane.active)
+                    })
+                }
+            })
+        }
+        thenNext?.let { tn ->
+            put("then_next", JSONObject().apply {
+                put("maneuver", tn.maneuver)
+                put("distance_m", tn.distanceM)
+                put("distance_text", tn.distanceText)
+                put("instruction", tn.instruction)
+                put("road", tn.road)
+            })
+        }
         if (ribbonPoints.size >= 2) {
             put("ribbon_points", JSONArray().also { arr ->
                 ribbonPoints.forEach { p ->
@@ -126,6 +163,21 @@ object ManeuverParser {
         return bare?.groupValues?.get(1)?.toIntOrNull() ?: 0
     }
 
+    fun parseEtaMinutes(text: String): Int {
+        val hms = Regex(
+            """(\d+)\s*h(?:ours?)?\s*(\d+)\s*min""",
+            RegexOption.IGNORE_CASE,
+        ).find(text)
+        if (hms != null) {
+            val h = hms.groupValues[1].toIntOrNull() ?: 0
+            val m = hms.groupValues[2].toIntOrNull() ?: 0
+            return h * 60 + m
+        }
+        val min = Regex("""(\d+)\s*min""", RegexOption.IGNORE_CASE).find(text)
+        if (min != null) return min.groupValues[1].toIntOrNull() ?: 0
+        return 0
+    }
+
     /** Format meters for HUD / distance_text (locale-stable). */
     fun formatDistanceMeters(meters: Int): String {
         if (meters < 0) return ""
@@ -139,5 +191,44 @@ object ManeuverParser {
             return "$s km"
         }
         return "$meters m"
+    }
+}
+
+/**
+ * Decode OsmAnd TurnType lane bitfields into protocol [LaneInfo].
+ * Encoding: bit0 = active; bits1-4 primary turn; bits5-9 secondary; bits10-14 tertiary.
+ */
+object OsmandLaneCodec {
+    fun decode(laneValues: IntArray?): List<LaneInfo> {
+        if (laneValues == null || laneValues.isEmpty()) return emptyList()
+        return laneValues.map { v ->
+            // OsmAnd: bit0 = active/recommended for this route.
+            val active = (v and 1) == 1
+            val dirs = buildList {
+                val primary = primaryTurn(v)
+                if (primary != 0) add(ManeuverParser.fromOsmandTurnType(primary))
+                val secondary = secondaryTurn(v)
+                if (secondary != 0) add(ManeuverParser.fromOsmandTurnType(secondary))
+                val tertiary = tertiaryTurn(v)
+                if (tertiary != 0) add(ManeuverParser.fromOsmandTurnType(tertiary))
+            }.ifEmpty { listOf("straight") }
+            LaneInfo(directions = dirs.distinct(), active = active)
+        }
+    }
+
+    // Matches net.osmand.router.TurnType bit packing (getPrimaryTurn / getSecondaryTurn / getTertiaryTurn).
+    fun primaryTurn(laneValue: Int): Int = (laneValue shr 1) and 0xF
+
+    fun secondaryTurn(laneValue: Int): Int = (laneValue shr 5) and 0x1F
+
+    fun tertiaryTurn(laneValue: Int): Int = (laneValue shr 10) and 0x1F
+
+    /** Encode helper for tests: active + primary turn type. */
+    fun encodeLane(active: Boolean, primary: Int, secondary: Int = 0, tertiary: Int = 0): Int {
+        var v = (primary and 0xF) shl 1
+        if (active) v = v or 1
+        v = v or ((secondary and 0x1F) shl 5)
+        v = v or ((tertiary and 0x1F) shl 10)
+        return v
     }
 }

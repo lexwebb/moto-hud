@@ -31,7 +31,19 @@ See [uuids.json](uuids.json). Shared constants also live in:
   "distance_text": "200 m",
   "road": "High St",
   "eta_min": 12,
+  "remaining_m": 5400,
   "maneuver": "left",
+  "lanes": [
+    {"directions": ["straight"], "active": false},
+    {"directions": ["left", "straight"], "active": true}
+  ],
+  "then_next": {
+    "maneuver": "right",
+    "distance_m": 400,
+    "distance_text": "400 m",
+    "instruction": "Turn right",
+    "road": "Bridge Rd"
+  },
   "ribbon_points": [
     {"x": 0, "y": 0},
     {"x": 0, "y": 120},
@@ -42,6 +54,8 @@ See [uuids.json](uuids.json). Shared constants also live in:
 ```
 
 `maneuver` enum: `left`, `right`, `straight`, `slight_left`, `slight_right`, `u_turn`, `roundabout`, `arrive`, `depart`, `unknown`
+
+Optional `lanes` (left→right): each lane lists allowed `directions` (same strings as `maneuver`) and whether it is `active` for the route. Omitted when the engine cannot provide lane guidance (e.g. MapKit, stock AIDL). Optional `then_next` is the following maneuver. Optional `remaining_m` is distance to destination.
 
 Optional `ribbon_points` / `ribbon_turn`: local-unit corridor vertices (Y ahead, X right). When present (≥2 points) and `minimap` is absent, the Pi draws that corridor in the live two-column layout; otherwise it falls back to a synthetic kink from `maneuver`. The Android companion fills these from a short public-OSRM probe.
 
@@ -115,8 +129,9 @@ Wire format is **engine-agnostic** ([ADR 0006](../docs/adr/0006-engine-agnostic-
 
 | Priority | Source | How | Notes |
 |----------|--------|-----|--------|
-| 1 | **OsmAnd** (free or +) | AIDL `registerForNavigationUpdates` → `ADirectionInfo` | Typed `turnType` + `distanceTo`; no text scrape. Road name / ETA not in this callback yet. |
-| 2 | Google Maps / Maps Go | `NotificationListenerService` text scrape | Fallback when OsmAnd is absent or not actively navigating. |
+| 1a | **OsmAnd embedded** (`embedded` flavor) | Full Library `RoutingHelper` poll | Lanes, then-next, ETA, street, remaining |
+| 1b | **OsmAnd AIDL** (`aidl` flavor) | `registerForNavigationUpdates` + voice + OsmAnd notif enrich | Typed turn/distance; soft road/ETA from notifications |
+| 2 | Google Maps / Maps Go | `NotificationListenerService` text scrape | Fallback when OsmAnd is absent or not actively navigating |
 
 While OsmAnd reports `active` navigation, Maps notification updates are ignored.
 

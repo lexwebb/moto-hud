@@ -6,17 +6,27 @@ import android.content.pm.PackageManager
 import android.os.Build
 import android.os.Bundle
 import android.provider.Settings
+import android.util.Log
+import android.view.View
 import android.widget.Button
 import android.widget.EditText
 import android.widget.TextView
+import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.widget.SwitchCompat
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.lifecycleScope
+import com.google.android.play.core.splitcompat.SplitCompat
+import com.google.android.play.core.splitinstall.SplitInstallManagerFactory
 import kotlinx.coroutines.launch
 
 class MainActivity : AppCompatActivity() {
+
+    override fun attachBaseContext(newBase: android.content.Context) {
+        super.attachBaseContext(newBase)
+        SplitCompat.installActivity(this)
+    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -27,9 +37,15 @@ class MainActivity : AppCompatActivity() {
         val mediaText = findViewById<TextView>(R.id.mediaText)
         val httpEnable = findViewById<SwitchCompat>(R.id.httpEnable)
         val httpUrl = findViewById<EditText>(R.id.httpUrl)
+        val richBtn = findViewById<Button>(R.id.btnRichNav)
+        val openOsmand = findViewById<Button>(R.id.btnOpenOsmand)
 
         httpEnable.isChecked = LinkPrefs.httpEnabled(this)
         httpUrl.setText(LinkPrefs.httpBaseUrl(this))
+        refreshRichNavUi(richBtn, openOsmand)
+
+        richBtn.setOnClickListener { onRichNavClicked(richBtn, openOsmand) }
+        openOsmand.setOnClickListener { openEmbeddedOsmandMap() }
 
         findViewById<Button>(R.id.btnNotificationAccess).setOnClickListener {
             startActivity(Intent(Settings.ACTION_NOTIFICATION_LISTENER_SETTINGS))
@@ -49,11 +65,21 @@ class MainActivity : AppCompatActivity() {
         }
         lifecycleScope.launch {
             HudBus.nav.collect {
-                val src = if (HudBus.isOsmandBound()) "OsmAnd" else "Maps?"
+                val engine = when {
+                    OsmandModule.isRichNavReady(this@MainActivity) -> "embedded"
+                    HudBus.isOsmandBound() -> "aidl"
+                    else -> "maps"
+                }
+                val src = when {
+                    HudBus.isOsmandBound() && it.lanes.isNotEmpty() -> "OsmAnd+$engine·lanes"
+                    HudBus.isOsmandBound() -> "OsmAnd+$engine"
+                    else -> "Maps?"
+                }
                 navText.text = if (it.active) {
-                    "[$src] ${it.maneuver} ${it.distanceText}\n${it.instruction}"
+                    val then = it.thenNext?.let { t -> " → then ${t.maneuver} ${t.distanceText}" }.orEmpty()
+                    "[$src] ${it.maneuver} ${it.distanceText}$then\n${it.road.ifBlank { it.instruction }}"
                 } else {
-                    "Nav idle · ${if (HudBus.isOsmandBound()) "OsmAnd bound" else "OsmAnd not bound (Maps scrape)"}"
+                    "Nav idle · engine=$engine"
                 }
             }
         }
@@ -62,6 +88,76 @@ class MainActivity : AppCompatActivity() {
                 mediaText.text = listOf(it.title, it.artist).filter { s -> s.isNotBlank() }.joinToString(" — ")
                     .ifBlank { "No media" }
             }
+        }
+    }
+
+    private fun refreshRichNavUi(richBtn: Button, openOsmand: Button) {
+        when {
+            OsmandModule.isRichNavReady(this) -> {
+                richBtn.text = getString(R.string.rich_nav_ready)
+                richBtn.isEnabled = false
+                openOsmand.visibility = View.VISIBLE
+            }
+            OsmandModule.isInstalled(this) -> {
+                richBtn.text = getString(R.string.rich_nav_restart)
+                richBtn.isEnabled = true
+                openOsmand.visibility = View.GONE
+            }
+            else -> {
+                richBtn.text = getString(R.string.rich_nav_download)
+                richBtn.isEnabled = true
+                openOsmand.visibility = View.GONE
+            }
+        }
+    }
+
+    private fun onRichNavClicked(richBtn: Button, openOsmand: Button) {
+        if (OsmandModule.isInstalled(this) && !OsmandModule.isRichNavReady(this)) {
+            Toast.makeText(this, R.string.rich_nav_restart_hint, Toast.LENGTH_LONG).show()
+            // Kill process so AppComponentFactory can pick OsmAnd Application.
+            finishAffinity()
+            Runtime.getRuntime().exit(0)
+            return
+        }
+        richBtn.isEnabled = false
+        lifecycleScope.launch {
+            OsmandModule.requestInstall(this@MainActivity).collect { event ->
+                when (event) {
+                    is OsmandModule.InstallEvent.Progress ->
+                        richBtn.text = getString(R.string.rich_nav_progress, event.percent)
+                    OsmandModule.InstallEvent.Installing,
+                    OsmandModule.InstallEvent.AlreadyInstalled,
+                    -> richBtn.text = getString(R.string.rich_nav_installing)
+                    OsmandModule.InstallEvent.Installed -> {
+                        Toast.makeText(this@MainActivity, R.string.rich_nav_restart_hint, Toast.LENGTH_LONG).show()
+                        refreshRichNavUi(richBtn, openOsmand)
+                        richBtn.isEnabled = true
+                    }
+                    is OsmandModule.InstallEvent.Failed -> {
+                        Toast.makeText(
+                            this@MainActivity,
+                            getString(R.string.rich_nav_failed, event.code),
+                            Toast.LENGTH_LONG,
+                        ).show()
+                        refreshRichNavUi(richBtn, openOsmand)
+                    }
+                    OsmandModule.InstallEvent.Canceled -> refreshRichNavUi(richBtn, openOsmand)
+                    is OsmandModule.InstallEvent.NeedsConfirmation -> {
+                        SplitInstallManagerFactory.create(this@MainActivity)
+                            .startConfirmationDialogForResult(event.state, this@MainActivity, REQ_CONFIRM)
+                    }
+                }
+            }
+        }
+    }
+
+    private fun openEmbeddedOsmandMap() {
+        try {
+            val cls = Class.forName("net.osmand.plus.activities.MapActivity")
+            startActivity(Intent(this, cls))
+        } catch (e: Exception) {
+            Log.e(TAG, "MapActivity unavailable", e)
+            Toast.makeText(this, R.string.rich_nav_map_unavailable, Toast.LENGTH_SHORT).show()
         }
     }
 
@@ -92,5 +188,10 @@ class MainActivity : AppCompatActivity() {
         if (needed.isNotEmpty()) {
             ActivityCompat.requestPermissions(this, needed.toTypedArray(), 1001)
         }
+    }
+
+    companion object {
+        private const val TAG = "MainActivity"
+        private const val REQ_CONFIRM = 4401
     }
 }
