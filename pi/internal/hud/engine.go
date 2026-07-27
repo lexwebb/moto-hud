@@ -3,6 +3,7 @@ package hud
 import (
 	"image"
 
+	"moto-hud/pi/internal/hudui/compose"
 	"moto-hud/pi/internal/hudui/plan"
 	"moto-hud/pi/internal/protocol"
 )
@@ -39,7 +40,7 @@ func (e *Engine) Draw(screen Screen, nav protocol.NavMessage, media protocol.Med
 		if e.frame != nil {
 			return FrameResult{Image: e.frame}
 		}
-		img := renderFromPlan(screen, nav, media, linked, sp)
+		img := renderFromPlan(in, sp)
 		e.frame = cloneGray(img)
 		return FrameResult{Image: e.frame}
 	}
@@ -67,7 +68,7 @@ func (e *Engine) Draw(screen Screen, nav protocol.NavMessage, media protocol.Med
 		}
 	}
 
-	img := renderFromPlan(screen, nav, media, linked, sp)
+	img := renderFromPlan(in, sp)
 	e.frame = cloneGray(img)
 	return FrameResult{
 		Image:   e.frame,
@@ -76,35 +77,31 @@ func (e *Engine) Draw(screen Screen, nav protocol.NavMessage, media protocol.Med
 	}
 }
 
-func renderFromPlan(screen Screen, nav protocol.NavMessage, media protocol.MediaMessage, linked bool, sp plan.ScreenPlan) *image.Gray {
-	body := sp.BodySVG
-	link := linkMarkSVG(linked)
-	var vars map[string]string
-	switch screen {
-	case ScreenMedia:
-		action := "PLAY"
-		if media.Playing {
-			action = "PAUSE"
-		}
-		vars = chromeShell("MEDIA", link, body, "SKIP", action, "SKIP")
-	case ScreenStatus:
-		vars = chromeShell("STATUS", link, body, "MODE", "REDRAW", "MODE")
-	default:
-		legPrev, legAction, legNext := "MEDIA", "-", "STATUS"
-		if nav.Active {
-			legPrev, legAction, legNext = "MODE", "-", "MODE"
-		}
-		vars = chromeShell("NAV", link, body, legPrev, legAction, legNext)
+func renderFromPlan(in compose.Input, sp plan.ScreenPlan) *image.Gray {
+	vars, err := compose.FrameVars(in, sp)
+	if err != nil {
+		return Render(composeScreen(in.Screen), in.Nav, in.Media, in.Linked)
 	}
 	svg, err := BuildPixelSVGFromVars(vars)
 	if err != nil {
-		return Render(screen, nav, media, linked)
+		return Render(composeScreen(in.Screen), in.Nav, in.Media, in.Linked)
 	}
 	img, err := RasterizeSVG(svg)
 	if err != nil {
-		return Render(screen, nav, media, linked)
+		return Render(composeScreen(in.Screen), in.Nav, in.Media, in.Linked)
 	}
 	return img
+}
+
+func composeScreen(k compose.ScreenKind) Screen {
+	switch k {
+	case compose.ScreenMedia:
+		return ScreenMedia
+	case compose.ScreenStatus:
+		return ScreenStatus
+	default:
+		return ScreenNav
+	}
 }
 
 // RenderEngine is the package-level compositor used by motohud and WASM.

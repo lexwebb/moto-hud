@@ -13,7 +13,8 @@ func ComposeInput(screen Screen, nav protocol.NavMessage, media protocol.MediaMe
 		Nav:    nav,
 		Media:  media,
 		Linked: linked,
-		NavSVG: navSVGDeps(),
+		NavSVG:  navSVGDeps(),
+		LinkSVG: linkMarkSVG,
 	}
 }
 

@@ -21,6 +21,7 @@ type Input struct {
 	Media  protocol.MediaMessage
 	Linked bool
 	NavSVG NavSVGDeps // set by hud when building nav plans
+	LinkSVG func(linked bool) string
 }
 
 // NavSVGDeps supplies nav-specific SVG fragments from the hud package (maneuver, ribbon, text helpers).

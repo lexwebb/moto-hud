@@ -39,7 +39,7 @@ func NavIdleCentered(title, msg string, mw, baseline1, baseline2 int) templ.Comp
 		var templ_7745c5c3_Var2 string
 		templ_7745c5c3_Var2, templ_7745c5c3_Err = templ.ResolveAttributeValue(strconv.Itoa(mw / 2))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/hudui/screens/nav_idle.templ`, Line: 7, Col: 60}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `screens/nav_idle.templ`, Line: 7, Col: 60}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var2)
 		if templ_7745c5c3_Err != nil {
@@ -52,7 +52,7 @@ func NavIdleCentered(title, msg string, mw, baseline1, baseline2 int) templ.Comp
 		var templ_7745c5c3_Var3 string
 		templ_7745c5c3_Var3, templ_7745c5c3_Err = templ.ResolveAttributeValue(strconv.Itoa(baseline1))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/hudui/screens/nav_idle.templ`, Line: 7, Col: 90}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `screens/nav_idle.templ`, Line: 7, Col: 90}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var3)
 		if templ_7745c5c3_Err != nil {
@@ -65,7 +65,7 @@ func NavIdleCentered(title, msg string, mw, baseline1, baseline2 int) templ.Comp
 		var templ_7745c5c3_Var4 string
 		templ_7745c5c3_Var4, templ_7745c5c3_Err = templ.JoinStringErrs(title)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/hudui/screens/nav_idle.templ`, Line: 7, Col: 148}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `screens/nav_idle.templ`, Line: 7, Col: 148}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var4))
 		if templ_7745c5c3_Err != nil {
@@ -78,7 +78,7 @@ func NavIdleCentered(title, msg string, mw, baseline1, baseline2 int) templ.Comp
 		var templ_7745c5c3_Var5 string
 		templ_7745c5c3_Var5, templ_7745c5c3_Err = templ.ResolveAttributeValue(strconv.Itoa(mw / 2))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/hudui/screens/nav_idle.templ`, Line: 8, Col: 58}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `screens/nav_idle.templ`, Line: 8, Col: 58}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var5)
 		if templ_7745c5c3_Err != nil {
@@ -91,7 +91,7 @@ func NavIdleCentered(title, msg string, mw, baseline1, baseline2 int) templ.Comp
 		var templ_7745c5c3_Var6 string
 		templ_7745c5c3_Var6, templ_7745c5c3_Err = templ.ResolveAttributeValue(strconv.Itoa(baseline2))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/hudui/screens/nav_idle.templ`, Line: 8, Col: 88}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `screens/nav_idle.templ`, Line: 8, Col: 88}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var6)
 		if templ_7745c5c3_Err != nil {
@@ -104,7 +104,7 @@ func NavIdleCentered(title, msg string, mw, baseline1, baseline2 int) templ.Comp
 		var templ_7745c5c3_Var7 string
 		templ_7745c5c3_Var7, templ_7745c5c3_Err = templ.JoinStringErrs(msg)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/hudui/screens/nav_idle.templ`, Line: 8, Col: 144}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `screens/nav_idle.templ`, Line: 8, Col: 144}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var7))
 		if templ_7745c5c3_Err != nil {
