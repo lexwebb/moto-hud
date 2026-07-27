@@ -23,6 +23,9 @@ const (
 	NodeManeuver NodeID = "maneuver"
 	NodeChrome   NodeID = "chrome"
 	NodeScreen   NodeID = "screen"
+	NodeMediaTitle  NodeID = "media_title"
+	NodeMediaArtist NodeID = "media_artist"
+	NodeMediaState  NodeID = "media_state"
 )
 
 // Slot is a fixed or computed rectangle in canvas coordinates.

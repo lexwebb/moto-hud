@@ -37,9 +37,8 @@ func (e *Engine) Draw(screen Screen, nav protocol.NavMessage, media protocol.Med
 		return FrameResult{Image: e.frame}
 	}
 
-	if plan.Mode == RefreshSpatialPatch && e.frame != nil && patchOnlyDistance(plan.DirtyIDs) {
-		slots := NavRefreshSlots(nav)
-		if err := PatchDistance(e.frame, nav, slots.Distance); err == nil {
+	if plan.Mode == RefreshSpatialPatch && e.frame != nil {
+		if e.applySpatialPatches(screen, plan, nav, media) {
 			return FrameResult{
 				Image:   e.frame,
 				Spatial: true,
@@ -58,11 +57,68 @@ func (e *Engine) Draw(screen Screen, nav protocol.NavMessage, media protocol.Med
 	}
 }
 
-func patchOnlyDistance(ids []hudui.NodeID) bool {
-	if len(ids) != 1 {
+func (e *Engine) applySpatialPatches(screen Screen, plan RefreshPlan, nav protocol.NavMessage, media protocol.MediaMessage) bool {
+	for _, id := range plan.DirtyIDs {
+		if !isPatchableNode(screen, id) {
+			return false
+		}
+	}
+	switch screen {
+	case ScreenNav:
+		slots := NavRefreshSlots(nav)
+		for _, id := range plan.DirtyIDs {
+			var err error
+			switch id {
+			case hudui.NodeDistance:
+				err = PatchDistance(e.frame, nav, slots.Distance)
+			case hudui.NodeETA:
+				err = PatchETA(e.frame, nav, slots.ETA)
+			case hudui.NodeRoad:
+				err = PatchRoad(e.frame, nav, slots.Road)
+			default:
+				return false
+			}
+			if err != nil {
+				return false
+			}
+		}
+		return true
+	case ScreenMedia:
+		slots := MediaRefreshSlots()
+		for _, id := range plan.DirtyIDs {
+			var err error
+			switch id {
+			case hudui.NodeMediaTitle:
+				err = PatchMediaTitle(e.frame, media, slots.Title)
+			case hudui.NodeMediaArtist:
+				err = PatchMediaArtist(e.frame, media, slots.Artist)
+			default:
+				return false
+			}
+			if err != nil {
+				return false
+			}
+		}
+		return true
+	default:
 		return false
 	}
-	return ids[0] == hudui.NodeDistance
+}
+
+func isPatchableNode(screen Screen, id hudui.NodeID) bool {
+	switch screen {
+	case ScreenNav:
+		switch id {
+		case hudui.NodeDistance, hudui.NodeETA, hudui.NodeRoad:
+			return true
+		}
+	case ScreenMedia:
+		switch id {
+		case hudui.NodeMediaTitle, hudui.NodeMediaArtist:
+			return true
+		}
+	}
+	return false
 }
 
 func cloneGray(src *image.Gray) *image.Gray {

@@ -1,0 +1,20 @@
+package screens
+
+import "strconv"
+
+// MediaBody is the centered now-playing block (design MediaFocus).
+templ MediaBody(playing string, title, artist string, mw, yPlaying, yTitle, yArtist int) {
+	<text id="playing" data-pixel="6x12" x="0" y={ strconv.Itoa(yPlaying) } font-size="12" fill="#000">{ playing }</text>
+	<text id="title" data-pixel="12x24" x="0" y={ strconv.Itoa(yTitle) } font-size="24" fill="#000">{ title }</text>
+	<text id="artist" data-pixel="8x16" x="0" y={ strconv.Itoa(yArtist) } font-size="16" fill="#000">{ artist }</text>
+}
+
+// StatusRows is link/nav/pkts diagnostics (design StatusDiagnostics).
+templ StatusRows(link, nav, pkts string, mw, y1, y2, y3 int) {
+	<text data-pixel="8x16" x="0" y={ strconv.Itoa(y1) } font-size="16" fill="#000">LINK</text>
+	<text data-pixel="8x16" x={ strconv.Itoa(mw) } y={ strconv.Itoa(y1) } text-anchor="end" font-size="16" fill="#000">{ link }</text>
+	<text data-pixel="8x16" x="0" y={ strconv.Itoa(y2) } font-size="16" fill="#000">NAV</text>
+	<text data-pixel="8x16" x={ strconv.Itoa(mw) } y={ strconv.Itoa(y2) } text-anchor="end" font-size="16" fill="#000">{ nav }</text>
+	<text data-pixel="8x16" x="0" y={ strconv.Itoa(y3) } font-size="16" fill="#000">PKTS</text>
+	<text data-pixel="8x16" x={ strconv.Itoa(mw) } y={ strconv.Itoa(y3) } text-anchor="end" font-size="16" fill="#000">{ pkts }</text>
+}

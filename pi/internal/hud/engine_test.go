@@ -28,3 +28,16 @@ func TestEngineDistancePatch(t *testing.T) {
 		t.Fatalf("expected patched frame, spatial=%v dirty=%v", r2.Spatial, r2.Dirty)
 	}
 }
+
+func TestEngineRoadPatch(t *testing.T) {
+	e := hud.NewEngine()
+	nav := protocol.NavMessage{
+		Active: true, DistanceM: 200, Road: "High St", Maneuver: protocol.ManeuverLeft,
+	}
+	_ = e.Draw(hud.ScreenNav, nav, protocol.MediaMessage{}, true, true)
+	nav.Road = "Main Ave"
+	r := e.Draw(hud.ScreenNav, nav, protocol.MediaMessage{}, true, false)
+	if !r.Patched {
+		t.Fatalf("expected road patch, spatial=%v", r.Spatial)
+	}
+}

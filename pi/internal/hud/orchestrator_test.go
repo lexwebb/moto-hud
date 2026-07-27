@@ -40,7 +40,7 @@ func TestRefreshOrchestratorDistanceBucketPartial(t *testing.T) {
 	}
 }
 
-func TestRefreshOrchestratorRoadChangeFullFrame(t *testing.T) {
+func TestRefreshOrchestratorRoadChangeSpatial(t *testing.T) {
 	o := hud.NewRefreshOrchestrator()
 	nav := protocol.NavMessage{
 		Active: true, DistanceM: 200, Road: "A", Maneuver: protocol.ManeuverStraight,
@@ -48,7 +48,10 @@ func TestRefreshOrchestratorRoadChangeFullFrame(t *testing.T) {
 	_ = o.Plan(hud.ScreenNav, nav, protocol.MediaMessage{}, true, true)
 	nav.Road = "B"
 	r := o.Plan(hud.ScreenNav, nav, protocol.MediaMessage{}, true, false)
-	if r.Mode != hud.RefreshFullFrame {
-		t.Fatalf("road change want full got %v", r.Mode)
+	if r.Mode != hud.RefreshSpatialPatch {
+		t.Fatalf("road change want spatial got %v dirty=%v", r.Mode, r.DirtyIDs)
+	}
+	if len(r.DirtyIDs) != 1 || r.DirtyIDs[0] != hudui.NodeRoad {
+		t.Fatalf("dirty %v", r.DirtyIDs)
 	}
 }

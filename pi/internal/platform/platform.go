@@ -14,11 +14,8 @@ import (
 	"moto-hud/pi/internal/transport"
 )
 
-// Screen is the e-ink (or mock) panel.
-type Screen interface {
-	Show(img *image.Gray) error
-	Close() error
-}
+// Screen is the e-ink (or mock) panel — same contract as display.Display.
+type Screen = display.Display
 
 // Controls delivers physical or virtual button events.
 type Controls interface {

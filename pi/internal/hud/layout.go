@@ -349,68 +349,72 @@ func buildMediaBody(media protocol.MediaMessage, bleLinked bool) map[string]stri
 	mw := mainWidth()
 	link := linkMarkSVG(bleLinked)
 
-	playing := "PAUSED"
 	action := "PLAY"
 	if media.Playing {
-		playing = "PLAYING"
 		action = "PAUSE"
 	}
-	title := media.Title
-	if title == "" || title == "-" {
-		title = "No track"
+
+	content, err := compose.MediaBodySVGFromMessage(media, fit)
+	if err != nil || content == "" {
+		playing := "PAUSED"
+		if media.Playing {
+			playing = "PLAYING"
+		}
+		title := media.Title
+		if title == "" || title == "-" {
+			title = "No track"
+		}
+		artist := media.Artist
+		headerBottom := pad + meta.Metrics.CellH
+		contentTop := headerBottom + gapSm + gapMd
+		contentBot := Height - pad
+		playing = fit(meta, playing, mw)
+		title = fit(titleFace, title, mw)
+		artist = fit(body, artist, mw)
+		blockH := meta.Metrics.CellH + gapSm + titleFace.Metrics.CellH + gapSm + body.Metrics.CellH
+		top := contentTop + (contentBot-contentTop-blockH)/2
+		y1 := top + meta.Metrics.Ascent
+		y2 := top + meta.Metrics.CellH + gapSm + titleFace.Metrics.Ascent
+		y3 := top + meta.Metrics.CellH + gapSm + titleFace.Metrics.CellH + gapSm + body.Metrics.Ascent
+		var c strings.Builder
+		c.WriteString(textSVG("playing", meta, 0, y1, "start", playing))
+		c.WriteString(textSVG("title", titleFace, 0, y2, "start", title))
+		c.WriteString(textSVG("artist", body, 0, y3, "start", artist))
+		content = c.String()
 	}
-	artist := media.Artist
-
-	headerBottom := pad + meta.Metrics.CellH
-	contentTop := headerBottom + gapSm + gapMd
-	contentBot := Height - pad
-
-	playing = fit(meta, playing, mw)
-	title = fit(titleFace, title, mw)
-	artist = fit(body, artist, mw)
-
-	blockH := meta.Metrics.CellH + gapSm + titleFace.Metrics.CellH + gapSm + body.Metrics.CellH
-	top := contentTop + (contentBot-contentTop-blockH)/2
-	y1 := top + meta.Metrics.Ascent
-	y2 := top + meta.Metrics.CellH + gapSm + titleFace.Metrics.Ascent
-	y3 := top + meta.Metrics.CellH + gapSm + titleFace.Metrics.CellH + gapSm + body.Metrics.Ascent
-
-	var c strings.Builder
-	c.WriteString(textSVG("playing", meta, 0, y1, "start", playing))
-	c.WriteString(textSVG("title", titleFace, 0, y2, "start", title))
-	c.WriteString(textSVG("artist", body, 0, y3, "start", artist))
-	return chromeShell("MEDIA", link, c.String(), "SKIP", action, "SKIP")
+	return chromeShell("MEDIA", link, content, "SKIP", action, "SKIP")
 }
 
 func buildStatusBody(bleLinked, navActive bool) map[string]string {
-	body := mustFace(pixelfont.Size8x16)
-	meta := mustFace(pixelfont.Size6x12)
-	mw := mainWidth()
 	link := linkMarkSVG(bleLinked)
-
-	ble, nav := "DOWN", "OFF"
-	if bleLinked {
-		ble = "UP"
+	content, err := compose.StatusBodySVG(bleLinked, navActive)
+	if err != nil || content == "" {
+		body := mustFace(pixelfont.Size8x16)
+		meta := mustFace(pixelfont.Size6x12)
+		mw := mainWidth()
+		ble, nav := "DOWN", "OFF"
+		if bleLinked {
+			ble = "UP"
+		}
+		if navActive {
+			nav = "ON"
+		}
+		headerBottom := pad + meta.Metrics.CellH
+		contentTop := headerBottom + gapSm + gapMd
+		contentBot := Height - pad
+		rowH := body.Metrics.CellH + gapMd
+		rows := 3
+		blockH := rowH*rows - gapMd
+		top := contentTop + (contentBot-contentTop-blockH)/2
+		var c strings.Builder
+		labels := []string{"LINK", "NAV", "PKTS"}
+		vals := []string{ble, nav, "OK"}
+		for i := 0; i < rows; i++ {
+			baseline := top + i*rowH + body.Metrics.Ascent
+			c.WriteString(textSVG("", body, 0, baseline, "start", labels[i]))
+			c.WriteString(textSVG("", body, mw, baseline, "end", vals[i]))
+		}
+		content = c.String()
 	}
-	if navActive {
-		nav = "ON"
-	}
-
-	headerBottom := pad + meta.Metrics.CellH
-	contentTop := headerBottom + gapSm + gapMd
-	contentBot := Height - pad
-	rowH := body.Metrics.CellH + gapMd
-	rows := 3
-	blockH := rowH*rows - gapMd
-	top := contentTop + (contentBot-contentTop-blockH)/2
-
-	var c strings.Builder
-	labels := []string{"LINK", "NAV", "PKTS"}
-	vals := []string{ble, nav, "OK"}
-	for i := 0; i < rows; i++ {
-		baseline := top + i*rowH + body.Metrics.Ascent
-		c.WriteString(textSVG("", body, 0, baseline, "start", labels[i]))
-		c.WriteString(textSVG("", body, mw, baseline, "end", vals[i]))
-	}
-	return chromeShell("STATUS", link, c.String(), "MODE", "REDRAW", "MODE")
+	return chromeShell("STATUS", link, content, "MODE", "REDRAW", "MODE")
 }

@@ -76,7 +76,7 @@ func (o *RefreshOrchestrator) Plan(screen Screen, nav protocol.NavMessage, media
 			}
 		}
 		prevSlot, hadSlot := o.slots[d.ID]
-		if hadSlot && d.ID == hudui.NodeDistance && prevSlot != d.Slot {
+		if hadSlot && d.Tier == hudui.TierPartialOK && prevSlot != d.Slot {
 			allPartialOK = false
 		}
 	}
@@ -143,17 +143,32 @@ func navRefreshDescriptors(nav protocol.NavMessage, linked bool) []hudui.Descrip
 		{ID: hudui.NodeChrome, Tier: hudui.TierStatic, Key: keyBool(linked)},
 		{ID: hudui.NodeManeuver, Tier: hudui.TierSlow, Slot: slots.Maneuver, Key: keyManeuver(nav)},
 		{ID: hudui.NodeDistance, Tier: hudui.TierPartialOK, Slot: slots.Distance, Key: keyDistance(nav)},
-		{ID: hudui.NodeRoad, Tier: hudui.TierSlow, Slot: slots.Road, Key: keyRoad(nav)},
-		{ID: hudui.NodeETA, Tier: hudui.TierFast, Slot: slots.ETA, Key: keyETA(nav)},
+		{ID: hudui.NodeRoad, Tier: hudui.TierPartialOK, Slot: slots.Road, Key: keyRoad(nav)},
+		{ID: hudui.NodeETA, Tier: hudui.TierPartialOK, Slot: slots.ETA, Key: keyETA(nav)},
 		{ID: hudui.NodeRibbon, Tier: hudui.TierSlow, Slot: slots.Ribbon, Key: keyRibbon(nav)},
 	}
 }
 
 func mediaRefreshDescriptors(media protocol.MediaMessage, linked bool) []hudui.Descriptor {
+	slots := MediaRefreshSlots()
 	return []hudui.Descriptor{
-		{ID: hudui.NodeScreen, Tier: hudui.TierStatic, Key: keyMedia(media, linked)},
+		{ID: hudui.NodeScreen, Tier: hudui.TierStatic, Key: keyMediaScreen(media, linked)},
 		{ID: hudui.NodeChrome, Tier: hudui.TierStatic, Key: keyBool(linked)},
+		{ID: hudui.NodeMediaState, Tier: hudui.TierSlow, Slot: slots.Playing, Key: keyMediaPlaying(media)},
+		{ID: hudui.NodeMediaTitle, Tier: hudui.TierPartialOK, Slot: slots.Title, Key: refreshHashStr(media.Title)},
+		{ID: hudui.NodeMediaArtist, Tier: hudui.TierPartialOK, Slot: slots.Artist, Key: refreshHashStr(media.Artist)},
 	}
+}
+
+func keyMediaScreen(media protocol.MediaMessage, linked bool) hudui.ChangeKey {
+	return keyMedia(media, linked)
+}
+
+func keyMediaPlaying(media protocol.MediaMessage) hudui.ChangeKey {
+	if media.Playing {
+		return 1
+	}
+	return 0
 }
 
 func statusRefreshDescriptors(navActive, linked bool) []hudui.Descriptor {
