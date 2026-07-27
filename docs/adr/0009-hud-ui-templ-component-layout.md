@@ -20,3 +20,4 @@ The Pi compositor will move from hand-built SVG strings in `layout.go` toward **
 - Screen migration is incremental (one kit screen at a time); `layout.go` shrinks as screens move.
 - Shared tokens should converge with `design/tokens/` (codegen or checked-in JSON) to limit drift.
 - Interactive “hooks” are not a runtime: state lives on `hud.State`; preview interactivity uses the same props from tests or emulator, not `useEffect` in components.
+- Refresh tiers, fixed slots, and spatial partial orchestration are specified in [ADR 0010](0010-component-refresh-tiers-partial-regions.md).
