@@ -14,6 +14,9 @@ type DrawDeps struct {
 	RoadBlockH    func(lineCount int) int
 	HasMinimap    func(protocol.NavMessage) bool
 	MinimapNodes  func(mm *protocol.MinimapMessage, w, h int) []scene.Node
+	// Junction IR (parallel to minimap; gated by PreferJunctionTemplates in hud).
+	HasJunction    func(protocol.NavMessage) bool
+	JunctionNodes  func(nav protocol.NavMessage, w, h int) []scene.Node
 	HasLanes      func(protocol.NavMessage) bool
 	LaneStripNodes func(lanes []protocol.LaneInfo, maxW int) []scene.Node
 	TextSVG       func(id string, faceSize string, x, baseline int, anchor, s string) string

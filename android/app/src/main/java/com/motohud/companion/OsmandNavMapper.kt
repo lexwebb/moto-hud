@@ -8,6 +8,10 @@ import net.osmand.aidlapi.navigation.ADirectionInfo
  * TurnType values from OsmAnd (net.osmand.router.TurnType):
  * C=1 TL=2 TSLL=3 TSHL=4 TR=5 TSLR=6 TSHR=7 KL=8 KR=9 TU=10 TRU=11
  * OFFR=12 RNDB=13 RNLB=14
+ *
+ * AIDL stays thin: emits minimal `nav.junction` (`kind`+`outbound`) so the Pi
+ * does not have to synthesize. Rich topology (arms / dual / ramps) requires
+ * the embedded Full Library engine.
  */
 object OsmandNavMapper {
 
@@ -28,6 +32,7 @@ object OsmandNavMapper {
             road = "",
             etaMin = 0,
             maneuver = maneuver,
+            junction = JunctionBuilder.fromManeuver(maneuver),
         )
     }
 }

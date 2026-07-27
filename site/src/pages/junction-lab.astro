@@ -1,0 +1,114 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+
+const base = import.meta.env.BASE_URL;
+---
+<BaseLayout title="Junction lab" description="Semantic junction IR template stubs" fullBleed>
+  <div class="lab">
+    <header class="lab-head">
+      <div>
+        <h1>Junction lab</h1>
+        <p class="meta">
+          Idealized templates from semantic IR (not meter polylines). POC:
+          <code>emulator/junction-poc/whitehall-farringdon.json</code>.
+          Pi source of truth: <code>pi/internal/hud/junction.go</code>.
+        </p>
+      </div>
+      <p class="meta links">
+        <a href={`${base}minimap-lab/`}>Minimap lab</a>
+        ·
+        <a href={`${base}emulator/`}>Emulator</a>
+      </p>
+    </header>
+
+    <aside class="panel fixtures">
+      <h2 id="routeTitle">POC</h2>
+      <div id="maneuverList" class="fixture-list">Loading…</div>
+      <p class="meta" id="fixtureMeta">—</p>
+    </aside>
+
+    <section class="panel main">
+      <div class="col">
+        <h2 id="paneTitle">Template</h2>
+        <canvas id="pane" width="70" height="80" aria-label="Junction template"></canvas>
+        <div class="row">
+          <button type="button" id="prev">Prev</button>
+          <button type="button" id="next">Next</button>
+          <span class="meta" id="status">—</span>
+        </div>
+      </div>
+      <div class="col">
+        <h2>IR</h2>
+        <pre id="irJson" class="ir">—</pre>
+      </div>
+    </section>
+  </div>
+</BaseLayout>
+
+<script is:inline define:vars={{ base }}>
+  window.__MOTO_HUD_BASE__ = base;
+</script>
+<script>
+  import '../scripts/junction-lab.js';
+</script>
+
+<style>
+  .lab {
+    display: grid;
+    grid-template-columns: 16rem 1fr;
+    grid-template-areas:
+      "head head"
+      "fixtures main";
+    gap: 1rem;
+    padding: 1.25rem;
+    min-height: calc(100vh - 3.2rem);
+  }
+  .lab-head { grid-area: head; display: flex; justify-content: space-between; gap: 1rem; flex-wrap: wrap; }
+  .lab h1 { margin: 0 0 .35rem; font-size: 1.35rem; }
+  .lab h2 { margin: 0 0 .35rem; font-size: 1rem; }
+  .lab .meta { color: var(--muted); font-size: .88rem; margin: 0; line-height: 1.45; }
+  .lab .panel { background: var(--panel); border-radius: 4px; padding: 1rem; }
+  .fixtures { grid-area: fixtures; }
+  .main { grid-area: main; display: grid; grid-template-columns: auto 1fr; gap: 1.25rem; }
+  .fixture-list { display: flex; flex-direction: column; gap: .35rem; margin: .75rem 0; }
+  .fixture-list button, .row button {
+    padding: .45rem .65rem;
+    border: 1px solid #555;
+    border-radius: 3px;
+    background: #1e2124;
+    color: var(--text);
+    font: inherit;
+    font-size: .82rem;
+    font-weight: 600;
+    cursor: pointer;
+    text-align: left;
+  }
+  .fixture-list button.active { border-color: var(--accent); color: var(--accent); }
+  .col canvas {
+    image-rendering: pixelated;
+    image-rendering: crisp-edges;
+    width: 210px;
+    height: 240px;
+    background: #fff;
+    border: 1px solid #333;
+    display: block;
+  }
+  .row { display: flex; gap: .5rem; flex-wrap: wrap; align-items: center; margin-top: .65rem; }
+  .ir {
+    margin: 0;
+    padding: .75rem;
+    background: #121416;
+    border: 1px solid #3a3f44;
+    border-radius: 3px;
+    font-size: .78rem;
+    line-height: 1.4;
+    overflow: auto;
+    max-height: min(60vh, 28rem);
+    color: var(--text);
+  }
+  code { font-size: .85em; }
+  @media (max-width: 900px) {
+    .lab { grid-template-columns: 1fr; grid-template-areas: "head" "fixtures" "main"; }
+    .main { grid-template-columns: 1fr; }
+  }
+</style>

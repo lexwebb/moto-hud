@@ -1,0 +1,171 @@
+{
+  "route": "Whitehall → Farringdon",
+  "total_m": 2712,
+  "drive": "left",
+  "generated": "2026-07-27",
+  "labeling_rule": "expected_dual = any dual_carriageway=yes segment mid in turn-local corridor y∈[-45,20], |x|≤30 (same as classifyJunction tag path). Tag GT is incomplete vs physical duals.",
+  "caveat": "Lab-only bake. Product dual inference still uses OsmAnd. Embankment may be physically dual but untagged; Fleet Street must stay negative; Whitehall/Northumberland positive via tags.",
+  "summary": {
+    "total": 13,
+    "pass": 13,
+    "fail": 0
+  },
+  "turns": [
+    {
+      "index": 0,
+      "along_m": 0,
+      "label": "depart · Whitehall",
+      "expected_dual": true,
+      "predicted_dual": true,
+      "match": true,
+      "label_source": "osm_dual_carriageway_tag",
+      "predicted_source": "tag",
+      "junction_kind": "depart",
+      "notes": "tagged dual approach — expect positive; tag hits: Whitehall"
+    },
+    {
+      "index": 1,
+      "along_m": 152,
+      "label": "right · Whitehall Place",
+      "expected_dual": true,
+      "predicted_dual": true,
+      "match": true,
+      "label_source": "osm_dual_carriageway_tag",
+      "predicted_source": "tag",
+      "junction_kind": "dual_carriageway",
+      "notes": "tagged dual approach — expect positive; tag hits: Whitehall"
+    },
+    {
+      "index": 2,
+      "along_m": 425,
+      "label": "right · Northumberland Avenue",
+      "expected_dual": true,
+      "predicted_dual": true,
+      "match": true,
+      "label_source": "osm_dual_carriageway_tag",
+      "predicted_source": "tag",
+      "junction_kind": "dual_carriageway",
+      "notes": "tagged dual — expect positive; tag hits: Northumberland Avenue"
+    },
+    {
+      "index": 3,
+      "along_m": 502,
+      "label": "left · Victoria Embankment",
+      "expected_dual": true,
+      "predicted_dual": true,
+      "match": true,
+      "label_source": "osm_dual_carriageway_tag",
+      "predicted_source": "tag",
+      "junction_kind": "dual_carriageway",
+      "notes": "physically dual but often untagged; tag GT may be false or bleed from prior dual; tag hits: Northumberland Avenue"
+    },
+    {
+      "index": 4,
+      "along_m": 1175,
+      "label": "slight left · Temple Place",
+      "expected_dual": false,
+      "predicted_dual": false,
+      "match": true,
+      "label_source": "no_tag_in_corridor",
+      "predicted_source": null,
+      "junction_kind": "fork",
+      "notes": "on Embankment corridor — physical dual may be untagged"
+    },
+    {
+      "index": 5,
+      "along_m": 1343,
+      "label": "left · Arundel Street",
+      "expected_dual": false,
+      "predicted_dual": false,
+      "match": true,
+      "label_source": "no_tag_in_corridor",
+      "predicted_source": null,
+      "junction_kind": "simple",
+      "notes": null
+    },
+    {
+      "index": 6,
+      "along_m": 1518,
+      "label": "right · Strand",
+      "expected_dual": false,
+      "predicted_dual": false,
+      "match": true,
+      "label_source": "no_tag_in_corridor",
+      "predicted_source": null,
+      "junction_kind": "crossroads",
+      "notes": null
+    },
+    {
+      "index": 7,
+      "along_m": 1726,
+      "label": "straight · Fleet Street",
+      "expected_dual": false,
+      "predicted_dual": false,
+      "match": true,
+      "label_source": "no_tag_in_corridor",
+      "predicted_source": null,
+      "junction_kind": "simple",
+      "notes": "must stay negative (parallel oneways, not dual_carriageway)"
+    },
+    {
+      "index": 8,
+      "along_m": 1916,
+      "label": "left · Fetter Lane",
+      "expected_dual": false,
+      "predicted_dual": false,
+      "match": true,
+      "label_source": "no_tag_in_corridor",
+      "predicted_source": null,
+      "junction_kind": "crossroads",
+      "notes": null
+    },
+    {
+      "index": 9,
+      "along_m": 2129,
+      "label": "straight · New Fetter Lane",
+      "expected_dual": false,
+      "predicted_dual": false,
+      "match": true,
+      "label_source": "no_tag_in_corridor",
+      "predicted_source": null,
+      "junction_kind": "simple",
+      "notes": null
+    },
+    {
+      "index": 10,
+      "along_m": 2366,
+      "label": "straight · Charterhouse Street",
+      "expected_dual": true,
+      "predicted_dual": true,
+      "match": true,
+      "label_source": "osm_dual_carriageway_tag",
+      "predicted_source": "tag",
+      "junction_kind": "dual_carriageway",
+      "notes": "tag hits: Holborn, A40"
+    },
+    {
+      "index": 11,
+      "along_m": 2548,
+      "label": "left · Farringdon Road",
+      "expected_dual": false,
+      "predicted_dual": false,
+      "match": true,
+      "label_source": "no_tag_in_corridor",
+      "predicted_source": null,
+      "junction_kind": "crossroads",
+      "notes": null
+    },
+    {
+      "index": 12,
+      "along_m": 2712,
+      "label": "arrive · Farringdon Road",
+      "expected_dual": false,
+      "predicted_dual": false,
+      "match": true,
+      "label_source": "no_tag_in_corridor",
+      "predicted_source": null,
+      "junction_kind": "arrive",
+      "notes": null
+    }
+  ]
+}

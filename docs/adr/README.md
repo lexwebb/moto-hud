@@ -16,3 +16,4 @@ Short records of hard-to-reverse trade-offs. Format and when-to-write: project s
 | [0010](0010-hud-ui-templ-component-layout.md) | HUD UI: templ components + layout props | accepted |
 | [0011](0011-component-refresh-tiers-partial-regions.md) | Component refresh tiers + spatial partial regions | accepted |
 | [0012](0012-hud-scene-ir-svg-backend.md) | HUD scene IR; SVG as render backend only | accepted |
+| [0013](0013-junction-ir-replaces-minimap.md) | Semantics-first junction IR replaces meter minimap | accepted |

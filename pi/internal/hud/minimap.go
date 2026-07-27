@@ -63,6 +63,10 @@ func minimapSVG(mm *protocol.MinimapMessage, w, h int) string {
 }
 
 // MinimapNodes draws context dashes, solid route, and turn/rider marks as scene nodes.
+//
+// Junction IR path: PreferJunctionTemplates + JunctionNodes (junction.go) will
+// replace this meter polyline rasterizer. Keep MinimapNodes until that flag is
+// the live default — do not delete this path from stubs.
 func MinimapNodes(mm *protocol.MinimapMessage, w, h int) []scene.Node {
 	return minimapNodesLayers(mm, w, h, true, true, true)
 }

@@ -5,6 +5,7 @@ import android.os.Handler
 import android.os.Looper
 import android.util.Log
 import com.motohud.companion.HudBus
+import com.motohud.companion.JunctionBuilder
 import com.motohud.companion.ManeuverParser
 import com.motohud.companion.NavEngine
 import com.motohud.companion.NavSource
@@ -115,6 +116,13 @@ class OsmandEmbeddedNavEngine(private val app: Context) : NavEngine {
             ?.takeIf { it.isNotBlank() }
             ?: ManeuverParser.instructionForOsmandTurnType(turn.value)
 
+        val junction = try {
+            OsmandJunctionExtractor.extract(osmand, rh, di, maneuver)
+        } catch (e: Exception) {
+            Log.w(TAG, "junction extract failed — emitting minimal IR", e)
+            JunctionBuilder.fromManeuver(maneuver)
+        }
+
         HudBus.publishNav(
             NavState(
                 active = true,
@@ -127,6 +135,7 @@ class OsmandEmbeddedNavEngine(private val app: Context) : NavEngine {
                 maneuver = maneuver,
                 lanes = lanes,
                 thenNext = thenNext,
+                junction = junction,
             ),
             NavSource.OSMAND,
         )

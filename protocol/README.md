@@ -49,7 +49,17 @@ See [uuids.json](uuids.json). Shared constants also live in:
     {"x": 0, "y": 120},
     {"x": -40, "y": 180}
   ],
-  "ribbon_turn": 2
+  "ribbon_turn": 2,
+  "junction": {
+    "kind": "crossroads",
+    "drive": "left",
+    "outbound": "right",
+    "through": true,
+    "sides": [
+      { "side": "left", "at": "before", "style": "dashed" },
+      { "side": "left", "at": "at", "style": "dashed" }
+    ]
+  }
 }
 ```
 
@@ -57,21 +67,61 @@ See [uuids.json](uuids.json). Shared constants also live in:
 
 Optional `lanes` (left→right): each lane lists allowed `directions` (same strings as `maneuver`) and whether it is `active` for the route. Omitted when the engine cannot provide lane guidance (e.g. MapKit, stock AIDL). Optional `then_next` is the following maneuver. Optional `remaining_m` is distance to destination.
 
-Optional `ribbon_points` / `ribbon_turn`: local-unit corridor vertices (Y ahead, X right). When present (≥2 points) and `minimap` is absent, the Pi draws that corridor in the live two-column layout; otherwise it falls back to a synthetic kink from `maneuver`. The Android companion fills these from a short public-OSRM probe.
+Optional `ribbon_points` / `ribbon_turn`: local-unit corridor vertices (Y ahead, X right). Secondary path when `junction` is absent and the Pi cannot synthesize from `maneuver`. The Android companion may still fill these from a short public-OSRM probe.
 
-Optional `minimap` (preferred when available): top-down **junction snapshot** in meters. Origin ≈ next turn; +Y along the inbound approach (rider usually at negative Y). The Pi fits orthographically (no perspective): dashed `context`, solid `route`, turn mark at origin, `rider` blob.
+Optional `junction` (**replaces** `minimap` — do not send geographic polylines): semantic turn-scene IR. Shared frame: approach from bottom, ahead toward top; proportions belong to the renderer. TypeScript: [`junction.ts`](junction.ts). Decision: [ADR 0013](../docs/adr/0013-junction-ir-replaces-minimap.md).
 
-```json
-"minimap": {
-  "route": [{"x": 0, "y": -40}, {"x": 0, "y": 0}, {"x": 18, "y": 25}],
-  "context": [
-    [{"x": -20, "y": -30}, {"x": -18, "y": 40}]
-  ],
-  "rider": {"x": 0, "y": -35}
-}
-```
+#### `junction` shared fields
 
-The browser emulator builds this from the ride polyline + baked OSM highways around the next maneuver; Android does not send it yet.
+| Field | Meaning |
+|-------|---------|
+| `kind` | Template family (required when `junction` present) |
+| `drive` | `right` \| `left`; omit → `right` |
+| `outbound` | Our exit relative to approach: `left` / `right` / `slight_*` / `straight` / `u_turn` |
+| `through` | Main corridor continues past the decision |
+| `sides[]` | Extra arms: `side` `left`\|`right`, `at` `before`\|`at`\|`after`, `style` `dashed`\|`solid` |
+
+#### `junction` kinds (v1 draw + reserved)
+
+| Kind | Extra fields | Diagram idea | v1 draw |
+|------|--------------|--------------|---------|
+| `simple` | optional `sides` | Spine + outbound kink (+ stubs) | yes |
+| `t_junction` | — | T bar; `through` false | yes |
+| `crossroads` | — | + solid route, dashed others | yes |
+| `fork` | outbound slight L/R | Y; route solid, other dashed | yes |
+| `merge` | optional `side` | Side joins spine | yes |
+| `dual_carriageway` | optional `cross_median` | Twin parallels; median gap if crossing | yes |
+| `roundabout` | `exits` (2–6), `exit` (1-based) | Ring + ticks; ours solid | yes |
+| `ramp_exit` | `through` true | Mainline + diverging slip | yes |
+| `ramp_enter` | optional `side` | Slip → mainline | yes |
+| `u_turn` | — | Canned U (flip with `drive`) | yes |
+| `arrive` / `depart` | — | End/start mark on short spine | yes |
+| `jughandle`, `interchange`, `gyratory` | — | Reserved; render as `simple` | no |
+
+`cross_median`: set when `kind=dual_carriageway` and outbound is a hard left/right (not slight/straight). Dual detection is **inferred** on the companion (same-name opposite oneway, or parallel opposite oneway); OBF has no `dual_carriageway` tag.
+
+Phone produces rich `junction` when possible (OsmAnd Full Library). When omitted, Pi synthesizes `{ kind, outbound }` from `maneuver` (`left`/`right`→`simple`, `slight_*`→`fork`, `roundabout`→`roundabout` exits=4 exit=2, etc.); `sides` empty. Unknown `kind` → `simple` fallback.
+
+#### OsmAnd TurnType / classifier → `kind`
+
+Maps through protocol `maneuver` first ([`ManeuverParser.fromOsmandTurnType`](../android/app/src/main/java/com/motohud/companion/Models.kt)); rich producers then upgrade `kind` from topology.
+
+| OsmAnd `TurnType` | `maneuver` | Default / synthesized `kind` | Rich upgrade when |
+|-------------------|------------|------------------------------|-------------------|
+| C (1) | `straight` | `simple` | dual → `dual_carriageway`; arms → `crossroads` |
+| TL (2), TSHL (4) | `left` | `simple` | T / cross / dual / `cross_median` |
+| TR (5), TSHR (7) | `right` | `simple` | same |
+| TSLL (3), KL (8) | `slight_left` | `fork` | dual context may still be `dual_carriageway` |
+| TSLR (6), KR (9) | `slight_right` | `fork` | same |
+| TU (10), TRU (11) | `u_turn` | `u_turn` | — |
+| RNDB (13), RNLB (14) | `roundabout` | `roundabout` | fill `exits`/`exit` when known |
+| OFFR (12) | `unknown` | `simple` | — |
+| (arrive / depart) | `arrive` / `depart` | `arrive` / `depart` | — |
+| `*_link` highway diverge | (turn class) | `ramp_exit` | attached mainline continues |
+| `*_link` highway merge | (turn class) | `ramp_enter` | slip joins spine |
+| classifier: L+R+through arms | — | `crossroads` | — |
+| classifier: one side, no through | — | `t_junction` | — |
+| classifier: dual inferred | — | `dual_carriageway` | `cross_median` if hard L/R |
 
 ### `media`
 
@@ -145,12 +195,13 @@ While OsmAnd reports `active` navigation, Maps notification updates are ignored.
 
 If nav fields are empty, disable Google Maps **Live Updates** / **Live info** notification categories in Android system settings for Maps, then restart navigation.
 
-## Road ribbon / minimap
+## Road ribbon / junction
 
-Active nav with live geometry uses a **two-column** layout: left = corridor or turn snapshot, right = compacted hero distance + road + ETA (no maneuver arrows).
+Active nav with live geometry uses a **two-column** layout: left = junction diagram or corridor, right = compacted hero distance + road + ETA (no maneuver arrows).
 
-- Prefer optional `minimap`: top-down orthographic snapshot of the **next turn** (dashed OSM context, solid route, rider + turn marks). Frame stays locked to the junction; the rider blob moves as you approach.
+- Prefer optional `junction`: semantic IR → idealized template by `kind` (immediate decision only).
+- Else synthesize a minimal junction from `maneuver`.
 - Else `ribbon_points` schematic corridor.
 - Else synthetic kink from `maneuver` in the classic stack (glyph + distance + road + bottom ribbon); unknown → dashed placeholder.
 
-OSRM (phone) uses the public demo server for `ribbon_points` only today. The emulator proves `minimap` offline via a baked OSM extract beside the Whitehall route.
+`nav.minimap` (meter polylines) is **removed** from the live HUD path. Emulator/lab may still classify offline; production rich IR comes from OsmAnd Full Library, not AIDL.

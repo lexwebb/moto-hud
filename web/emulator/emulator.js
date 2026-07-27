@@ -110,6 +110,13 @@ const TURN_SNAP_HALF_W = 50;
  * Top-down snapshot centered on the next turn.
  * Local frame: turn at origin; +Y = inbound approach direction (rider below).
  */
+function wayCoords(way) {
+  if (!way) return null;
+  if (Array.isArray(way)) return way;
+  if (Array.isArray(way.coords)) return way.coords;
+  return null;
+}
+
 function buildMinimap(coords, riderPos, turnAt, ways) {
   if (!ways || !ways.length) return null;
   const turnIdx = Math.min(Math.max(turnAt, 0), coords.length - 1);
@@ -167,8 +174,10 @@ function buildMinimap(coords, riderPos, turnAt, ways) {
   const context = [];
   for (const way of ways) {
     if (context.length >= 40) break;
+    const geom = wayCoords(way);
+    if (!geom || geom.length < 2) continue;
     let near = false;
-    for (const [lng, lat] of way) {
+    for (const [lng, lat] of geom) {
       if (Math.abs(lat - turnLat) <= dLat && Math.abs(lng - turnLng) <= dLon) {
         near = true;
         break;
@@ -184,7 +193,7 @@ function buildMinimap(coords, riderPos, turnAt, ways) {
         projected.length = 0;
       }
     };
-    for (const [lng, lat] of way) {
+    for (const [lng, lat] of geom) {
       const p = toLocal(lng, lat);
       if (p.y >= -TURN_SNAP_BEHIND && p.y <= TURN_SNAP_AHEAD && Math.abs(p.x) <= TURN_SNAP_HALF_W) {
         projected.push({ x: Math.round(p.x), y: Math.round(p.y) });

@@ -86,7 +86,11 @@ func planNavLive(in Input) (plan.ScreenPlan, error) {
 	}
 
 	var leftNodes []scene.Node
-	if deps.HasMinimap != nil && deps.HasMinimap(nav) && deps.MinimapNodes != nil {
+	// Junction IR templates (PreferJunctionTemplates) sit beside the meter minimap —
+	// do not remove MinimapNodes until the flag is the live default.
+	if deps.HasJunction != nil && deps.HasJunction(nav) && deps.JunctionNodes != nil {
+		leftNodes = deps.JunctionNodes(nav, leftW, ribbonH)
+	} else if deps.HasMinimap != nil && deps.HasMinimap(nav) && deps.MinimapNodes != nil {
 		leftNodes = deps.MinimapNodes(nav.Minimap, leftW, ribbonH)
 	} else if deps.RibbonNodes != nil {
 		leftNodes = deps.RibbonNodes(nav, leftW, ribbonH)

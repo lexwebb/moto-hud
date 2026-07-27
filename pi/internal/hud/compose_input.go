@@ -48,6 +48,10 @@ func drawDeps() compose.DrawDeps {
 		},
 		HasMinimap: HasMinimap,
 		MinimapNodes: MinimapNodes,
+		HasJunction: func(nav protocol.NavMessage) bool {
+			return PreferJunctionTemplates && (HasJunction(nav) || nav.Active)
+		},
+		JunctionNodes: JunctionNodesForNav,
 		HasLanes:   hasLanes,
 		LaneStripNodes: LaneStripNodes,
 	}

@@ -8,6 +8,54 @@ data class RibbonPoint(
     val y: Double,
 )
 
+/** Extra arm on the approach or at the decision node (nav.junction.sides). */
+data class JunctionSideArm(
+    val side: String, // left | right
+    val at: String, // before | at | after
+    val style: String = "dashed", // dashed | solid
+)
+
+/**
+ * Semantic turn-scene IR on nav.junction (replaces minimap).
+ * See protocol/junction.ts and ADR 0013.
+ */
+data class JunctionMessage(
+    val kind: String,
+    val outbound: String,
+    val through: Boolean,
+    val drive: String? = null, // left | right; omit → right
+    val sides: List<JunctionSideArm> = emptyList(),
+    val crossMedian: Boolean = false,
+    val exits: Int = 0,
+    val exit: Int = 0,
+    val side: String? = null, // merge / ramp_enter
+) {
+    fun toJsonObject(): JSONObject = JSONObject().apply {
+        put("kind", kind)
+        put("outbound", outbound)
+        put("through", through)
+        drive?.let { put("drive", it) }
+        if (sides.isNotEmpty()) {
+            put("sides", JSONArray().also { arr ->
+                sides.forEach { s ->
+                    arr.put(
+                        JSONObject()
+                            .put("side", s.side)
+                            .put("at", s.at)
+                            .put("style", s.style),
+                    )
+                }
+            })
+        }
+        if (kind == "dual_carriageway") put("cross_median", crossMedian)
+        if (kind == "roundabout") {
+            put("exits", exits)
+            put("exit", exit)
+        }
+        side?.let { put("side", it) }
+    }
+}
+
 /** One lane, left-to-right. Directions use protocol maneuver strings. */
 data class LaneInfo(
     val directions: List<String>,
@@ -35,6 +83,7 @@ data class NavState(
     val thenNext: ThenNext? = null,
     val ribbonPoints: List<RibbonPoint> = emptyList(),
     val ribbonTurn: Int = -1,
+    val junction: JunctionMessage? = null,
 ) {
     fun toJson(): ByteArray = JSONObject().apply {
         put("type", "nav")
@@ -73,6 +122,7 @@ data class NavState(
             })
             put("ribbon_turn", ribbonTurn)
         }
+        junction?.let { put("junction", it.toJsonObject()) }
     }.toString().toByteArray(Charsets.UTF_8)
 }
 

@@ -1,0 +1,10 @@
+# Large / regenerable OsmAnd POC artifacts (keep dump JSON + sources)
+mapcreator/
+mapcreator2/
+OsmAndMapCreator-main.zip
+OsmAnd-java-android.jar
+whitehall-farringdon.osm
+regions.ocbf
+*.class
+DumpOsmandJunction.class
+DumpOsmandJunction$*.class

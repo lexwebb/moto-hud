@@ -77,7 +77,8 @@ class MainActivity : AppCompatActivity() {
                 }
                 navText.text = if (it.active) {
                     val then = it.thenNext?.let { t -> " → then ${t.maneuver} ${t.distanceText}" }.orEmpty()
-                    "[$src] ${it.maneuver} ${it.distanceText}$then\n${it.road.ifBlank { it.instruction }}"
+                    val junc = it.junction?.let { j -> " · j=${j.kind}/${j.outbound}" }.orEmpty()
+                    "[$src] ${it.maneuver} ${it.distanceText}$then$junc\n${it.road.ifBlank { it.instruction }}"
                 } else {
                     "Nav idle · engine=$engine"
                 }

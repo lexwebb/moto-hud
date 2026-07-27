@@ -29,6 +29,7 @@ func main() {
 		"renderPNG":         js.FuncOf(renderPNG),
 		"renderMinimapPNG":  js.FuncOf(renderMinimapPNG),
 		"minimapSVG":        js.FuncOf(minimapSVGJS),
+		"junctionSVG":       js.FuncOf(junctionSVGJS),
 		"screen":            js.FuncOf(screenName),
 		"width":             hud.Width,
 		"height":            hud.Height,
@@ -163,6 +164,26 @@ func minimapSVGJS(this js.Value, args []js.Value) any {
 		}
 	}
 	return hud.MinimapSVGFragment(&mm, w, h)
+}
+
+func junctionSVGJS(this js.Value, args []js.Value) any {
+	if len(args) < 1 {
+		return errVal("missing junction json")
+	}
+	var j protocol.JunctionMessage
+	if err := json.Unmarshal([]byte(args[0].String()), &j); err != nil {
+		return errVal(err.Error())
+	}
+	w, h := 70, 80
+	if len(args) >= 3 {
+		if args[1].Truthy() {
+			w = args[1].Int()
+		}
+		if args[2].Truthy() {
+			h = args[2].Int()
+		}
+	}
+	return hud.JunctionSVGFragment(&j, w, h)
 }
 
 func screenName(this js.Value, args []js.Value) any {

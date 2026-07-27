@@ -71,6 +71,7 @@ class NavNotificationListener : NotificationListenerService() {
             else -> ""
         }
 
+        val maneuver = ManeuverParser.fromText(instruction)
         return NavState(
             active = true,
             instruction = instruction,
@@ -78,7 +79,9 @@ class NavNotificationListener : NotificationListenerService() {
             distanceText = distanceCandidate.ifBlank { "" },
             road = road,
             etaMin = ManeuverParser.parseEtaMinutes(blob),
-            maneuver = ManeuverParser.fromText(instruction),
+            maneuver = maneuver,
+            // Thin scrape: minimal junction so Pi need not guess; Full Library owns rich IR.
+            junction = JunctionBuilder.fromManeuver(maneuver),
         )
     }
 

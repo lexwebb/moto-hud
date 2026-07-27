@@ -32,12 +32,33 @@ type RibbonPoint struct {
 	Y float64 `json:"y"`
 }
 
-// MinimapMessage is a top-down junction snapshot in meters.
-// Origin ≈ next turn; +Y along the inbound approach (rider usually at negative Y).
+// MinimapMessage is deprecated geographic polylines (superseded by JunctionMessage / ADR 0013).
+// Kept for unmarshaling old fixtures until the Pi renderer fully migrates.
 type MinimapMessage struct {
 	Route   []RibbonPoint   `json:"route,omitempty"`
 	Context [][]RibbonPoint `json:"context,omitempty"`
 	Rider   *RibbonPoint    `json:"rider,omitempty"`
+}
+
+// JunctionSideArm is an extra arm on the approach or at the decision node.
+type JunctionSideArm struct {
+	Side  string `json:"side"`  // left | right
+	At    string `json:"at"`    // before | at | after
+	Style string `json:"style"` // dashed | solid
+}
+
+// JunctionMessage is the semantic turn-scene IR on nav.junction (replaces minimap).
+// Shared frame: approach from bottom, ahead toward top. See protocol/junction.ts.
+type JunctionMessage struct {
+	Kind        string            `json:"kind"`
+	Drive       string            `json:"drive,omitempty"` // left | right; omit → right
+	Outbound    string            `json:"outbound"`
+	Through     bool              `json:"through"`
+	Sides       []JunctionSideArm `json:"sides,omitempty"`
+	CrossMedian bool              `json:"cross_median,omitempty"` // dual_carriageway
+	Exits       int               `json:"exits,omitempty"`        // roundabout 2–6
+	Exit        int               `json:"exit,omitempty"`         // roundabout 1-based
+	Side        string            `json:"side,omitempty"`         // merge / ramp_enter
 }
 
 // LaneInfo is one lane in left-to-right order at the upcoming junction.
@@ -68,9 +89,10 @@ type NavMessage struct {
 	Maneuver     Maneuver         `json:"maneuver"`
 	Lanes        []LaneInfo       `json:"lanes,omitempty"`
 	ThenNext     *ThenNextMessage `json:"then_next,omitempty"`
-	RibbonPoints []RibbonPoint    `json:"ribbon_points,omitempty"`
-	RibbonTurn   int              `json:"ribbon_turn,omitempty"`
-	Minimap      *MinimapMessage  `json:"minimap,omitempty"`
+	RibbonPoints []RibbonPoint     `json:"ribbon_points,omitempty"`
+	RibbonTurn   int               `json:"ribbon_turn,omitempty"`
+	Junction     *JunctionMessage  `json:"junction,omitempty"`
+	Minimap      *MinimapMessage   `json:"minimap,omitempty"` // deprecated; prefer Junction
 }
 
 type MediaMessage struct {

@@ -1,0 +1,571 @@
+{
+  "route": "Whitehall → Farringdon",
+  "total_m": 2712,
+  "drive": "left",
+  "generated": "2026-07-27",
+  "note": "POC classifier — OSM dual_carriageway tags first; stricter opposite-heading geometry fallback.",
+  "maneuvers": [
+    {
+      "index": 0,
+      "along_m": 0,
+      "label": "depart · Whitehall",
+      "junction": {
+        "kind": "depart",
+        "drive": "left",
+        "outbound": "straight",
+        "through": true,
+        "sides": [
+          {
+            "side": "right",
+            "at": "at",
+            "style": "dashed"
+          },
+          {
+            "side": "right",
+            "at": "before",
+            "style": "dashed"
+          }
+        ]
+      },
+      "debug": {
+        "road": "Whitehall",
+        "maneuver_label": "depart",
+        "turn_deg": -10.9,
+        "geom_outbound": "straight",
+        "inbound_bearing_deg": 0,
+        "outbound_bearing_deg": 349.1,
+        "arms": {
+          "left": false,
+          "right": true,
+          "through": true
+        },
+        "dual_detected": true,
+        "dual_source": "tag",
+        "context_segs": 21,
+        "sides_raw": 2
+      }
+    },
+    {
+      "index": 1,
+      "along_m": 152,
+      "label": "right · Whitehall Place",
+      "junction": {
+        "kind": "dual_carriageway",
+        "drive": "left",
+        "outbound": "right",
+        "through": true,
+        "sides": [
+          {
+            "side": "right",
+            "at": "at",
+            "style": "dashed"
+          },
+          {
+            "side": "left",
+            "at": "after",
+            "style": "dashed"
+          },
+          {
+            "side": "left",
+            "at": "before",
+            "style": "dashed"
+          }
+        ],
+        "cross_median": true
+      },
+      "debug": {
+        "road": "Whitehall Place",
+        "maneuver_label": "right",
+        "turn_deg": 82.2,
+        "geom_outbound": "right",
+        "inbound_bearing_deg": 345.2,
+        "outbound_bearing_deg": 67.3,
+        "arms": {
+          "left": false,
+          "right": true,
+          "through": true
+        },
+        "dual_detected": true,
+        "dual_source": "tag",
+        "context_segs": 29,
+        "sides_raw": 3
+      }
+    },
+    {
+      "index": 2,
+      "along_m": 425,
+      "label": "right · Northumberland Avenue",
+      "junction": {
+        "kind": "dual_carriageway",
+        "drive": "left",
+        "outbound": "right",
+        "through": true,
+        "sides": [
+          {
+            "side": "right",
+            "at": "at",
+            "style": "dashed"
+          },
+          {
+            "side": "left",
+            "at": "before",
+            "style": "dashed"
+          },
+          {
+            "side": "left",
+            "at": "at",
+            "style": "dashed"
+          }
+        ],
+        "cross_median": true
+      },
+      "debug": {
+        "road": "Northumberland Avenue",
+        "maneuver_label": "right",
+        "turn_deg": 50.9,
+        "geom_outbound": "right",
+        "inbound_bearing_deg": 26,
+        "outbound_bearing_deg": 76.8,
+        "arms": {
+          "left": false,
+          "right": true,
+          "through": true
+        },
+        "dual_detected": true,
+        "dual_source": "tag",
+        "context_segs": 35,
+        "sides_raw": 3
+      }
+    },
+    {
+      "index": 3,
+      "along_m": 502,
+      "label": "left · Victoria Embankment",
+      "junction": {
+        "kind": "dual_carriageway",
+        "drive": "left",
+        "outbound": "left",
+        "through": false,
+        "sides": [
+          {
+            "side": "left",
+            "at": "at",
+            "style": "dashed"
+          },
+          {
+            "side": "right",
+            "at": "at",
+            "style": "dashed"
+          }
+        ],
+        "cross_median": true
+      },
+      "debug": {
+        "road": "Victoria Embankment",
+        "maneuver_label": "left",
+        "turn_deg": -87.8,
+        "geom_outbound": "left",
+        "inbound_bearing_deg": 111.4,
+        "outbound_bearing_deg": 23.6,
+        "arms": {
+          "left": true,
+          "right": true,
+          "through": false
+        },
+        "dual_detected": true,
+        "dual_source": "tag",
+        "context_segs": 28,
+        "sides_raw": 2
+      }
+    },
+    {
+      "index": 4,
+      "along_m": 1175,
+      "label": "slight left · Temple Place",
+      "junction": {
+        "kind": "fork",
+        "drive": "left",
+        "outbound": "slight_left",
+        "through": false,
+        "sides": [
+          {
+            "side": "left",
+            "at": "after",
+            "style": "dashed"
+          },
+          {
+            "side": "right",
+            "at": "at",
+            "style": "dashed"
+          }
+        ]
+      },
+      "debug": {
+        "road": "Temple Place",
+        "maneuver_label": "slight_left",
+        "turn_deg": -28.6,
+        "geom_outbound": "slight_left",
+        "inbound_bearing_deg": 71.1,
+        "outbound_bearing_deg": 42.5,
+        "arms": {
+          "left": true,
+          "right": false,
+          "through": true
+        },
+        "dual_detected": false,
+        "dual_source": null,
+        "context_segs": 32,
+        "sides_raw": 2
+      }
+    },
+    {
+      "index": 5,
+      "along_m": 1343,
+      "label": "left · Arundel Street",
+      "junction": {
+        "kind": "simple",
+        "drive": "left",
+        "outbound": "left",
+        "through": true,
+        "sides": [
+          {
+            "side": "left",
+            "at": "at",
+            "style": "dashed"
+          }
+        ]
+      },
+      "debug": {
+        "road": "Arundel Street",
+        "maneuver_label": "left",
+        "turn_deg": -87.5,
+        "geom_outbound": "left",
+        "inbound_bearing_deg": 69.9,
+        "outbound_bearing_deg": 342.4,
+        "arms": {
+          "left": true,
+          "right": false,
+          "through": true
+        },
+        "dual_detected": false,
+        "dual_source": null,
+        "context_segs": 26,
+        "sides_raw": 1
+      }
+    },
+    {
+      "index": 6,
+      "along_m": 1518,
+      "label": "right · Strand",
+      "junction": {
+        "kind": "crossroads",
+        "drive": "left",
+        "outbound": "right",
+        "through": true,
+        "sides": [
+          {
+            "side": "right",
+            "at": "after",
+            "style": "dashed"
+          },
+          {
+            "side": "left",
+            "at": "after",
+            "style": "dashed"
+          },
+          {
+            "side": "left",
+            "at": "at",
+            "style": "dashed"
+          }
+        ]
+      },
+      "debug": {
+        "road": "Strand",
+        "maneuver_label": "right",
+        "turn_deg": 89.4,
+        "geom_outbound": "right",
+        "inbound_bearing_deg": 338.9,
+        "outbound_bearing_deg": 68.3,
+        "arms": {
+          "left": true,
+          "right": true,
+          "through": true
+        },
+        "dual_detected": false,
+        "dual_source": null,
+        "context_segs": 38,
+        "sides_raw": 3
+      }
+    },
+    {
+      "index": 7,
+      "along_m": 1726,
+      "label": "straight · Fleet Street",
+      "junction": {
+        "kind": "simple",
+        "drive": "left",
+        "outbound": "straight",
+        "through": true,
+        "sides": [
+          {
+            "side": "right",
+            "at": "before",
+            "style": "dashed"
+          },
+          {
+            "side": "left",
+            "at": "before",
+            "style": "dashed"
+          },
+          {
+            "side": "left",
+            "at": "after",
+            "style": "dashed"
+          },
+          {
+            "side": "right",
+            "at": "after",
+            "style": "dashed"
+          },
+          {
+            "side": "left",
+            "at": "at",
+            "style": "dashed"
+          },
+          {
+            "side": "right",
+            "at": "at",
+            "style": "dashed"
+          }
+        ]
+      },
+      "debug": {
+        "road": "Fleet Street",
+        "maneuver_label": "straight",
+        "turn_deg": 6.5,
+        "geom_outbound": "straight",
+        "inbound_bearing_deg": 67,
+        "outbound_bearing_deg": 73.4,
+        "arms": {
+          "left": false,
+          "right": false,
+          "through": true
+        },
+        "dual_detected": false,
+        "dual_source": null,
+        "context_segs": 50,
+        "sides_raw": 6
+      }
+    },
+    {
+      "index": 8,
+      "along_m": 1916,
+      "label": "left · Fetter Lane",
+      "junction": {
+        "kind": "crossroads",
+        "drive": "left",
+        "outbound": "left",
+        "through": true,
+        "sides": [
+          {
+            "side": "left",
+            "at": "at",
+            "style": "dashed"
+          },
+          {
+            "side": "right",
+            "at": "at",
+            "style": "dashed"
+          }
+        ]
+      },
+      "debug": {
+        "road": "Fetter Lane",
+        "maneuver_label": "left",
+        "turn_deg": -86.1,
+        "geom_outbound": "left",
+        "inbound_bearing_deg": 74,
+        "outbound_bearing_deg": 347.9,
+        "arms": {
+          "left": true,
+          "right": true,
+          "through": true
+        },
+        "dual_detected": false,
+        "dual_source": null,
+        "context_segs": 43,
+        "sides_raw": 2
+      }
+    },
+    {
+      "index": 9,
+      "along_m": 2129,
+      "label": "straight · New Fetter Lane",
+      "junction": {
+        "kind": "simple",
+        "drive": "left",
+        "outbound": "straight",
+        "through": true,
+        "sides": [
+          {
+            "side": "left",
+            "at": "before",
+            "style": "dashed"
+          },
+          {
+            "side": "left",
+            "at": "at",
+            "style": "dashed"
+          }
+        ]
+      },
+      "debug": {
+        "road": "New Fetter Lane",
+        "maneuver_label": "straight",
+        "turn_deg": 3.4,
+        "geom_outbound": "straight",
+        "inbound_bearing_deg": 37.5,
+        "outbound_bearing_deg": 40.9,
+        "arms": {
+          "left": true,
+          "right": false,
+          "through": true
+        },
+        "dual_detected": false,
+        "dual_source": null,
+        "context_segs": 19,
+        "sides_raw": 2
+      }
+    },
+    {
+      "index": 10,
+      "along_m": 2366,
+      "label": "straight · Charterhouse Street",
+      "junction": {
+        "kind": "dual_carriageway",
+        "drive": "left",
+        "outbound": "straight",
+        "through": true,
+        "sides": [
+          {
+            "side": "right",
+            "at": "at",
+            "style": "dashed"
+          },
+          {
+            "side": "left",
+            "at": "at",
+            "style": "dashed"
+          },
+          {
+            "side": "left",
+            "at": "after",
+            "style": "dashed"
+          },
+          {
+            "side": "right",
+            "at": "after",
+            "style": "dashed"
+          },
+          {
+            "side": "left",
+            "at": "before",
+            "style": "dashed"
+          },
+          {
+            "side": "right",
+            "at": "before",
+            "style": "dashed"
+          }
+        ],
+        "cross_median": false
+      },
+      "debug": {
+        "road": "Charterhouse Street",
+        "maneuver_label": "straight",
+        "turn_deg": 18,
+        "geom_outbound": "straight",
+        "inbound_bearing_deg": 28.7,
+        "outbound_bearing_deg": 46.7,
+        "arms": {
+          "left": true,
+          "right": true,
+          "through": true
+        },
+        "dual_detected": true,
+        "dual_source": "tag",
+        "context_segs": 66,
+        "sides_raw": 6
+      }
+    },
+    {
+      "index": 11,
+      "along_m": 2548,
+      "label": "left · Farringdon Road",
+      "junction": {
+        "kind": "crossroads",
+        "drive": "left",
+        "outbound": "left",
+        "through": true,
+        "sides": [
+          {
+            "side": "right",
+            "at": "at",
+            "style": "dashed"
+          },
+          {
+            "side": "left",
+            "at": "at",
+            "style": "dashed"
+          }
+        ]
+      },
+      "debug": {
+        "road": "Farringdon Road",
+        "maneuver_label": "left",
+        "turn_deg": -69.9,
+        "geom_outbound": "left",
+        "inbound_bearing_deg": 64.5,
+        "outbound_bearing_deg": 354.5,
+        "arms": {
+          "left": true,
+          "right": true,
+          "through": true
+        },
+        "dual_detected": false,
+        "dual_source": null,
+        "context_segs": 32,
+        "sides_raw": 2
+      }
+    },
+    {
+      "index": 12,
+      "along_m": 2712,
+      "label": "arrive · Farringdon Road",
+      "junction": {
+        "kind": "arrive",
+        "drive": "left",
+        "outbound": "straight",
+        "through": false
+      },
+      "debug": {
+        "road": "Farringdon Road",
+        "maneuver_label": "arrive",
+        "turn_deg": 12.4,
+        "geom_outbound": "straight",
+        "inbound_bearing_deg": 347.6,
+        "outbound_bearing_deg": 0,
+        "arms": {
+          "left": false,
+          "right": false,
+          "through": true
+        },
+        "dual_detected": false,
+        "dual_source": null,
+        "context_segs": 22,
+        "sides_raw": 0
+      }
+    }
+  ]
+}
