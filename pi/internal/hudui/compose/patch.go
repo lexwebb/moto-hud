@@ -92,6 +92,19 @@ func patchMediaArtistSVG(artist string, w, h int, deps mediaPatchDeps) ([]byte, 
 	return pixelfontReplace(raw)
 }
 
+func patchStatusValueSVG(id, value string, w, h int, deps NavSVGDeps) ([]byte, error) {
+	if deps.TextSVG == nil {
+		return patchSVG(w, h, "")
+	}
+	body, _ := pixelfont.Load(pixelfont.Size8x16)
+	line := deps.TextSVG(id, "8x16", w, body.Metrics.Ascent, "end", value)
+	raw, err := patchSVG(w, h, line)
+	if err != nil {
+		return nil, err
+	}
+	return pixelfontReplace(raw)
+}
+
 func pixelfontReplace(svg []byte) ([]byte, error) {
 	out, err := pixelfont.ReplaceSVGText(string(svg))
 	if err != nil {

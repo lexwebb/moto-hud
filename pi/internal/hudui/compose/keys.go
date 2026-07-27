@@ -92,6 +92,18 @@ func (Keys) MediaPlaying(media protocol.MediaMessage) hudui.ChangeKey {
 	return 0
 }
 
+func (Keys) StatusLink(linked bool) hudui.ChangeKey {
+	return Keys{}.Bool(linked)
+}
+
+func (Keys) StatusNav(active bool) hudui.ChangeKey {
+	return Keys{}.Bool(active)
+}
+
+func (Keys) StatusPkts() hudui.ChangeKey {
+	return 0
+}
+
 func boolKey(b bool) uint64 {
 	if b {
 		return 1

@@ -1,0 +1,165 @@
+package compose
+
+import (
+	"bytes"
+	"context"
+	"image"
+
+	"moto-hud/pi/internal/hudui/screens"
+	"moto-hud/pi/internal/hudui/token"
+	"moto-hud/pi/internal/pixelfont"
+	"moto-hud/pi/internal/protocol"
+)
+
+type navClassicLayout struct {
+	mw, mainX                                                                 int
+	glyphY, heroTop, roadTop, etaTop, ribbonTop, ribbonH, distBaseline, etaH int
+	dist, eta                                                                  string
+	roadLines                                                                  []string
+	maneuverSlot, distanceSlot, roadSlot, etaSlot, ribbonSlot                  image.Rectangle
+	ribbonInner                                                                string
+	maneuver                                                                   protocol.Maneuver
+}
+
+func layoutNavClassic(nav protocol.NavMessage, deps NavSVGDeps) navClassicLayout {
+	mw := token.MainWidth()
+	mainX := token.Pad
+
+	meta, _ := pixelfont.Load(pixelfont.Size6x12)
+	body, _ := pixelfont.Load(pixelfont.Size8x16)
+	hero, _ := pixelfont.Load(pixelfont.Size16x32)
+
+	headerBottom := token.Pad + meta.Metrics.CellH
+	contentTop := headerBottom + token.GapSm + token.GapMd
+	contentBot := token.Height - token.Pad
+
+	dist := nav.DistanceText
+	if dist == "" {
+		dist = formatDistance(nav.DistanceM)
+	}
+	road := nav.Road
+	if road == "" {
+		road = nav.Instruction
+	}
+	eta := ""
+	if nav.EtaMin > 0 {
+		eta = formatETA(nav.EtaMin)
+	}
+
+	heroH := token.GlyphSz
+	if hero.Metrics.CellH > heroH {
+		heroH = hero.Metrics.CellH
+	}
+	etaH := 0
+	if eta != "" {
+		etaH = body.Metrics.CellH
+	}
+	ribbonH := 40
+
+	roadMaxLines := 2
+	roadLines := deps.WrapRoad(road, mw, roadMaxLines)
+	roadH := deps.RoadBlockH(len(roadLines))
+
+	stackH := heroH + token.GapLg + roadH + token.GapLg + ribbonH
+	if etaH > 0 {
+		stackH += etaH + token.GapSm
+	}
+	avail := contentBot - contentTop
+	extra := avail - stackH
+	if extra < 0 {
+		extra = 0
+		shrink := stackH - avail
+		if shrink > 0 && ribbonH > 24 {
+			ribbonH -= shrink
+			if ribbonH < 24 {
+				ribbonH = 24
+			}
+			stackH = heroH + token.GapLg + roadH + token.GapLg + ribbonH
+			if etaH > 0 {
+				stackH += etaH + token.GapSm
+			}
+		}
+		if avail < stackH && roadMaxLines > 1 {
+			roadMaxLines = 1
+			roadLines = deps.WrapRoad(road, mw, 1)
+			roadH = deps.RoadBlockH(len(roadLines))
+			stackH = heroH + token.GapLg + roadH + token.GapLg + ribbonH
+			if etaH > 0 {
+				stackH += etaH + token.GapSm
+			}
+		}
+		extra = avail - stackH
+		if extra < 0 {
+			extra = 0
+		}
+	}
+
+	heroTop := contentTop + extra/6
+	roadTop := heroTop + heroH + token.GapLg + extra/6
+	y := roadTop + roadH + token.GapLg + extra/6
+	etaTop := y
+	if etaH > 0 {
+		y += etaH + token.GapSm
+	}
+	ribbonTop := contentBot - ribbonH
+	if y > ribbonTop {
+		ribbonTop = y
+		ribbonH = contentBot - ribbonTop
+		if ribbonH < 20 {
+			ribbonH = 20
+			ribbonTop = contentBot - ribbonH
+		}
+	}
+
+	dist = deps.Fit("16x32", dist, mw-token.GlyphSz-token.GapMd)
+	eta = deps.Fit("8x16", eta, mw)
+	glyphY := heroTop + (heroH-token.GlyphSz)/2
+	distBaseline := heroTop + (heroH-hero.Metrics.CellH)/2 + hero.Metrics.Ascent
+
+	maneuverSlot := image.Rect(mainX-2, glyphY, mainX-2+token.GlyphSz, glyphY+token.GlyphSz)
+	distanceSlot := image.Rect(mainX+token.GlyphSz, heroTop, mainX+mw, heroTop+heroH+(contentBot-contentTop)/6)
+	if distanceSlot.Max.Y > contentBot {
+		distanceSlot.Max.Y = contentBot
+	}
+	roadSlot := image.Rect(mainX, roadTop, mainX+mw, ribbonTop-token.GapLg)
+	etaSlot := image.Rect(mainX, ribbonTop-token.GapLg-16, mainX+mw, ribbonTop)
+	ribbonSlot := image.Rect(mainX, ribbonTop, mainX+mw, contentBot)
+
+	ribbonInner := ""
+	if deps.RibbonSVG != nil {
+		ribbonInner = deps.RibbonSVG(nav, mw, ribbonH)
+	}
+
+	return navClassicLayout{
+		mw: mw, mainX: mainX,
+		glyphY: glyphY, heroTop: heroTop, roadTop: roadTop, etaTop: etaTop,
+		ribbonTop: ribbonTop, ribbonH: ribbonH, distBaseline: distBaseline, etaH: etaH,
+		dist: dist, eta: eta, roadLines: roadLines,
+		maneuverSlot: maneuverSlot, distanceSlot: distanceSlot, roadSlot: roadSlot,
+		etaSlot: etaSlot, ribbonSlot: ribbonSlot,
+		ribbonInner: ribbonInner, maneuver: nav.Maneuver,
+	}
+}
+
+// NavClassicBodySVG renders the classic nav main column via templ.
+func NavClassicBodySVG(l navClassicLayout, deps NavSVGDeps) (string, error) {
+	body, _ := pixelfont.Load(pixelfont.Size8x16)
+	roadHTML := roadLinesSVG(deps, body, 0, l.roadTop, l.roadLines)
+	etaHTML := ""
+	if l.etaH > 0 {
+		etaHTML = deps.TextSVG("eta", "8x16", 0, l.etaTop+body.Metrics.Ascent, "start", l.eta)
+	}
+	paths := ""
+	if deps.ManeuverPaths != nil {
+		paths = deps.ManeuverPaths(l.maneuver)
+	}
+	var buf bytes.Buffer
+	err := screens.NavClassicBody(
+		l.glyphY, paths, l.dist, l.distBaseline, l.mw,
+		roadHTML, etaHTML, l.ribbonTop, l.ribbonInner,
+	).Render(context.Background(), &buf)
+	if err != nil {
+		return "", err
+	}
+	return buf.String(), nil
+}

@@ -54,3 +54,19 @@ func TestRefreshOrchestratorRoadChangeSpatial(t *testing.T) {
 		t.Fatalf("road change want spatial got %v dirty=%v", rp.Mode, rp.DirtyIDs)
 	}
 }
+
+func TestRefreshOrchestratorStatusNavSpatial(t *testing.T) {
+	o := hud.NewRefreshOrchestrator()
+	nav := protocol.NavMessage{Active: false}
+	in := hud.ComposeInput(hud.ScreenStatus, nav, protocol.MediaMessage{}, true)
+	_, _, _ = o.PlanFromCompose(in, true)
+	nav.Active = true
+	in.Nav = nav
+	rp, _, _ := o.PlanFromCompose(in, false)
+	if rp.Mode != hud.RefreshSpatialPatch {
+		t.Fatalf("nav active change want spatial got %v dirty=%v", rp.Mode, rp.DirtyIDs)
+	}
+	if len(rp.DirtyIDs) != 1 || rp.DirtyIDs[0] != hudui.NodeStatusNav {
+		t.Fatalf("dirty ids %v", rp.DirtyIDs)
+	}
+}

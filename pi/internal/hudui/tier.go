@@ -26,6 +26,9 @@ const (
 	NodeMediaTitle  NodeID = "media_title"
 	NodeMediaArtist NodeID = "media_artist"
 	NodeMediaState  NodeID = "media_state"
+	NodeStatusLink  NodeID = "status_link"
+	NodeStatusNav   NodeID = "status_nav"
+	NodeStatusPkts  NodeID = "status_pkts"
 )
 
 // Slot is a fixed or computed rectangle in canvas coordinates.
