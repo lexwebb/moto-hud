@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"strings"
 
+	"moto-hud/pi/internal/hudui/compose"
 	"moto-hud/pi/internal/pixelfont"
 	"moto-hud/pi/internal/protocol"
 )
@@ -126,16 +127,23 @@ func buildNavBody(nav protocol.NavMessage, bleLinked bool) map[string]string {
 	contentBot := Height - pad
 
 	if !nav.Active {
-		title := "MOTO HUD"
-		msg := "Waiting for route..."
-		blockH := body.Metrics.CellH*2 + gapMd
-		top := contentTop + (contentBot-contentTop-blockH)/2
-		b1 := top + body.Metrics.Ascent
-		b2 := top + body.Metrics.CellH + gapMd + body.Metrics.Ascent
-		var c strings.Builder
-		c.WriteString(textSVG("", body, mw/2, b1, "middle", title))
-		c.WriteString(textSVG("", body, mw/2, b2, "middle", msg))
-		return chromeShell("NAV", link, c.String(), "MEDIA", "-", "STATUS")
+		idleSVG, err := compose.NavIdleBodySVG()
+		if err != nil {
+			idleSVG = ""
+		}
+		if idleSVG == "" {
+			title := "MOTO HUD"
+			msg := "Waiting for route..."
+			blockH := body.Metrics.CellH*2 + gapMd
+			top := contentTop + (contentBot-contentTop-blockH)/2
+			b1 := top + body.Metrics.Ascent
+			b2 := top + body.Metrics.CellH + gapMd + body.Metrics.Ascent
+			var c strings.Builder
+			c.WriteString(textSVG("", body, mw/2, b1, "middle", title))
+			c.WriteString(textSVG("", body, mw/2, b2, "middle", msg))
+			idleSVG = c.String()
+		}
+		return chromeShell("NAV", link, idleSVG, "MEDIA", "-", "STATUS")
 	}
 
 	if hasMinimap(nav) || len(nav.RibbonPoints) >= 2 {

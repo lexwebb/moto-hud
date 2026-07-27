@@ -1,0 +1,9 @@
+package screens
+
+import "strconv"
+
+// NavIdleCentered is the waiting-for-route copy block (design kit NavIdle).
+templ NavIdleCentered(title, msg string, mw, baseline1, baseline2 int) {
+	<text id="title" data-pixel="8x16" x={ strconv.Itoa(mw / 2) } y={ strconv.Itoa(baseline1) } text-anchor="middle" font-size="16" fill="#000">{ title }</text>
+	<text id="msg" data-pixel="8x16" x={ strconv.Itoa(mw / 2) } y={ strconv.Itoa(baseline2) } text-anchor="middle" font-size="16" fill="#000">{ msg }</text>
+}

@@ -109,6 +109,8 @@ go run ./cmd/mock-nav -scenario approach
 
 Keyboard buttons while `motohud` runs: `p`/`n`/`a` short, `P`/`N`/`A` long (+ Enter).
 
+**HUD UI layer** (`pi/internal/hudui`, ADR 0009–0010): [templ](https://templ.guide) screen components, integer flex layout helpers, and `hud.RenderEngine` for tier-aware draws (distance-only patches when the refresh orchestrator allows). Regenerate after editing `.templ` files: `./scripts/generate-hudui.sh`.
+
 HTTP injector (also used by `mock-nav`):
 
 - `POST /nav` — JSON nav message

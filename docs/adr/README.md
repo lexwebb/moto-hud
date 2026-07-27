@@ -12,5 +12,5 @@ Short records of hard-to-reverse trade-offs. Format and when-to-write: project s
 | [0006](0006-engine-agnostic-nav-android-osmand-ios-mapkit.md) | Engine-agnostic nav; OsmAnd Android / MapKit iOS | accepted |
 | [0007](0007-ble-json-protocol.md) | BLE JSON phone↔Pi protocol | accepted |
 | [0008](0008-terminus-bold-1bit-typography.md) | Terminus Bold 1-bit typography | accepted |
-| [0009](0009-hud-ui-templ-component-layout.md) | HUD UI: templ components + layout props | proposed |
-| [0010](0010-component-refresh-tiers-partial-regions.md) | Component refresh tiers + spatial partial regions | proposed |
+| [0009](0009-hud-ui-templ-component-layout.md) | HUD UI: templ components + layout props | accepted |
+| [0010](0010-component-refresh-tiers-partial-regions.md) | Component refresh tiers + spatial partial regions | accepted |

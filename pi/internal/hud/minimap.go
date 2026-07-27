@@ -16,6 +16,11 @@ const (
 	minimapRadiusMin = 25.0
 )
 
+// HasMinimap reports whether nav carries a minimap route snapshot.
+func HasMinimap(nav protocol.NavMessage) bool {
+	return hasMinimap(nav)
+}
+
 func hasMinimap(nav protocol.NavMessage) bool {
 	return nav.Minimap != nil && len(nav.Minimap.Route) >= 2
 }
