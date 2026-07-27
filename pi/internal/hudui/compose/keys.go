@@ -54,9 +54,13 @@ func (Keys) Hash(s string) hudui.ChangeKey {
 	return hashStr(s)
 }
 
-func (Keys) NavScreen(nav protocol.NavMessage, linked bool) hudui.ChangeKey {
+func (Keys) NavScreen(nav protocol.NavMessage) hudui.ChangeKey {
 	k := Keys{}
-	return k.Bool(nav.Active) | k.Hash(string(nav.Maneuver))<<4 | k.Bool(linked)<<12
+	return k.Bool(nav.Active) | k.Hash(string(nav.Maneuver))<<4
+}
+
+func (Keys) Link(linked bool) hudui.ChangeKey {
+	return Keys{}.Bool(linked)
 }
 
 func (Keys) Maneuver(nav protocol.NavMessage) hudui.ChangeKey {
@@ -80,9 +84,8 @@ func (Keys) Ribbon(nav protocol.NavMessage) hudui.ChangeKey {
 	return k
 }
 
-func (Keys) MediaScreen(media protocol.MediaMessage, linked bool) hudui.ChangeKey {
-	k := Keys{}
-	return hashStr(media.Title) ^ hashStr(media.Artist) ^ hudui.ChangeKey(boolKey(media.Playing)<<1) ^ k.Bool(linked)<<2
+func (Keys) MediaScreen(media protocol.MediaMessage) hudui.ChangeKey {
+	return hashStr(media.Title) ^ hashStr(media.Artist) ^ hudui.ChangeKey(boolKey(media.Playing)<<1)
 }
 
 func (Keys) MediaPlaying(media protocol.MediaMessage) hudui.ChangeKey {

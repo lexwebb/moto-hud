@@ -4,6 +4,7 @@
 *.png
 *.wasm
 !site/public/**/*.png
+!pi/internal/hud/testdata/**/*.png
 
 # Unused / abandoned font experiments
 assets/fonts/LiberationSans-Bold.ttf

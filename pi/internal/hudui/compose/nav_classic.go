@@ -47,11 +47,7 @@ func planNavClassic(in Input) (plan.ScreenPlan, error) {
 	}
 	layers = append(layers, plan.Layer{ID: hudui.NodeRibbon, Tier: hudui.TierSlow, Key: k.Ribbon(nav), Slot: lay.ribbonSlot})
 
-	return plan.ScreenPlan{
-		BodySVG:     body,
-		Descriptors: plan.BuildDescriptors(k.NavScreen(nav, in.Linked), Keys{}.Bool(in.Linked), layers),
-		Layers:      layers,
-	}, nil
+	return finalizePlan(in, k.NavScreen(nav), staticChromeKey(), body, layers), nil
 }
 
 func formatDistance(m int) string {

@@ -15,6 +15,7 @@ import (
 	"github.com/tdewolff/canvas"
 	"github.com/tdewolff/canvas/renderers/rasterizer"
 
+	"moto-hud/pi/internal/hudui/compose"
 	"moto-hud/pi/internal/pixelfont"
 	"moto-hud/pi/internal/protocol"
 )
@@ -76,6 +77,11 @@ func resolveAssetDir() string {
 
 // Render fills an SVG template, converts Terminus <text> to pixel rects, then rasterizes.
 func Render(screen Screen, nav protocol.NavMessage, media protocol.MediaMessage, bleLinked bool) *image.Gray {
+	in := ComposeInput(screen, nav, media, bleLinked)
+	sp, err := compose.BuildPlan(in)
+	if err != nil {
+		return fallbackFrame(fmt.Sprintf("plan: %v", err))
+	}
 	svg, err := BuildPixelSVG(screen, nav, media, bleLinked)
 	if err != nil {
 		return fallbackFrame(fmt.Sprintf("svg: %v", err))
@@ -84,6 +90,7 @@ func Render(screen Screen, nav protocol.NavMessage, media protocol.MediaMessage,
 	if err != nil {
 		return fallbackFrame(fmt.Sprintf("raster: %v", err))
 	}
+	applyLinkLayer(img, sp)
 	return img
 }
 
@@ -154,12 +161,7 @@ func escapeXML(s string) string {
 }
 
 func linkMarkSVG(connected bool) string {
-	if connected {
-		return `<path d="M2,9 L6,2 L6,6 L10,6 L6,10 L6,6" fill="none" stroke="#000" stroke-width="1.6" stroke-linejoin="miter"/>` +
-			`<rect x="12" y="4" width="4" height="4" fill="#000"/>`
-	}
-	return `<line x1="2" y1="2" x2="10" y2="10" stroke="#000" stroke-width="1.6"/>` +
-		`<line x1="10" y1="2" x2="2" y2="10" stroke="#000" stroke-width="1.6"/>`
+	return compose.LinkMarkFragment(connected)
 }
 
 // progressTicks draws 5 coarse distance ticks (design ProgressTicks).

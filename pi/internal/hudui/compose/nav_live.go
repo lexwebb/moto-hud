@@ -132,11 +132,7 @@ func planNavLive(in Input) (plan.ScreenPlan, error) {
 		})
 	}
 
-	return plan.ScreenPlan{
-		BodySVG:     b.String(),
-		Descriptors: plan.BuildDescriptors(k.NavScreen(nav, in.Linked), Keys{}.Bool(in.Linked), layers),
-		Layers:      layers,
-	}, nil
+	return finalizePlan(in, k.NavScreen(nav), staticChromeKey(), b.String(), layers), nil
 }
 
 func liveRoadLinesSVG(deps NavSVGDeps, x, top int, lines []string) string {

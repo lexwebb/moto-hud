@@ -10,8 +10,5 @@ func planNavIdle(in Input) (plan.ScreenPlan, error) {
 		return plan.ScreenPlan{}, err
 	}
 	k := Keys{}
-	return plan.ScreenPlan{
-		BodySVG:     body,
-		Descriptors: plan.BuildDescriptors(k.NavScreen(in.Nav, in.Linked), k.Bool(in.Linked), nil),
-	}, nil
+	return finalizePlan(in, k.NavScreen(in.Nav), staticChromeKey(), body, nil), nil
 }

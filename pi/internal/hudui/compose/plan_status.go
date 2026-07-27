@@ -80,9 +80,5 @@ func planStatus(in Input) (plan.ScreenPlan, error) {
 			},
 		},
 	}
-	return plan.ScreenPlan{
-		BodySVG:     body,
-		Descriptors: plan.BuildDescriptors(Keys{}.Hash("status_screen"), Keys{}.Hash("status_chrome"), layers),
-		Layers:      layers,
-	}, nil
+	return finalizePlan(in, Keys{}.Hash("status_screen"), staticChromeKey(), body, layers), nil
 }

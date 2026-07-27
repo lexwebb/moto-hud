@@ -51,14 +51,14 @@ func chromeGeom() (pad, mw, divY, ruleX, headerBaseline, legTop, legMid, legBot,
 }
 
 // ChromeBodySVG wraps main-column SVG in the shared chrome shell (templ).
-func ChromeBodySVG(mode, linkSVG, content, legPrev, legAction, legNext string) (string, error) {
+func ChromeBodySVG(mode, content, legPrev, legAction, legNext string) (string, error) {
 	pad, mw, divY, ruleX, headerBaseline, legTop, legMid, legBot, linkX, linkY := chromeGeom()
 	var buf bytes.Buffer
 	err := screens.ChromeShell(
 		mode, legPrev, legAction, legNext,
 		pad, mw, divY, ruleX, headerBaseline, legTop, legMid, legBot, linkX, linkY,
 		token.Width, token.Height,
-		linkSVG, content,
+		content,
 	).Render(context.Background(), &buf)
 	if err != nil {
 		return "", err
@@ -68,12 +68,8 @@ func ChromeBodySVG(mode, linkSVG, content, legPrev, legAction, legNext string) (
 
 // FrameVars returns frame.svg template vars for a composed screen plan.
 func FrameVars(in Input, sp plan.ScreenPlan) (map[string]string, error) {
-	link := ""
-	if in.LinkSVG != nil {
-		link = in.LinkSVG(in.Linked)
-	}
 	ch := chromeFor(in)
-	body, err := ChromeBodySVG(ch.mode, link, sp.BodySVG, ch.legPrev, ch.legAction, ch.legNext)
+	body, err := ChromeBodySVG(ch.mode, sp.BodySVG, ch.legPrev, ch.legAction, ch.legNext)
 	if err != nil {
 		return nil, fmt.Errorf("compose: chrome: %w", err)
 	}

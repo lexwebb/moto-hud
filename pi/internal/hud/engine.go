@@ -3,6 +3,7 @@ package hud
 import (
 	"image"
 
+	"moto-hud/pi/internal/hudui"
 	"moto-hud/pi/internal/hudui/compose"
 	"moto-hud/pi/internal/hudui/plan"
 	"moto-hud/pi/internal/protocol"
@@ -90,7 +91,14 @@ func renderFromPlan(in compose.Input, sp plan.ScreenPlan) *image.Gray {
 	if err != nil {
 		return Render(composeScreen(in.Screen), in.Nav, in.Media, in.Linked)
 	}
+	applyLinkLayer(img, sp)
 	return img
+}
+
+func applyLinkLayer(img *image.Gray, sp plan.ScreenPlan) {
+	if layer, ok := sp.LayerByID(hudui.NodeLink); ok {
+		_ = PatchLayer(img, layer)
+	}
 }
 
 func composeScreen(k compose.ScreenKind) Screen {

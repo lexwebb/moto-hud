@@ -92,6 +92,13 @@ func patchMediaArtistSVG(artist string, w, h int, deps mediaPatchDeps) ([]byte, 
 	return pixelfontReplace(raw)
 }
 
+func patchLinkSVG(linked bool, w, h int, linkFn func(bool) string) ([]byte, error) {
+	if linkFn == nil {
+		linkFn = LinkMarkFragment
+	}
+	return patchSVG(w, h, linkFn(linked))
+}
+
 func patchStatusValueSVG(id, value string, w, h int, deps NavSVGDeps) ([]byte, error) {
 	if deps.TextSVG == nil {
 		return patchSVG(w, h, "")

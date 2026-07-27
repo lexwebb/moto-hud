@@ -59,7 +59,7 @@ The orchestrator **does not** infer dirtiness from SVG or raster diffs in v1; **
 3. **On partial path** — call each dirty layer’s `Patch()`, blit at `Layer.Slot`, crop to aligned union, pass to display.
 4. **On full path** — `BodySVG` from the plan plus chrome shell → `BuildPixelSVGFromVars` → rasterize entire 250×122.
 
-`templ` components stay pure; tier/slot/key/patch live on compose layout nodes (`plan.Layer`).
+`templ` components stay pure; tier/slot/key/patch live on compose layout nodes (`plan.Layer`). The BLE link glyph uses a fixed chrome slot (`NodeLink`, `TierPartialOK`) and is composited after the shell SVG (full frame and spatial patch).
 
 ## Display host capabilities
 

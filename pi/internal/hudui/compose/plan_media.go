@@ -46,11 +46,7 @@ func planMedia(in Input) (plan.ScreenPlan, error) {
 			},
 		},
 	}
-	return plan.ScreenPlan{
-		BodySVG:     body,
-		Descriptors: plan.BuildDescriptors(k.MediaScreen(media, in.Linked), k.Bool(in.Linked), layers),
-		Layers:      layers,
-	}, nil
+	return finalizePlan(in, k.MediaScreen(media), staticChromeKey(), body, layers), nil
 }
 
 type mediaLayout struct {

@@ -22,6 +22,7 @@ const (
 	NodeRibbon   NodeID = "ribbon"
 	NodeManeuver NodeID = "maneuver"
 	NodeChrome   NodeID = "chrome"
+	NodeLink     NodeID = "ble_link"
 	NodeScreen   NodeID = "screen"
 	NodeMediaTitle  NodeID = "media_title"
 	NodeMediaArtist NodeID = "media_artist"
