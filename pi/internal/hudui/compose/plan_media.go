@@ -5,6 +5,7 @@ import (
 
 	"moto-hud/pi/internal/hudui"
 	"moto-hud/pi/internal/hudui/plan"
+	"moto-hud/pi/internal/hudui/scene"
 	"moto-hud/pi/internal/hudui/token"
 	"moto-hud/pi/internal/pixelfont"
 )
@@ -20,7 +21,7 @@ func planMedia(in Input) (plan.ScreenPlan, error) {
 		title = "No track"
 	}
 	if in.NavSVG.Fit != nil {
-		title = in.NavSVG.Fit("12x24", title, geom.mw)
+		title = in.NavSVG.Fit(scene.Face12x24, title, geom.mw)
 	}
 	body, err := MediaBodySVG(playing, title, in.Media.Artist)
 	if err != nil {
@@ -35,14 +36,14 @@ func planMedia(in Input) (plan.ScreenPlan, error) {
 		{ID: hudui.NodeMediaState, Tier: hudui.TierSlow, Key: k.MediaPlaying(media), Slot: geom.playingSlot},
 		{
 			ID: hudui.NodeMediaTitle, Tier: hudui.TierPartialOK, Key: k.Hash(media.Title), Slot: geom.titleSlot,
-			Patch: func() ([]byte, error) {
-				return patchMediaTitleSVG(titleCopy, geom.titleSlot.Dx(), geom.titleSlot.Dy(), mediaPatchDeps{deps: deps, role: "title"})
+			Patch: func() (scene.Document, error) {
+				return patchMediaTitleDoc(titleCopy, geom.titleSlot.Dx(), geom.titleSlot.Dy(), mediaPatchDeps{deps: deps, role: "title"})
 			},
 		},
 		{
 			ID: hudui.NodeMediaArtist, Tier: hudui.TierPartialOK, Key: k.Hash(media.Artist), Slot: geom.artistSlot,
-			Patch: func() ([]byte, error) {
-				return patchMediaArtistSVG(artistCopy, geom.artistSlot.Dx(), geom.artistSlot.Dy(), mediaPatchDeps{deps: deps, role: "artist"})
+			Patch: func() (scene.Document, error) {
+				return patchMediaArtistDoc(artistCopy, geom.artistSlot.Dx(), geom.artistSlot.Dy(), mediaPatchDeps{deps: deps, role: "artist"})
 			},
 		},
 	}
@@ -78,7 +79,7 @@ func mediaLayoutGeom() mediaLayout {
 }
 
 type mediaPatchDeps struct {
-	deps NavSVGDeps
+	deps DrawDeps
 	role string // title | artist
 }
 
@@ -88,14 +89,14 @@ func (m mediaPatchDeps) TextSVG(id, faceSize string, x, baseline int, anchor, s 
 
 func (m mediaPatchDeps) FitTitle(s string, maxW int) string {
 	if m.deps.Fit != nil {
-		return m.deps.Fit("12x24", s, maxW)
+		return m.deps.Fit(scene.Face12x24, s, maxW)
 	}
 	return s
 }
 
 func (m mediaPatchDeps) FitBody(s string, maxW int) string {
 	if m.deps.Fit != nil {
-		return m.deps.Fit("8x16", s, maxW)
+		return m.deps.Fit(scene.Face8x16, s, maxW)
 	}
 	return s
 }

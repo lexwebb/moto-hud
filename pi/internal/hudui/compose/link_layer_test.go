@@ -9,9 +9,9 @@ import (
 
 func TestEveryPlanIncludesLinkLayer(t *testing.T) {
 	cases := []compose.Input{
-		{Screen: compose.ScreenNav, NavSVG: stubNavSVG()},
-		{Screen: compose.ScreenMedia, NavSVG: stubNavSVG()},
-		{Screen: compose.ScreenStatus, NavSVG: stubNavSVG()},
+		{Screen: compose.ScreenNav, NavSVG: stubDrawDeps()},
+		{Screen: compose.ScreenMedia, NavSVG: stubDrawDeps()},
+		{Screen: compose.ScreenStatus, NavSVG: stubDrawDeps()},
 	}
 	for _, in := range cases {
 		sp, err := compose.BuildPlan(in)

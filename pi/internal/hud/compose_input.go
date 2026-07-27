@@ -2,18 +2,19 @@ package hud
 
 import (
 	"moto-hud/pi/internal/hudui/compose"
+	"moto-hud/pi/internal/hudui/scene"
 	"moto-hud/pi/internal/pixelfont"
 	"moto-hud/pi/internal/protocol"
 )
 
-// ComposeInput builds compose.Input with hud-backed SVG helpers (single wiring point).
+// ComposeInput builds compose.Input with hud-backed draw helpers (single wiring point).
 func ComposeInput(screen Screen, nav protocol.NavMessage, media protocol.MediaMessage, linked bool) compose.Input {
 	return compose.Input{
-		Screen: composeScreenKind(screen),
-		Nav:    nav,
-		Media:  media,
-		Linked: linked,
-		NavSVG:  navSVGDeps(),
+		Screen:  composeScreenKind(screen),
+		Nav:     nav,
+		Media:   media,
+		Linked:  linked,
+		NavSVG:  drawDeps(),
 		LinkSVG: compose.LinkMarkFragment,
 	}
 }
@@ -29,15 +30,15 @@ func composeScreenKind(s Screen) compose.ScreenKind {
 	}
 }
 
-func navSVGDeps() compose.NavSVGDeps {
-	return compose.NavSVGDeps{
+func drawDeps() compose.DrawDeps {
+	return compose.DrawDeps{
 		ManeuverPaths: maneuverPaths,
 		RibbonSVG: func(nav protocol.NavMessage, w, h int) string {
 			pts, turnIdx := ribbonForNav(nav)
 			return roadRibbonSVG(pts, turnIdx, w, h)
 		},
 		TextSVG: textSVGFromFaceSize,
-		Fit:     fitFromFaceSize,
+		Fit:     fitFromSceneFace,
 		WrapRoad: func(s string, maxW, maxLines int) []string {
 			body := mustFace(pixelfont.Size8x16)
 			return wrapLines(body, abbreviateRoad(s), maxW, maxLines)
@@ -63,25 +64,42 @@ func textSVGFromFaceSize(id, faceSize string, x, baseline int, anchor, s string)
 	return textSVG(id, face, x, baseline, anchor, s)
 }
 
-func fitFromFaceSize(faceSize, s string, maxW int) string {
-	face := faceFromSize(faceSize)
+func fitFromSceneFace(f scene.Face, s string, maxW int) string {
+	face := faceFromSceneFace(f)
 	if face == nil {
 		return s
 	}
 	return fit(face, s, maxW)
 }
 
-func faceFromSize(size string) *pixelfont.Face {
-	switch size {
-	case "6x12":
+func faceFromSceneFace(f scene.Face) *pixelfont.Face {
+	switch f {
+	case scene.Face6x12:
 		return mustFace(pixelfont.Size6x12)
-	case "8x16":
+	case scene.Face8x16:
 		return mustFace(pixelfont.Size8x16)
-	case "12x24":
+	case scene.Face12x24:
 		return mustFace(pixelfont.Size12x24)
-	case "16x32":
+	case scene.Face16x32:
 		return mustFace(pixelfont.Size16x32)
 	default:
 		return mustFace(pixelfont.Size8x16)
+	}
+}
+
+func faceFromSize(size string) *pixelfont.Face {
+	return faceFromSceneFace(sceneFaceFromSizeAttr(size))
+}
+
+func sceneFaceFromSizeAttr(size string) scene.Face {
+	switch size {
+	case "6x12":
+		return scene.Face6x12
+	case "12x24":
+		return scene.Face12x24
+	case "16x32":
+		return scene.Face16x32
+	default:
+		return scene.Face8x16
 	}
 }

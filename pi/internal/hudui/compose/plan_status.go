@@ -5,6 +5,7 @@ import (
 
 	"moto-hud/pi/internal/hudui"
 	"moto-hud/pi/internal/hudui/plan"
+	"moto-hud/pi/internal/hudui/scene"
 	"moto-hud/pi/internal/hudui/token"
 	"moto-hud/pi/internal/pixelfont"
 )
@@ -55,28 +56,28 @@ func planStatus(in Input) (plan.ScreenPlan, error) {
 	layers := []plan.Layer{
 		{
 			ID: hudui.NodeStatusLink, Tier: hudui.TierPartialOK, Key: k.StatusLink(linked), Slot: geom.linkSlot,
-			Patch: func() ([]byte, error) {
+			Patch: func() (scene.Document, error) {
 				v := "DOWN"
 				if linked {
 					v = "UP"
 				}
-				return patchStatusValueSVG("status_link", v, geom.linkSlot.Dx(), geom.linkSlot.Dy(), deps)
+				return patchStatusValueDoc("status_link", v, geom.linkSlot.Dx(), geom.linkSlot.Dy(), deps)
 			},
 		},
 		{
 			ID: hudui.NodeStatusNav, Tier: hudui.TierPartialOK, Key: k.StatusNav(navActive), Slot: geom.navSlot,
-			Patch: func() ([]byte, error) {
+			Patch: func() (scene.Document, error) {
 				v := "OFF"
 				if navActive {
 					v = "ON"
 				}
-				return patchStatusValueSVG("status_nav", v, geom.navSlot.Dx(), geom.navSlot.Dy(), deps)
+				return patchStatusValueDoc("status_nav", v, geom.navSlot.Dx(), geom.navSlot.Dy(), deps)
 			},
 		},
 		{
 			ID: hudui.NodeStatusPkts, Tier: hudui.TierPartialOK, Key: k.StatusPkts(), Slot: geom.pktsSlot,
-			Patch: func() ([]byte, error) {
-				return patchStatusValueSVG("status_pkts", "OK", geom.pktsSlot.Dx(), geom.pktsSlot.Dy(), deps)
+			Patch: func() (scene.Document, error) {
+				return patchStatusValueDoc("status_pkts", "OK", geom.pktsSlot.Dx(), geom.pktsSlot.Dy(), deps)
 			},
 		},
 	}

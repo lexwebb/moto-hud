@@ -15,3 +15,4 @@ Short records of hard-to-reverse trade-offs. Format and when-to-write: project s
 | [0009](0009-android-on-demand-osmand-module.md) | On-demand OsmAnd Full Library module | accepted |
 | [0010](0010-hud-ui-templ-component-layout.md) | HUD UI: templ components + layout props | accepted |
 | [0011](0011-component-refresh-tiers-partial-regions.md) | Component refresh tiers + spatial partial regions | accepted |
+| [0012](0012-hud-scene-ir-svg-backend.md) | HUD scene IR; SVG as render backend only | accepted |

@@ -18,6 +18,7 @@ The Pi compositor will move from hand-built SVG strings in `layout.go` toward **
 
 - New package(s) under `pi/internal/hudui/` (or similar): layout pass → SVG serialize; existing `pixelfont` + `RasterizeSVG` path unchanged.
 - Screen migration is incremental (one kit screen at a time); `layout.go` shrinks as screens move.
+- **Scene IR** ([0012](0012-hud-scene-ir-svg-backend.md)) is the compose/engine contract; SVG strings are backend-only.
 - **Chrome** (header, legend column, link glyph slot) lives in `hudui/screens/chrome.templ`; compose wraps each screen `BodySVG` via `FrameVars`.
 - Shared tokens should converge with `design/tokens/` (codegen or checked-in JSON) to limit drift.
 - Interactive “hooks” are not a runtime: state lives on `hud.State`; preview interactivity uses the same props from tests or emulator, not `useEffect` in components.

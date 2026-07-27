@@ -5,6 +5,7 @@ import (
 
 	"moto-hud/pi/internal/hudui"
 	"moto-hud/pi/internal/hudui/plan"
+	"moto-hud/pi/internal/hudui/scene"
 )
 
 const linkSlotW = 16
@@ -29,8 +30,8 @@ func linkLayer(in Input) plan.Layer {
 		Tier: hudui.TierPartialOK,
 		Key:  Keys{}.Bool(linked),
 		Slot: slot,
-		Patch: func() ([]byte, error) {
-			return patchLinkSVG(linked, slot.Dx(), slot.Dy(), linkFn)
+		Patch: func() (scene.Document, error) {
+			return patchLinkDoc(linked, slot.Dx(), slot.Dy(), linkFn)
 		},
 	}
 }

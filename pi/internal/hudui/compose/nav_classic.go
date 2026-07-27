@@ -5,13 +5,14 @@ import (
 
 	"moto-hud/pi/internal/hudui"
 	"moto-hud/pi/internal/hudui/plan"
+	"moto-hud/pi/internal/hudui/scene"
 )
 
 // planNavClassic builds the standard nav screen (glyph + distance + road + ribbon).
 func planNavClassic(in Input) (plan.ScreenPlan, error) {
 	deps := in.NavSVG
 	if deps.TextSVG == nil {
-		return plan.ScreenPlan{}, fmt.Errorf("compose: NavSVGDeps required")
+		return plan.ScreenPlan{}, fmt.Errorf("compose: DrawDeps required")
 	}
 	nav := in.Nav
 	k := Keys{}
@@ -26,22 +27,22 @@ func planNavClassic(in Input) (plan.ScreenPlan, error) {
 		{ID: hudui.NodeManeuver, Tier: hudui.TierSlow, Key: k.Maneuver(nav), Slot: lay.maneuverSlot},
 		{
 			ID: hudui.NodeDistance, Tier: hudui.TierPartialOK, Key: k.DistanceBucket(nav.DistanceM), Slot: lay.distanceSlot,
-			Patch: func() ([]byte, error) {
-				return patchDistanceSVG(navCopy, lay.distanceSlot.Dx(), lay.distanceSlot.Dy(), deps)
+			Patch: func() (scene.Document, error) {
+				return patchDistanceDoc(navCopy, lay.distanceSlot.Dx(), lay.distanceSlot.Dy(), deps)
 			},
 		},
 		{
 			ID: hudui.NodeRoad, Tier: hudui.TierPartialOK, Key: k.Road(nav), Slot: lay.roadSlot,
-			Patch: func() ([]byte, error) {
-				return patchRoadSVG(navCopy, lay.roadSlot, deps)
+			Patch: func() (scene.Document, error) {
+				return patchRoadDoc(navCopy, lay.roadSlot, deps)
 			},
 		},
 	}
 	if lay.etaH > 0 {
 		layers = append(layers, plan.Layer{
 			ID: hudui.NodeETA, Tier: hudui.TierPartialOK, Key: k.ETA(nav), Slot: lay.etaSlot,
-			Patch: func() ([]byte, error) {
-				return patchETASVG(navCopy, lay.etaSlot.Dx(), lay.etaSlot.Dy(), deps)
+			Patch: func() (scene.Document, error) {
+				return patchETADoc(navCopy, lay.etaSlot.Dx(), lay.etaSlot.Dy(), deps)
 			},
 		})
 	}

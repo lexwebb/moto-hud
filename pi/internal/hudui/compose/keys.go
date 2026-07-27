@@ -20,22 +20,8 @@ type Input struct {
 	Nav    protocol.NavMessage
 	Media  protocol.MediaMessage
 	Linked bool
-	NavSVG NavSVGDeps // set by hud when building nav plans
+	NavSVG DrawDeps // set by hud when building nav plans
 	LinkSVG func(linked bool) string
-}
-
-// NavSVGDeps supplies nav-specific SVG fragments from the hud package (maneuver, ribbon, text helpers).
-type NavSVGDeps struct {
-	ManeuverPaths func(protocol.Maneuver) string
-	RibbonSVG     func(nav protocol.NavMessage, w, h int) string
-	TextSVG       func(id string, faceSize string, x, baseline int, anchor, s string) string
-	Fit           func(faceSize, s string, maxW int) string
-	WrapRoad      func(s string, maxW, maxLines int) []string
-	RoadBlockH    func(lineCount int) int
-	HasMinimap    func(protocol.NavMessage) bool
-	MinimapSVG    func(mm *protocol.MinimapMessage, w, h int) string
-	HasLanes      func(protocol.NavMessage) bool
-	LaneStripSVG  func(lanes []protocol.LaneInfo, maxW int) string
 }
 
 // Keys builds change keys from protocol state (layout-agnostic).

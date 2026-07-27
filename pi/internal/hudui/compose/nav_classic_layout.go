@@ -7,6 +7,7 @@ import (
 	"image"
 
 	"moto-hud/pi/internal/hudui/screens"
+	"moto-hud/pi/internal/hudui/scene"
 	"moto-hud/pi/internal/hudui/token"
 	"moto-hud/pi/internal/pixelfont"
 	"moto-hud/pi/internal/protocol"
@@ -25,7 +26,7 @@ type navClassicLayout struct {
 
 const laneStripH = 14
 
-func layoutNavClassic(nav protocol.NavMessage, deps NavSVGDeps) navClassicLayout {
+func layoutNavClassic(nav protocol.NavMessage, deps DrawDeps) navClassicLayout {
 	mw := token.MainWidth()
 	mainX := token.Pad
 
@@ -115,8 +116,8 @@ func layoutNavClassic(nav protocol.NavMessage, deps NavSVGDeps) navClassicLayout
 		}
 	}
 
-	dist = deps.Fit("16x32", dist, mw-token.GlyphSz-token.GapMd)
-	eta = deps.Fit("8x16", eta, mw)
+	dist = deps.Fit(scene.Face16x32, dist, mw-token.GlyphSz-token.GapMd)
+	eta = deps.Fit(scene.Face8x16, eta, mw)
 	glyphY := heroTop + (heroH-token.GlyphSz)/2
 	distBaseline := heroTop + (heroH-hero.Metrics.CellH)/2 + hero.Metrics.Ascent
 
@@ -155,7 +156,7 @@ func layoutNavClassic(nav protocol.NavMessage, deps NavSVGDeps) navClassicLayout
 }
 
 // NavClassicBodySVG renders the classic nav main column via templ.
-func NavClassicBodySVG(l navClassicLayout, deps NavSVGDeps) (string, error) {
+func NavClassicBodySVG(l navClassicLayout, deps DrawDeps) (string, error) {
 	body, _ := pixelfont.Load(pixelfont.Size8x16)
 	roadHTML := roadLinesSVG(deps, body, 0, l.roadTop, l.roadLines)
 	etaHTML := ""

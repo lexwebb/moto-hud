@@ -6,6 +6,7 @@ import (
 
 	"moto-hud/pi/internal/hudui"
 	"moto-hud/pi/internal/hudui/compose"
+	"moto-hud/pi/internal/hudui/scene"
 	"moto-hud/pi/internal/protocol"
 )
 
@@ -16,7 +17,7 @@ func TestNavClassicPlanLayers(t *testing.T) {
 			Active: true, DistanceM: 200, Road: "High St", EtaMin: 5,
 			Maneuver: protocol.ManeuverLeft,
 		},
-		NavSVG: stubNavSVG(),
+		NavSVG: stubDrawDeps(),
 	}
 	sp, err := compose.BuildPlan(in)
 	if err != nil {
@@ -44,14 +45,14 @@ func TestNavClassicPlanLayers(t *testing.T) {
 	}
 }
 
-func stubNavSVG() compose.NavSVGDeps {
-	return compose.NavSVGDeps{
+func stubDrawDeps() compose.DrawDeps {
+	return compose.DrawDeps{
 		ManeuverPaths: func(protocol.Maneuver) string { return `<path d="M0,0"/>` },
 		RibbonSVG:     func(protocol.NavMessage, int, int) string { return "" },
 		TextSVG: func(id, faceSize string, x, baseline int, anchor, s string) string {
 			return "<text id=\"" + id + "\">" + s + "</text>"
 		},
-		Fit: func(_, s string, _ int) string { return s },
+		Fit: func(_ scene.Face, s string, _ int) string { return s },
 		WrapRoad: func(s string, _, maxLines int) []string {
 			if maxLines < 1 {
 				return nil

@@ -4,6 +4,7 @@ import (
 	"image"
 
 	"moto-hud/pi/internal/hudui"
+	"moto-hud/pi/internal/hudui/scene"
 )
 
 // Layer is one refresh-tracked region produced by a screen template/layout.
@@ -12,7 +13,7 @@ type Layer struct {
 	Tier  hudui.Tier
 	Key   hudui.ChangeKey
 	Slot  image.Rectangle // absolute canvas coordinates (0..250 × 0..122)
-	Patch func() ([]byte, error)
+	Patch func() (scene.Document, error)
 }
 
 // ScreenPlan is the output of a screen compose pass (layout + SVG body + refresh metadata).

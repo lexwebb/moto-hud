@@ -7,6 +7,7 @@ import (
 
 	"moto-hud/pi/internal/hudui"
 	"moto-hud/pi/internal/hudui/plan"
+	"moto-hud/pi/internal/hudui/scene"
 	"moto-hud/pi/internal/hudui/token"
 	"moto-hud/pi/internal/pixelfont"
 )
@@ -15,7 +16,7 @@ import (
 func planNavLive(in Input) (plan.ScreenPlan, error) {
 	deps := in.NavSVG
 	if deps.TextSVG == nil {
-		return plan.ScreenPlan{}, fmt.Errorf("compose: NavSVGDeps required")
+		return plan.ScreenPlan{}, fmt.Errorf("compose: DrawDeps required")
 	}
 	nav := in.Nav
 	k := Keys{}
@@ -60,8 +61,8 @@ func planNavLive(in Input) (plan.ScreenPlan, error) {
 		ribbonH = 20
 	}
 
-	dist = deps.Fit("16x32", dist, rightW)
-	eta = deps.Fit("8x16", eta, rightW)
+	dist = deps.Fit(scene.Face16x32, dist, rightW)
+	eta = deps.Fit(scene.Face8x16, eta, rightW)
 
 	roadMaxLines := 3
 	roadLines := deps.WrapRoad(road, rightW, roadMaxLines)
@@ -116,22 +117,22 @@ func planNavLive(in Input) (plan.ScreenPlan, error) {
 		{ID: hudui.NodeRibbon, Tier: hudui.TierSlow, Key: k.Ribbon(nav), Slot: ribbonSlot},
 		{
 			ID: hudui.NodeDistance, Tier: hudui.TierPartialOK, Key: k.DistanceBucket(nav.DistanceM), Slot: distanceSlot,
-			Patch: func() ([]byte, error) {
-				return patchDistanceSVG(navCopy, distanceSlot.Dx(), distanceSlot.Dy(), deps)
+			Patch: func() (scene.Document, error) {
+				return patchDistanceDoc(navCopy, distanceSlot.Dx(), distanceSlot.Dy(), deps)
 			},
 		},
 		{
 			ID: hudui.NodeRoad, Tier: hudui.TierPartialOK, Key: k.Road(nav), Slot: roadSlot,
-			Patch: func() ([]byte, error) {
-				return patchRoadSVG(navCopy, roadSlot, deps)
+			Patch: func() (scene.Document, error) {
+				return patchRoadDoc(navCopy, roadSlot, deps)
 			},
 		},
 	}
 	if eta != "" {
 		layers = append(layers, plan.Layer{
 			ID: hudui.NodeETA, Tier: hudui.TierPartialOK, Key: k.ETA(nav), Slot: etaSlot,
-			Patch: func() ([]byte, error) {
-				return patchETASVG(navCopy, etaSlot.Dx(), etaSlot.Dy(), deps)
+			Patch: func() (scene.Document, error) {
+				return patchETADoc(navCopy, etaSlot.Dx(), etaSlot.Dy(), deps)
 			},
 		})
 	}
@@ -139,7 +140,7 @@ func planNavLive(in Input) (plan.ScreenPlan, error) {
 	return finalizePlan(in, k.NavScreen(nav), staticChromeKey(), b.String(), layers), nil
 }
 
-func liveRoadLinesSVG(deps NavSVGDeps, x, top int, lines []string) string {
+func liveRoadLinesSVG(deps DrawDeps, x, top int, lines []string) string {
 	body, _ := pixelfont.Load(pixelfont.Size8x16)
 	var b strings.Builder
 	for i, ln := range lines {
