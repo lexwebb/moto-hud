@@ -3,7 +3,7 @@ package hud
 import (
 	"image"
 
-	"moto-hud/pi/internal/hudui"
+	"moto-hud/pi/internal/hudui/plan"
 	"moto-hud/pi/internal/protocol"
 )
 
@@ -27,98 +27,92 @@ func NewEngine() *Engine {
 
 // Draw renders or patches the panel for the current state.
 func (e *Engine) Draw(screen Screen, nav protocol.NavMessage, media protocol.MediaMessage, linked, force bool) FrameResult {
-	plan := e.Orch.Plan(screen, nav, media, linked, force)
-	if plan.Mode == RefreshNone {
-		if e.frame != nil {
-			return FrameResult{Image: e.frame}
-		}
+	in := ComposeInput(screen, nav, media, linked)
+	rp, sp, err := e.Orch.PlanFromCompose(in, force)
+	if err != nil {
 		img := Render(screen, nav, media, linked)
 		e.frame = cloneGray(img)
 		return FrameResult{Image: e.frame}
 	}
 
-	if plan.Mode == RefreshSpatialPatch && e.frame != nil {
-		if e.applySpatialPatches(screen, plan, nav, media) {
+	if rp.Mode == RefreshNone {
+		if e.frame != nil {
+			return FrameResult{Image: e.frame}
+		}
+		img := renderFromPlan(screen, nav, media, linked, sp)
+		e.frame = cloneGray(img)
+		return FrameResult{Image: e.frame}
+	}
+
+	if rp.Mode == RefreshSpatialPatch && e.frame != nil {
+		ok := true
+		for _, id := range rp.DirtyIDs {
+			layer, found := sp.LayerByID(id)
+			if !found || layer.Patch == nil {
+				ok = false
+				break
+			}
+			if err := PatchLayer(e.frame, layer); err != nil {
+				ok = false
+				break
+			}
+		}
+		if ok {
 			return FrameResult{
 				Image:   e.frame,
 				Spatial: true,
-				Dirty:   plan.DirtyUnion,
+				Dirty:   rp.DirtyUnion,
 				Patched: true,
 			}
 		}
 	}
 
-	img := Render(screen, nav, media, linked)
+	img := renderFromPlan(screen, nav, media, linked, sp)
 	e.frame = cloneGray(img)
 	return FrameResult{
 		Image:   e.frame,
-		Spatial: plan.Mode == RefreshSpatialPatch,
-		Dirty:   plan.DirtyUnion,
+		Spatial: rp.Mode == RefreshSpatialPatch,
+		Dirty:   rp.DirtyUnion,
 	}
 }
 
-func (e *Engine) applySpatialPatches(screen Screen, plan RefreshPlan, nav protocol.NavMessage, media protocol.MediaMessage) bool {
-	for _, id := range plan.DirtyIDs {
-		if !isPatchableNode(screen, id) {
-			return false
-		}
-	}
+func renderFromPlan(screen Screen, nav protocol.NavMessage, media protocol.MediaMessage, linked bool, sp plan.ScreenPlan) *image.Gray {
+	body := sp.BodySVG
+	link := linkMarkSVG(linked)
+	var vars map[string]string
 	switch screen {
-	case ScreenNav:
-		slots := NavRefreshSlots(nav)
-		for _, id := range plan.DirtyIDs {
-			var err error
-			switch id {
-			case hudui.NodeDistance:
-				err = PatchDistance(e.frame, nav, slots.Distance)
-			case hudui.NodeETA:
-				err = PatchETA(e.frame, nav, slots.ETA)
-			case hudui.NodeRoad:
-				err = PatchRoad(e.frame, nav, slots.Road)
-			default:
-				return false
-			}
-			if err != nil {
-				return false
-			}
-		}
-		return true
 	case ScreenMedia:
-		slots := MediaRefreshSlots()
-		for _, id := range plan.DirtyIDs {
-			var err error
-			switch id {
-			case hudui.NodeMediaTitle:
-				err = PatchMediaTitle(e.frame, media, slots.Title)
-			case hudui.NodeMediaArtist:
-				err = PatchMediaArtist(e.frame, media, slots.Artist)
-			default:
-				return false
-			}
-			if err != nil {
-				return false
-			}
+		action := "PLAY"
+		if media.Playing {
+			action = "PAUSE"
 		}
-		return true
+		vars = chromeShell("MEDIA", link, body, "SKIP", action, "SKIP")
+	case ScreenStatus:
+		vars = chromeShell("STATUS", link, body, "MODE", "REDRAW", "MODE")
 	default:
-		return false
+		legPrev, legAction, legNext := "MEDIA", "-", "STATUS"
+		if nav.Active {
+			legPrev, legAction, legNext = "MODE", "-", "MODE"
+		}
+		vars = chromeShell("NAV", link, body, legPrev, legAction, legNext)
 	}
+	svg, err := BuildPixelSVGFromVars(vars)
+	if err != nil {
+		return Render(screen, nav, media, linked)
+	}
+	img, err := RasterizeSVG(svg)
+	if err != nil {
+		return Render(screen, nav, media, linked)
+	}
+	return img
 }
 
-func isPatchableNode(screen Screen, id hudui.NodeID) bool {
-	switch screen {
-	case ScreenNav:
-		switch id {
-		case hudui.NodeDistance, hudui.NodeETA, hudui.NodeRoad:
-			return true
-		}
-	case ScreenMedia:
-		switch id {
-		case hudui.NodeMediaTitle, hudui.NodeMediaArtist:
-			return true
-		}
-	}
-	return false
+// RenderEngine is the package-level compositor used by motohud and WASM.
+var RenderEngine = NewEngine()
+
+// RenderWithEngine draws via the shared Engine (retains framebuffer for patches).
+func RenderWithEngine(screen Screen, nav protocol.NavMessage, media protocol.MediaMessage, linked, force bool) FrameResult {
+	return RenderEngine.Draw(screen, nav, media, linked, force)
 }
 
 func cloneGray(src *image.Gray) *image.Gray {
@@ -128,12 +122,4 @@ func cloneGray(src *image.Gray) *image.Gray {
 	dst := image.NewGray(src.Bounds())
 	copy(dst.Pix, src.Pix)
 	return dst
-}
-
-// RenderEngine is the package-level compositor used by motohud and WASM.
-var RenderEngine = NewEngine()
-
-// RenderWithEngine draws via the shared Engine (retains framebuffer for patches).
-func RenderWithEngine(screen Screen, nav protocol.NavMessage, media protocol.MediaMessage, linked, force bool) FrameResult {
-	return RenderEngine.Draw(screen, nav, media, linked, force)
 }

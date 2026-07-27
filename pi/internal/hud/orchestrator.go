@@ -1,47 +1,20 @@
 package hud
 
 import (
-	"hash/maphash"
 	"image"
 
 	"moto-hud/pi/internal/hudui"
+	"moto-hud/pi/internal/hudui/compose"
 	"moto-hud/pi/internal/hudui/layout"
-	"moto-hud/pi/internal/protocol"
+	"moto-hud/pi/internal/hudui/plan"
 )
-
-// RefreshPolicy tunes spatial partial decisions (ADR 0010).
-type RefreshPolicy struct {
-	MaxPartialPixels int
-}
-
-func DefaultRefreshPolicy() RefreshPolicy {
-	const canvas = Width * Height
-	return RefreshPolicy{MaxPartialPixels: canvas * 35 / 100}
-}
-
-// RefreshMode is how the display should be updated this frame.
-type RefreshMode int
-
-const (
-	RefreshNone RefreshMode = iota
-	RefreshSpatialPatch
-	RefreshFullFrame
-)
-
-// RefreshPlan is the orchestrator output for one draw.
-type RefreshPlan struct {
-	Mode       RefreshMode
-	DirtyIDs   []hudui.NodeID
-	DirtyUnion image.Rectangle
-	FullRender bool
-}
 
 // RefreshOrchestrator tracks per-node change keys and chooses update mode.
 type RefreshOrchestrator struct {
 	Policy RefreshPolicy
 	last   map[hudui.NodeID]hudui.ChangeKey
 	slots  map[hudui.NodeID]image.Rectangle
-	screen Screen
+	screen compose.ScreenKind
 }
 
 func NewRefreshOrchestrator() *RefreshOrchestrator {
@@ -52,9 +25,8 @@ func NewRefreshOrchestrator() *RefreshOrchestrator {
 	}
 }
 
-// Plan compares incoming state to last frame and returns draw mode + dirty nodes.
-func (o *RefreshOrchestrator) Plan(screen Screen, nav protocol.NavMessage, media protocol.MediaMessage, linked bool, force bool) RefreshPlan {
-	descs := refreshDescriptors(screen, nav, media, linked)
+// Plan compares template-produced descriptors to the previous frame.
+func (o *RefreshOrchestrator) Plan(screen compose.ScreenKind, descs []hudui.Descriptor, force bool) RefreshPlan {
 	if force || screen != o.screen {
 		o.screen = screen
 		o.rememberAll(descs)
@@ -123,119 +95,12 @@ func allNodeIDs(descs []hudui.Descriptor) []hudui.NodeID {
 	return out
 }
 
-func refreshDescriptors(screen Screen, nav protocol.NavMessage, media protocol.MediaMessage, linked bool) []hudui.Descriptor {
-	switch screen {
-	case ScreenNav:
-		return navRefreshDescriptors(nav, linked)
-	case ScreenMedia:
-		return mediaRefreshDescriptors(media, linked)
-	case ScreenStatus:
-		return statusRefreshDescriptors(nav.Active, linked)
-	default:
-		return navRefreshDescriptors(nav, linked)
+// PlanFromCompose builds a screen plan and runs refresh planning in one step.
+func (o *RefreshOrchestrator) PlanFromCompose(in compose.Input, force bool) (RefreshPlan, plan.ScreenPlan, error) {
+	sp, err := compose.BuildPlan(in)
+	if err != nil {
+		return RefreshPlan{}, plan.ScreenPlan{}, err
 	}
-}
-
-func navRefreshDescriptors(nav protocol.NavMessage, linked bool) []hudui.Descriptor {
-	slots := NavRefreshSlots(nav)
-	return []hudui.Descriptor{
-		{ID: hudui.NodeScreen, Tier: hudui.TierStatic, Key: keyScreenNav(nav, linked)},
-		{ID: hudui.NodeChrome, Tier: hudui.TierStatic, Key: keyBool(linked)},
-		{ID: hudui.NodeManeuver, Tier: hudui.TierSlow, Slot: slots.Maneuver, Key: keyManeuver(nav)},
-		{ID: hudui.NodeDistance, Tier: hudui.TierPartialOK, Slot: slots.Distance, Key: keyDistance(nav)},
-		{ID: hudui.NodeRoad, Tier: hudui.TierPartialOK, Slot: slots.Road, Key: keyRoad(nav)},
-		{ID: hudui.NodeETA, Tier: hudui.TierPartialOK, Slot: slots.ETA, Key: keyETA(nav)},
-		{ID: hudui.NodeRibbon, Tier: hudui.TierSlow, Slot: slots.Ribbon, Key: keyRibbon(nav)},
-	}
-}
-
-func mediaRefreshDescriptors(media protocol.MediaMessage, linked bool) []hudui.Descriptor {
-	slots := MediaRefreshSlots()
-	return []hudui.Descriptor{
-		{ID: hudui.NodeScreen, Tier: hudui.TierStatic, Key: keyMediaScreen(media, linked)},
-		{ID: hudui.NodeChrome, Tier: hudui.TierStatic, Key: keyBool(linked)},
-		{ID: hudui.NodeMediaState, Tier: hudui.TierSlow, Slot: slots.Playing, Key: keyMediaPlaying(media)},
-		{ID: hudui.NodeMediaTitle, Tier: hudui.TierPartialOK, Slot: slots.Title, Key: refreshHashStr(media.Title)},
-		{ID: hudui.NodeMediaArtist, Tier: hudui.TierPartialOK, Slot: slots.Artist, Key: refreshHashStr(media.Artist)},
-	}
-}
-
-func keyMediaScreen(media protocol.MediaMessage, linked bool) hudui.ChangeKey {
-	return keyMedia(media, linked)
-}
-
-func keyMediaPlaying(media protocol.MediaMessage) hudui.ChangeKey {
-	if media.Playing {
-		return 1
-	}
-	return 0
-}
-
-func statusRefreshDescriptors(navActive, linked bool) []hudui.Descriptor {
-	var k hudui.ChangeKey
-	if linked {
-		k |= 1
-	}
-	if navActive {
-		k |= 2
-	}
-	return []hudui.Descriptor{
-		{ID: hudui.NodeScreen, Tier: hudui.TierStatic, Key: k},
-		{ID: hudui.NodeChrome, Tier: hudui.TierStatic, Key: keyBool(linked)},
-	}
-}
-
-func keyBool(b bool) hudui.ChangeKey {
-	if b {
-		return 1
-	}
-	return 0
-}
-
-func keyManeuver(nav protocol.NavMessage) hudui.ChangeKey {
-	return refreshHashStr(string(nav.Maneuver)) | hudui.ChangeKey(boolKey(nav.Active) << 8)
-}
-
-func keyDistance(nav protocol.NavMessage) hudui.ChangeKey {
-	return hudui.ChangeKey(BucketForDistance(nav.DistanceM))
-}
-
-func keyRoad(nav protocol.NavMessage) hudui.ChangeKey {
-	return refreshHashStr(nav.Road) ^ refreshHashStr(nav.Instruction)
-}
-
-func keyETA(nav protocol.NavMessage) hudui.ChangeKey {
-	return hudui.ChangeKey(nav.EtaMin)
-}
-
-func keyRibbon(nav protocol.NavMessage) hudui.ChangeKey {
-	k := hudui.ChangeKey(len(nav.RibbonPoints)) | hudui.ChangeKey(nav.RibbonTurn<<8)
-	if nav.Minimap != nil {
-		k ^= hudui.ChangeKey(len(nav.Minimap.Route) << 4)
-	}
-	return k
-}
-
-func keyScreenNav(nav protocol.NavMessage, linked bool) hudui.ChangeKey {
-	return keyBool(nav.Active) | hudui.ChangeKey(refreshHashStr(string(nav.Maneuver))<<4) | keyBool(linked)<<12
-}
-
-func keyMedia(m protocol.MediaMessage, linked bool) hudui.ChangeKey {
-	return refreshHashStr(m.Title) ^ refreshHashStr(m.Artist) ^ hudui.ChangeKey(boolKey(m.Playing)<<1) ^ keyBool(linked)<<2
-}
-
-func boolKey(b bool) uint64 {
-	if b {
-		return 1
-	}
-	return 0
-}
-
-var refreshHashSeed = maphash.MakeSeed()
-
-func refreshHashStr(s string) hudui.ChangeKey {
-	var h maphash.Hash
-	h.SetSeed(refreshHashSeed)
-	_, _ = h.WriteString(s)
-	return hudui.ChangeKey(h.Sum64())
+	rp := o.Plan(in.Screen, sp.Descriptors, force)
+	return rp, sp, nil
 }

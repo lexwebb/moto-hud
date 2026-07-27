@@ -1,34 +1,32 @@
 package hud
 
 import (
+	"fmt"
 	"image"
-
-	"moto-hud/pi/internal/pixelfont"
-	"moto-hud/pi/internal/protocol"
 )
 
-// DistancePatchSVG is a small SVG for patching the hero distance slot (white bg + text).
-func DistancePatchSVG(nav protocol.NavMessage, w, h int) ([]byte, error) {
-	hero := mustFace(pixelfont.Size16x32)
-	dist := nav.DistanceText
-	if dist == "" {
-		dist = formatDistance(nav.DistanceM)
+func blitPatch(img *image.Gray, slot image.Rectangle, svg []byte) error {
+	if img == nil || slot.Empty() {
+		return fmt.Errorf("hud: bad patch target")
 	}
-	dist = fit(hero, dist, w)
-	baseline := hero.Metrics.Ascent + 2
-	body := textSVG("distance", hero, w, baseline, "end", dist)
-	svg, err := patchSVG(w, h, body)
-	if err != nil {
-		return nil, err
-	}
-	return svg, nil
-}
-
-// PatchDistance blits a rerasterized distance readout into an existing frame.
-func PatchDistance(img *image.Gray, nav protocol.NavMessage, slot image.Rectangle) error {
-	svg, err := DistancePatchSVG(nav, slot.Dx(), slot.Dy())
+	w, h := slot.Dx(), slot.Dy()
+	patch, err := RasterizeSVGAt(svg, w, h)
 	if err != nil {
 		return err
 	}
-	return blitPatch(img, slot, svg)
+	b := img.Bounds()
+	for y := 0; y < h; y++ {
+		dy := slot.Min.Y + y
+		if dy < b.Min.Y || dy >= b.Max.Y {
+			continue
+		}
+		for x := 0; x < w; x++ {
+			dx := slot.Min.X + x
+			if dx < b.Min.X || dx >= b.Max.X {
+				continue
+			}
+			img.SetGray(dx, dy, patch.GrayAt(x, y))
+		}
+	}
+	return nil
 }

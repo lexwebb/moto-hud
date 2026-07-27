@@ -120,6 +120,20 @@ func BuildPixelSVG(screen Screen, nav protocol.NavMessage, media protocol.MediaM
 	return []byte(out), nil
 }
 
+// BuildPixelSVGFromVars rasterizes a pre-filled template vars map (hudui plan path).
+func BuildPixelSVGFromVars(vars map[string]string) ([]byte, error) {
+	raw, err := loadFrameSVG()
+	if err != nil {
+		return nil, err
+	}
+	svg := applyVars(string(raw), vars)
+	out, err := pixelfont.ReplaceSVGText(svg)
+	if err != nil {
+		return nil, err
+	}
+	return []byte(out), nil
+}
+
 func applyVars(svg string, vars map[string]string) string {
 	for k, v := range vars {
 		if rawSVGKeys[k] {

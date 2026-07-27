@@ -115,306 +115,40 @@ func chromeShell(mode, link, content, legPrev, legAction, legNext string) map[st
 }
 
 func buildNavBody(nav protocol.NavMessage, bleLinked bool) map[string]string {
-	meta := mustFace(pixelfont.Size6x12)
-	body := mustFace(pixelfont.Size8x16)
-	hero := mustFace(pixelfont.Size16x32)
-	mw := mainWidth()
 	link := linkMarkSVG(bleLinked)
-
-	headerBottom := pad + meta.Metrics.CellH
-	divY := headerBottom + gapSm
-	contentTop := divY + gapMd
-	contentBot := Height - pad
-
-	if !nav.Active {
-		idleSVG, err := compose.NavIdleBodySVG()
-		if err != nil {
-			idleSVG = ""
-		}
-		if idleSVG == "" {
-			title := "MOTO HUD"
-			msg := "Waiting for route..."
-			blockH := body.Metrics.CellH*2 + gapMd
-			top := contentTop + (contentBot-contentTop-blockH)/2
-			b1 := top + body.Metrics.Ascent
-			b2 := top + body.Metrics.CellH + gapMd + body.Metrics.Ascent
-			var c strings.Builder
-			c.WriteString(textSVG("", body, mw/2, b1, "middle", title))
-			c.WriteString(textSVG("", body, mw/2, b2, "middle", msg))
-			idleSVG = c.String()
-		}
-		return chromeShell("NAV", link, idleSVG, "MEDIA", "-", "STATUS")
+	in := ComposeInput(ScreenNav, nav, protocol.MediaMessage{}, bleLinked)
+	sp, err := compose.BuildPlan(in)
+	if err != nil {
+		return chromeShell("NAV", link, "", "MEDIA", "-", "STATUS")
 	}
-
-	if hasMinimap(nav) || len(nav.RibbonPoints) >= 2 {
-		return buildNavBodyLive(nav, bleLinked, contentTop, contentBot)
+	legPrev, legAction, legNext := "MEDIA", "-", "STATUS"
+	if nav.Active {
+		legPrev, legAction, legNext = "MODE", "-", "MODE"
 	}
-
-	dist := nav.DistanceText
-	if dist == "" {
-		dist = formatDistance(nav.DistanceM)
-	}
-	road := nav.Road
-	if road == "" {
-		road = nav.Instruction
-	}
-	road = abbreviateRoad(road)
-	eta := ""
-	if nav.EtaMin > 0 {
-		eta = formatETA(nav.EtaMin)
-	}
-
-	heroH := glyphSize
-	if hero.Metrics.CellH > heroH {
-		heroH = hero.Metrics.CellH
-	}
-	etaH := 0
-	if eta != "" {
-		etaH = body.Metrics.CellH
-	}
-	ribbonH := ribbonDefaultH
-
-	// Prefer 2 road lines when vertical space allows; shrink ribbon first if needed.
-	roadMaxLines := 2
-	roadLines := wrapLines(body, road, mw, roadMaxLines)
-	roadH := roadBlockHeight(body, len(roadLines))
-
-	stackH := heroH + gapLg + roadH + gapLg + ribbonH
-	if etaH > 0 {
-		stackH += etaH + gapSm
-	}
-	avail := contentBot - contentTop
-	extra := avail - stackH
-	if extra < 0 {
-		extra = 0
-		shrink := stackH - avail
-		if shrink > 0 && ribbonH > 24 {
-			ribbonH -= shrink
-			if ribbonH < 24 {
-				ribbonH = 24
-			}
-			stackH = heroH + gapLg + roadH + gapLg + ribbonH
-			if etaH > 0 {
-				stackH += etaH + gapSm
-			}
-		}
-		// Still short on space: collapse road to one line.
-		if avail < stackH && roadMaxLines > 1 {
-			roadMaxLines = 1
-			roadLines = wrapLines(body, road, mw, 1)
-			roadH = roadBlockHeight(body, len(roadLines))
-			stackH = heroH + gapLg + roadH + gapLg + ribbonH
-			if etaH > 0 {
-				stackH += etaH + gapSm
-			}
-		}
-		extra = avail - stackH
-		if extra < 0 {
-			extra = 0
-		}
-	}
-
-	heroTop := contentTop + extra/6
-	roadTop := heroTop + heroH + gapLg + extra/6
-	y := roadTop + roadH + gapLg + extra/6
-	etaTop := y
-	if etaH > 0 {
-		y += etaH + gapSm
-	}
-	ribbonTop := contentBot - ribbonH
-	if y > ribbonTop {
-		ribbonTop = y
-		ribbonH = contentBot - ribbonTop
-		if ribbonH < 20 {
-			ribbonH = 20
-			ribbonTop = contentBot - ribbonH
-		}
-	}
-
-	dist = fit(hero, dist, mw-glyphSize-gapMd)
-	eta = fit(body, eta, mw)
-
-	glyphY := heroTop + (heroH-glyphSize)/2
-	distBaseline := heroTop + (heroH-hero.Metrics.CellH)/2 + hero.Metrics.Ascent
-
-	pts, turnIdx := ribbonForNav(nav)
-
-	var c strings.Builder
-	fmt.Fprintf(&c, `<g id="maneuver" transform="translate(-2,%d)" fill="#000" stroke="#000" stroke-width="3" stroke-linecap="square" stroke-linejoin="miter">%s</g>`,
-		glyphY, maneuverPaths(nav.Maneuver))
-	c.WriteString(textSVG("distance", hero, mw, distBaseline, "end", dist))
-	c.WriteString(roadLinesSVG("road", body, 0, roadTop, "start", roadLines))
-	if etaH > 0 {
-		c.WriteString(textSVG("eta", body, 0, etaTop+body.Metrics.Ascent, "start", eta))
-	}
-	fmt.Fprintf(&c, `<g id="ribbon" transform="translate(0,%d)">%s</g>`,
-		ribbonTop, roadRibbonSVG(pts, turnIdx, mw, ribbonH))
-
-	return chromeShell("NAV", link, c.String(), "MODE", "-", "MODE")
-}
-
-// buildNavBodyLive: left corridor minimap, right distance + road + ETA (no arrow glyph).
-func buildNavBodyLive(nav protocol.NavMessage, bleLinked bool, contentTop, contentBot int) map[string]string {
-	body := mustFace(pixelfont.Size8x16)
-	hero := mustFace(pixelfont.Size16x32)
-	mw := mainWidth()
-	link := linkMarkSVG(bleLinked)
-
-	dist := nav.DistanceText
-	if dist == "" {
-		dist = formatDistance(nav.DistanceM)
-	}
-	dist = compactDistanceText(dist)
-	road := nav.Road
-	if road == "" {
-		road = nav.Instruction
-	}
-	road = abbreviateRoad(road)
-	eta := ""
-	if nav.EtaMin > 0 {
-		eta = formatETA(nav.EtaMin)
-	}
-
-	leftW := (mw * 44) / 100
-	if leftW < 72 {
-		leftW = 72
-	}
-	rightX := leftW + gapMd
-	rightW := mw - rightX
-	if rightW < 60 {
-		rightW = 60
-		rightX = mw - rightW
-		leftW = rightX - gapMd
-	}
-	ribbonH := contentBot - contentTop
-	if ribbonH < 20 {
-		ribbonH = 20
-	}
-
-	dist = fit(hero, dist, rightW)
-	eta = fit(body, eta, rightW)
-
-	// Live layout has spare vertical room under the hero distance.
-	roadMaxLines := 3
-	roadLines := wrapLines(body, road, rightW, roadMaxLines)
-	roadH := roadBlockHeight(body, len(roadLines))
-
-	pts, turnIdx := ribbonForNav(nav)
-
-	distTop := contentTop
-	distBaseline := distTop + hero.Metrics.Ascent
-	roadTop := distTop + hero.Metrics.CellH + gapMd
-	etaTop := roadTop + roadH + gapSm
-	if eta != "" {
-		// Keep ETA inside content if road wrapped deep.
-		if etaTop+body.Metrics.CellH > contentBot {
-			roadMaxLines = 2
-			roadLines = wrapLines(body, road, rightW, roadMaxLines)
-			roadH = roadBlockHeight(body, len(roadLines))
-			etaTop = roadTop + roadH + gapSm
-		}
-	}
-
-	leftDraw := roadRibbonSVG(pts, turnIdx, leftW, ribbonH)
-	if hasMinimap(nav) {
-		leftDraw = minimapSVG(nav.Minimap, leftW, ribbonH)
-	}
-
-	var c strings.Builder
-	fmt.Fprintf(&c, `<g id="ribbon" transform="translate(0,%d)">%s</g>`,
-		contentTop, leftDraw)
-	c.WriteString(textSVG("distance", hero, mw, distBaseline, "end", dist))
-	c.WriteString(roadLinesSVG("road", body, rightX, roadTop, "start", roadLines))
-	if eta != "" {
-		c.WriteString(textSVG("eta", body, rightX, etaTop+body.Metrics.Ascent, "start", eta))
-	}
-
-	return chromeShell("NAV", link, c.String(), "MODE", "-", "MODE")
-}
-
-// compactDistanceText drops spaces around ≈ and units: "≈ 120 m" → "≈120m".
-func compactDistanceText(s string) string {
-	return strings.Map(func(r rune) rune {
-		if r == ' ' || r == '\t' {
-			return -1
-		}
-		return r
-	}, s)
+	return chromeShell("NAV", link, sp.BodySVG, legPrev, legAction, legNext)
 }
 
 func buildMediaBody(media protocol.MediaMessage, bleLinked bool) map[string]string {
-	meta := mustFace(pixelfont.Size6x12)
-	body := mustFace(pixelfont.Size8x16)
-	titleFace := mustFace(pixelfont.Size12x24)
-	mw := mainWidth()
 	link := linkMarkSVG(bleLinked)
-
 	action := "PLAY"
 	if media.Playing {
 		action = "PAUSE"
 	}
-
-	content, err := compose.MediaBodySVGFromMessage(media, fit)
-	if err != nil || content == "" {
-		playing := "PAUSED"
-		if media.Playing {
-			playing = "PLAYING"
-		}
-		title := media.Title
-		if title == "" || title == "-" {
-			title = "No track"
-		}
-		artist := media.Artist
-		headerBottom := pad + meta.Metrics.CellH
-		contentTop := headerBottom + gapSm + gapMd
-		contentBot := Height - pad
-		playing = fit(meta, playing, mw)
-		title = fit(titleFace, title, mw)
-		artist = fit(body, artist, mw)
-		blockH := meta.Metrics.CellH + gapSm + titleFace.Metrics.CellH + gapSm + body.Metrics.CellH
-		top := contentTop + (contentBot-contentTop-blockH)/2
-		y1 := top + meta.Metrics.Ascent
-		y2 := top + meta.Metrics.CellH + gapSm + titleFace.Metrics.Ascent
-		y3 := top + meta.Metrics.CellH + gapSm + titleFace.Metrics.CellH + gapSm + body.Metrics.Ascent
-		var c strings.Builder
-		c.WriteString(textSVG("playing", meta, 0, y1, "start", playing))
-		c.WriteString(textSVG("title", titleFace, 0, y2, "start", title))
-		c.WriteString(textSVG("artist", body, 0, y3, "start", artist))
-		content = c.String()
+	in := ComposeInput(ScreenMedia, protocol.NavMessage{}, media, bleLinked)
+	sp, err := compose.BuildPlan(in)
+	if err != nil {
+		return chromeShell("MEDIA", link, "", "SKIP", action, "SKIP")
 	}
-	return chromeShell("MEDIA", link, content, "SKIP", action, "SKIP")
+	return chromeShell("MEDIA", link, sp.BodySVG, "SKIP", action, "SKIP")
 }
 
 func buildStatusBody(bleLinked, navActive bool) map[string]string {
 	link := linkMarkSVG(bleLinked)
-	content, err := compose.StatusBodySVG(bleLinked, navActive)
-	if err != nil || content == "" {
-		body := mustFace(pixelfont.Size8x16)
-		meta := mustFace(pixelfont.Size6x12)
-		mw := mainWidth()
-		ble, nav := "DOWN", "OFF"
-		if bleLinked {
-			ble = "UP"
-		}
-		if navActive {
-			nav = "ON"
-		}
-		headerBottom := pad + meta.Metrics.CellH
-		contentTop := headerBottom + gapSm + gapMd
-		contentBot := Height - pad
-		rowH := body.Metrics.CellH + gapMd
-		rows := 3
-		blockH := rowH*rows - gapMd
-		top := contentTop + (contentBot-contentTop-blockH)/2
-		var c strings.Builder
-		labels := []string{"LINK", "NAV", "PKTS"}
-		vals := []string{ble, nav, "OK"}
-		for i := 0; i < rows; i++ {
-			baseline := top + i*rowH + body.Metrics.Ascent
-			c.WriteString(textSVG("", body, 0, baseline, "start", labels[i]))
-			c.WriteString(textSVG("", body, mw, baseline, "end", vals[i]))
-		}
-		content = c.String()
+	nav := protocol.NavMessage{Active: navActive}
+	in := ComposeInput(ScreenStatus, nav, protocol.MediaMessage{}, bleLinked)
+	sp, err := compose.BuildPlan(in)
+	if err != nil {
+		return chromeShell("STATUS", link, "", "MODE", "REDRAW", "MODE")
 	}
-	return chromeShell("STATUS", link, content, "MODE", "REDRAW", "MODE")
+	return chromeShell("STATUS", link, sp.BodySVG, "MODE", "REDRAW", "MODE")
 }

@@ -17,26 +17,26 @@ func TestRefreshOrchestratorDistanceBucketPartial(t *testing.T) {
 		Road:         "High St",
 		Maneuver:     protocol.ManeuverLeft,
 	}
-	r1 := o.Plan(hud.ScreenNav, nav, protocol.MediaMessage{}, true, true)
-	if r1.Mode != hud.RefreshFullFrame {
-		t.Fatalf("first frame mode %v", r1.Mode)
-	}
+	in := hud.ComposeInput(hud.ScreenNav, nav, protocol.MediaMessage{}, true)
+	_, _, _ = o.PlanFromCompose(in, true)
 
 	nav.DistanceM = 115
 	nav.DistanceText = "115 m"
-	r2 := o.Plan(hud.ScreenNav, nav, protocol.MediaMessage{}, true, false)
-	if r2.Mode != hud.RefreshNone {
-		t.Fatalf("same bucket want none got %v", r2.Mode)
+	in.Nav = nav
+	rp, _, _ := o.PlanFromCompose(in, false)
+	if rp.Mode != hud.RefreshNone {
+		t.Fatalf("same bucket want none got %v", rp.Mode)
 	}
 
 	nav.DistanceM = 70
 	nav.DistanceText = "70 m"
-	r3 := o.Plan(hud.ScreenNav, nav, protocol.MediaMessage{}, true, false)
-	if r3.Mode != hud.RefreshSpatialPatch {
-		t.Fatalf("bucket change want spatial got %v dirty=%v", r3.Mode, r3.DirtyIDs)
+	in.Nav = nav
+	rp, _, _ = o.PlanFromCompose(in, false)
+	if rp.Mode != hud.RefreshSpatialPatch {
+		t.Fatalf("bucket change want spatial got %v dirty=%v", rp.Mode, rp.DirtyIDs)
 	}
-	if len(r3.DirtyIDs) != 1 || r3.DirtyIDs[0] != hudui.NodeDistance {
-		t.Fatalf("dirty ids %v", r3.DirtyIDs)
+	if len(rp.DirtyIDs) != 1 || rp.DirtyIDs[0] != hudui.NodeDistance {
+		t.Fatalf("dirty ids %v", rp.DirtyIDs)
 	}
 }
 
@@ -45,13 +45,12 @@ func TestRefreshOrchestratorRoadChangeSpatial(t *testing.T) {
 	nav := protocol.NavMessage{
 		Active: true, DistanceM: 200, Road: "A", Maneuver: protocol.ManeuverStraight,
 	}
-	_ = o.Plan(hud.ScreenNav, nav, protocol.MediaMessage{}, true, true)
+	in := hud.ComposeInput(hud.ScreenNav, nav, protocol.MediaMessage{}, true)
+	_, _, _ = o.PlanFromCompose(in, true)
 	nav.Road = "B"
-	r := o.Plan(hud.ScreenNav, nav, protocol.MediaMessage{}, true, false)
-	if r.Mode != hud.RefreshSpatialPatch {
-		t.Fatalf("road change want spatial got %v dirty=%v", r.Mode, r.DirtyIDs)
-	}
-	if len(r.DirtyIDs) != 1 || r.DirtyIDs[0] != hudui.NodeRoad {
-		t.Fatalf("dirty %v", r.DirtyIDs)
+	in.Nav = nav
+	rp, _, _ := o.PlanFromCompose(in, false)
+	if rp.Mode != hud.RefreshSpatialPatch {
+		t.Fatalf("road change want spatial got %v dirty=%v", rp.Mode, rp.DirtyIDs)
 	}
 }

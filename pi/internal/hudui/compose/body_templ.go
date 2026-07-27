@@ -7,10 +7,9 @@ import (
 	"moto-hud/pi/internal/hudui/screens"
 	"moto-hud/pi/internal/hudui/token"
 	"moto-hud/pi/internal/pixelfont"
-	"moto-hud/pi/internal/protocol"
 )
 
-func mediaLayout() (mw, yPlaying, yTitle, yArtist int) {
+func mediaBodyLayout() (mw, yPlaying, yTitle, yArtist int) {
 	meta, _ := pixelfont.Load(pixelfont.Size6x12)
 	body, _ := pixelfont.Load(pixelfont.Size8x16)
 	title, _ := pixelfont.Load(pixelfont.Size12x24)
@@ -20,15 +19,14 @@ func mediaLayout() (mw, yPlaying, yTitle, yArtist int) {
 	contentBot := token.Height - token.Pad
 	blockH := meta.Metrics.CellH + token.GapSm + title.Metrics.CellH + token.GapSm + body.Metrics.CellH
 	top := contentTop + (contentBot-contentTop-blockH)/2
-	yPlaying = top + meta.Metrics.Ascent
-	yTitle = top + meta.Metrics.CellH + token.GapSm + title.Metrics.Ascent
-	yArtist = top + meta.Metrics.CellH + token.GapSm + title.Metrics.CellH + token.GapSm + body.Metrics.Ascent
-	return
+	return mw, top + meta.Metrics.Ascent,
+		top + meta.Metrics.CellH + token.GapSm + title.Metrics.Ascent,
+		top + meta.Metrics.CellH + token.GapSm + title.Metrics.CellH + token.GapSm + body.Metrics.Ascent
 }
 
-// MediaBodySVG renders the media main column via templ (strings should already be fitted).
+// MediaBodySVG renders the media main column via templ.
 func MediaBodySVG(playing, title, artist string) (string, error) {
-	mw, y1, y2, y3 := mediaLayout()
+	mw, y1, y2, y3 := mediaBodyLayout()
 	var buf bytes.Buffer
 	if err := screens.MediaBody(playing, title, artist, mw, y1, y2, y3).Render(context.Background(), &buf); err != nil {
 		return "", err
@@ -36,30 +34,7 @@ func MediaBodySVG(playing, title, artist string) (string, error) {
 	return buf.String(), nil
 }
 
-// MediaBodySVGFromMessage fits fields then renders.
-func MediaBodySVGFromMessage(media protocol.MediaMessage, fit func(face *pixelfont.Face, s string, maxW int) string) (string, error) {
-	meta, _ := pixelfont.Load(pixelfont.Size6x12)
-	body, _ := pixelfont.Load(pixelfont.Size8x16)
-	titleFace, _ := pixelfont.Load(pixelfont.Size12x24)
-	mw := token.MainWidth()
-	playing := "PAUSED"
-	if media.Playing {
-		playing = "PLAYING"
-	}
-	title := media.Title
-	if title == "" || title == "-" {
-		title = "No track"
-	}
-	if fit != nil {
-		playing = fit(meta, playing, mw)
-		title = fit(titleFace, title, mw)
-		artist := fit(body, media.Artist, mw)
-		return MediaBodySVG(playing, title, artist)
-	}
-	return MediaBodySVG(playing, title, media.Artist)
-}
-
-func statusLayout() (mw, y1, y2, y3 int) {
+func statusBodyLayout() (mw, y1, y2, y3 int) {
 	body, _ := pixelfont.Load(pixelfont.Size8x16)
 	meta, _ := pixelfont.Load(pixelfont.Size6x12)
 	mw = token.MainWidth()
@@ -70,13 +45,10 @@ func statusLayout() (mw, y1, y2, y3 int) {
 	rows := 3
 	blockH := rowH*rows - token.GapMd
 	top := contentTop + (contentBot-contentTop-blockH)/2
-	y1 = top + body.Metrics.Ascent
-	y2 = top + rowH + body.Metrics.Ascent
-	y3 = top + 2*rowH + body.Metrics.Ascent
-	return
+	return mw, top + body.Metrics.Ascent, top + rowH + body.Metrics.Ascent, top + 2*rowH + body.Metrics.Ascent
 }
 
-// StatusBodySVG renders the status rows via templ.
+// StatusBodySVG renders status rows via templ.
 func StatusBodySVG(bleLinked, navActive bool) (string, error) {
 	ble, nav := "DOWN", "OFF"
 	if bleLinked {
@@ -85,7 +57,7 @@ func StatusBodySVG(bleLinked, navActive bool) (string, error) {
 	if navActive {
 		nav = "ON"
 	}
-	mw, y1, y2, y3 := statusLayout()
+	mw, y1, y2, y3 := statusBodyLayout()
 	var buf bytes.Buffer
 	if err := screens.StatusRows(ble, nav, "OK", mw, y1, y2, y3).Render(context.Background(), &buf); err != nil {
 		return "", err

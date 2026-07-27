@@ -54,12 +54,12 @@ The orchestrator **does not** infer dirtiness from SVG or raster diffs in v1; **
 
 ## Rendering engine responsibilities
 
-1. **Layout** assigns stable slots for PartialOK widgets (e.g. hero distance box, ETA strip).
-2. **Retain** last frame grayscale buffer (or per-layer buffers for Static / Slow / Fast) on hosts that support spatial partial.
-3. **On partial path** — recomposite only dirty layers into the retained buffer, crop to aligned union, pass to display.
-4. **On full path** — existing pipeline: full SVG → `BuildPixelSVG` → rasterize entire 250×122.
+1. **Compose** (`hudui/compose` + templ) assigns stable slots, change keys, tiers, and optional `Patch` closures per layer in `plan.ScreenPlan`. The `hud` engine and orchestrator consume that plan only — they do not embed screen-specific geometry.
+2. **Retain** last frame grayscale buffer on hosts that support spatial partial.
+3. **On partial path** — call each dirty layer’s `Patch()`, blit at `Layer.Slot`, crop to aligned union, pass to display.
+4. **On full path** — `BodySVG` from the plan plus chrome shell → `BuildPixelSVGFromVars` → rasterize entire 250×122.
 
-`templ` components stay pure; tier/slot/key are declared on the Go wrapper type or layout node (e.g. `hudui.Node{ Tier, Slot, KeyFn }`).
+`templ` components stay pure; tier/slot/key/patch live on compose layout nodes (`plan.Layer`).
 
 ## Display host capabilities
 

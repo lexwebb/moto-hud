@@ -1,0 +1,165 @@
+package compose
+
+import (
+	"fmt"
+	"image"
+	"strings"
+
+	"moto-hud/pi/internal/hudui"
+	"moto-hud/pi/internal/hudui/plan"
+	"moto-hud/pi/internal/hudui/token"
+	"moto-hud/pi/internal/pixelfont"
+)
+
+// planNavLive: left corridor (minimap or ribbon), right column distance + road + ETA.
+func planNavLive(in Input) (plan.ScreenPlan, error) {
+	deps := in.NavSVG
+	if deps.TextSVG == nil {
+		return plan.ScreenPlan{}, fmt.Errorf("compose: NavSVGDeps required")
+	}
+	nav := in.Nav
+	k := Keys{}
+	mw := token.MainWidth()
+	mainX := token.Pad
+
+	meta, _ := pixelfont.Load(pixelfont.Size6x12)
+	body, _ := pixelfont.Load(pixelfont.Size8x16)
+	hero, _ := pixelfont.Load(pixelfont.Size16x32)
+
+	headerBottom := token.Pad + meta.Metrics.CellH
+	contentTop := headerBottom + token.GapSm + token.GapMd
+	contentBot := token.Height - token.Pad
+
+	dist := nav.DistanceText
+	if dist == "" {
+		dist = formatDistance(nav.DistanceM)
+	}
+	dist = compactDistanceText(dist)
+	road := nav.Road
+	if road == "" {
+		road = nav.Instruction
+	}
+	eta := ""
+	if nav.EtaMin > 0 {
+		eta = formatETA(nav.EtaMin)
+	}
+
+	leftW := (mw * 44) / 100
+	if leftW < 72 {
+		leftW = 72
+	}
+	rightX := leftW + token.GapMd
+	rightW := mw - rightX
+	if rightW < 60 {
+		rightW = 60
+		rightX = mw - rightW
+		leftW = rightX - token.GapMd
+	}
+	ribbonH := contentBot - contentTop
+	if ribbonH < 20 {
+		ribbonH = 20
+	}
+
+	dist = deps.Fit("16x32", dist, rightW)
+	eta = deps.Fit("8x16", eta, rightW)
+
+	roadMaxLines := 3
+	roadLines := deps.WrapRoad(road, rightW, roadMaxLines)
+	roadH := deps.RoadBlockH(len(roadLines))
+
+	distTop := contentTop
+	distBaseline := distTop + hero.Metrics.Ascent
+	roadTop := distTop + hero.Metrics.CellH + token.GapMd
+	etaTop := roadTop + roadH + token.GapSm
+	if eta != "" {
+		if etaTop+body.Metrics.CellH > contentBot {
+			roadMaxLines = 2
+			roadLines = deps.WrapRoad(road, rightW, roadMaxLines)
+			roadH = deps.RoadBlockH(len(roadLines))
+			etaTop = roadTop + roadH + token.GapSm
+		}
+	}
+
+	leftDraw := ""
+	if deps.HasMinimap != nil && deps.HasMinimap(nav) && deps.MinimapSVG != nil {
+		leftDraw = deps.MinimapSVG(nav.Minimap, leftW, ribbonH)
+	} else if deps.RibbonSVG != nil {
+		leftDraw = deps.RibbonSVG(nav, leftW, ribbonH)
+	}
+
+	ribbonSlot := image.Rect(mainX, contentTop, mainX+leftW, contentTop+ribbonH)
+	distanceSlot := image.Rect(mainX+rightX, distTop, mainX+mw, distTop+hero.Metrics.CellH)
+	roadBottom := contentBot
+	if eta != "" {
+		roadBottom = etaTop - token.GapSm
+	}
+	roadSlot := image.Rect(mainX+rightX, roadTop, mainX+mw, roadBottom)
+	var etaSlot image.Rectangle
+	if eta != "" {
+		etaSlot = image.Rect(mainX+rightX, etaTop, mainX+mw, etaTop+body.Metrics.CellH)
+	}
+
+	var b strings.Builder
+	fmt.Fprintf(&b, `<g id="ribbon" transform="translate(0,%d)">%s</g>`, contentTop, leftDraw)
+	b.WriteString(deps.TextSVG("distance", "16x32", mw, distBaseline, "end", dist))
+	b.WriteString(liveRoadLinesSVG(deps, rightX, roadTop, roadLines))
+	if eta != "" {
+		b.WriteString(deps.TextSVG("eta", "8x16", rightX, etaTop+body.Metrics.Ascent, "start", eta))
+	}
+
+	navCopy := nav
+	layers := []plan.Layer{
+		{ID: hudui.NodeRibbon, Tier: hudui.TierSlow, Key: k.Ribbon(nav), Slot: ribbonSlot},
+		{
+			ID: hudui.NodeDistance, Tier: hudui.TierPartialOK, Key: k.DistanceBucket(nav.DistanceM), Slot: distanceSlot,
+			Patch: func() ([]byte, error) {
+				return patchDistanceSVG(navCopy, distanceSlot.Dx(), distanceSlot.Dy(), deps)
+			},
+		},
+		{
+			ID: hudui.NodeRoad, Tier: hudui.TierPartialOK, Key: k.Road(nav), Slot: roadSlot,
+			Patch: func() ([]byte, error) {
+				return patchRoadSVG(navCopy, roadSlot, deps)
+			},
+		},
+	}
+	if eta != "" {
+		layers = append(layers, plan.Layer{
+			ID: hudui.NodeETA, Tier: hudui.TierPartialOK, Key: k.ETA(nav), Slot: etaSlot,
+			Patch: func() ([]byte, error) {
+				return patchETASVG(navCopy, etaSlot.Dx(), etaSlot.Dy(), deps)
+			},
+		})
+	}
+
+	return plan.ScreenPlan{
+		BodySVG:     b.String(),
+		Descriptors: plan.BuildDescriptors(k.NavScreen(nav, in.Linked), Keys{}.Bool(in.Linked), layers),
+		Layers:      layers,
+	}, nil
+}
+
+func liveRoadLinesSVG(deps NavSVGDeps, x, top int, lines []string) string {
+	body, _ := pixelfont.Load(pixelfont.Size8x16)
+	var b strings.Builder
+	for i, ln := range lines {
+		b.WriteString(deps.TextSVG("road", "8x16", x, top+i*body.Metrics.CellH+body.Metrics.Ascent, "start", ln))
+	}
+	return b.String()
+}
+
+// CompactDistanceText drops spaces in distance strings for the live nav column.
+func CompactDistanceText(s string) string {
+	return compactDistanceText(s)
+}
+
+func compactDistanceText(s string) string {
+	var b strings.Builder
+	for _, r := range s {
+		if r == ' ' || r == '\t' {
+			continue
+		}
+		b.WriteRune(r)
+	}
+	return b.String()
+}
