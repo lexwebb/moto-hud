@@ -15,6 +15,9 @@ pi/vendor/
 android/.gradle/
 android/build/
 android/app/build/
+android/**/build/
+android/**/out/
+android/**/.gradle/
 android/local.properties
 android/.idea/
 *.iml

@@ -239,6 +239,13 @@ func buildNavBody(nav protocol.NavMessage, bleLinked bool) map[string]string {
 	if etaH > 0 {
 		c.WriteString(textSVG("eta", body, 0, etaTop+body.Metrics.Ascent, "start", eta))
 	}
+	if hasLanes(nav) {
+		laneY := ribbonTop - laneBoxH - gapSm - 4
+		if laneY < y {
+			laneY = y
+		}
+		fmt.Fprintf(&c, `<g transform="translate(0,%d)">%s</g>`, laneY, laneStripSVG(nav.Lanes, mw))
+	}
 	fmt.Fprintf(&c, `<g id="ribbon" transform="translate(0,%d)">%s</g>`,
 		ribbonTop, roadRibbonSVG(pts, turnIdx, mw, ribbonH))
 
@@ -319,6 +326,11 @@ func buildNavBodyLive(nav protocol.NavMessage, bleLinked bool, contentTop, conte
 	c.WriteString(roadLinesSVG("road", body, rightX, roadTop, "start", roadLines))
 	if eta != "" {
 		c.WriteString(textSVG("eta", body, rightX, etaTop+body.Metrics.Ascent, "start", eta))
+	}
+	if hasLanes(nav) {
+		laneY := contentBot - laneBoxH - 2
+		fmt.Fprintf(&c, `<g transform="translate(%d,%d)">%s</g>`,
+			rightX, laneY, laneStripSVG(nav.Lanes, rightW))
 	}
 
 	return chromeShell("NAV", link, c.String(), "MODE", "-", "MODE")

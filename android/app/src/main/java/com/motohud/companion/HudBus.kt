@@ -8,8 +8,10 @@ import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
 
 enum class NavSource {
-    /** Typed OsmAnd AIDL (preferred when actively navigating). */
+    /** Typed OsmAnd AIDL / Full Library (preferred when actively navigating). */
     OSMAND,
+    /** Soft fields (road, ETA) scraped from OsmAnd notifications while AIDL owns turns. */
+    OSMAND_ENRICH,
     /** Google Maps / Maps Go notification scrape (fallback). */
     MAPS,
 }
@@ -46,6 +48,17 @@ object HudBus {
             NavSource.OSMAND -> {
                 osmandOwnsNav = n.active
                 _nav.value = n
+            }
+            NavSource.OSMAND_ENRICH -> {
+                if (!osmandOwnsNav) return
+                val cur = _nav.value
+                if (!cur.active) return
+                _nav.value = cur.copy(
+                    road = n.road.ifBlank { cur.road },
+                    etaMin = if (n.etaMin > 0) n.etaMin else cur.etaMin,
+                    remainingM = if (n.remainingM > 0) n.remainingM else cur.remainingM,
+                    instruction = n.instruction.ifBlank { cur.instruction },
+                )
             }
             NavSource.MAPS -> {
                 if (osmandOwnsNav) return

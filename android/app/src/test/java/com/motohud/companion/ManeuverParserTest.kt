@@ -65,6 +65,62 @@ class ManeuverParserTest {
     }
 
     @Test
+    fun parseEtaMinutes() {
+        assertEquals(12, ManeuverParser.parseEtaMinutes("12 min"))
+        assertEquals(75, ManeuverParser.parseEtaMinutes("1 h 15 min"))
+        assertEquals(0, ManeuverParser.parseEtaMinutes("no eta"))
+    }
+
+    @Test
+    fun osmandLaneCodec_decodesActivePrimary() {
+        val encoded = OsmandLaneCodec.encodeLane(
+            active = true,
+            primary = ManeuverParser.OSMAND_TL,
+        )
+        val lanes = OsmandLaneCodec.decode(intArrayOf(
+            OsmandLaneCodec.encodeLane(false, ManeuverParser.OSMAND_C),
+            encoded,
+        ))
+        assertEquals(2, lanes.size)
+        assertEquals(false, lanes[0].active)
+        assertEquals(listOf("straight"), lanes[0].directions)
+        assertEquals(true, lanes[1].active)
+        assertEquals(listOf("left"), lanes[1].directions)
+    }
+
+    @Test
+    fun navState_toJson_includesLanesAndThenNext() {
+        val json = String(
+            NavState(
+                active = true,
+                instruction = "Turn left",
+                distanceM = 200,
+                distanceText = "200 m",
+                road = "High St",
+                etaMin = 12,
+                remainingM = 5400,
+                maneuver = "left",
+                lanes = listOf(
+                    LaneInfo(listOf("straight"), false),
+                    LaneInfo(listOf("left"), true),
+                ),
+                thenNext = ThenNext(
+                    maneuver = "right",
+                    distanceM = 400,
+                    distanceText = "400 m",
+                    instruction = "Turn right",
+                    road = "Bridge Rd",
+                ),
+            ).toJson(),
+            Charsets.UTF_8,
+        )
+        val obj = org.json.JSONObject(json)
+        assertEquals(5400, obj.getInt("remaining_m"))
+        assertEquals(2, obj.getJSONArray("lanes").length())
+        assertEquals("right", obj.getJSONObject("then_next").getString("maneuver"))
+    }
+
+    @Test
     fun parseDistanceMeters_kmAndM() {
         assertEquals(1500, ManeuverParser.parseDistanceMeters("1.5 km"))
         assertEquals(1500, ManeuverParser.parseDistanceMeters("1,5 km"))

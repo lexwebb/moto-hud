@@ -40,18 +40,37 @@ type MinimapMessage struct {
 	Rider   *RibbonPoint    `json:"rider,omitempty"`
 }
 
+// LaneInfo is one lane in left-to-right order at the upcoming junction.
+// Directions use the same strings as Maneuver (typically a subset).
+type LaneInfo struct {
+	Directions []string `json:"directions"`
+	Active     bool     `json:"active"`
+}
+
+// ThenNextMessage is the maneuver after the immediate next turn (optional).
+type ThenNextMessage struct {
+	Maneuver     Maneuver `json:"maneuver"`
+	DistanceM    int      `json:"distance_m,omitempty"`
+	DistanceText string   `json:"distance_text,omitempty"`
+	Instruction  string   `json:"instruction,omitempty"`
+	Road         string   `json:"road,omitempty"`
+}
+
 type NavMessage struct {
-	Type         string          `json:"type"`
-	Active       bool            `json:"active"`
-	Instruction  string          `json:"instruction"`
-	DistanceM    int             `json:"distance_m"`
-	DistanceText string          `json:"distance_text"`
-	Road         string          `json:"road"`
-	EtaMin       int             `json:"eta_min"`
-	Maneuver     Maneuver        `json:"maneuver"`
-	RibbonPoints []RibbonPoint   `json:"ribbon_points,omitempty"`
-	RibbonTurn   int             `json:"ribbon_turn,omitempty"`
-	Minimap      *MinimapMessage `json:"minimap,omitempty"`
+	Type         string           `json:"type"`
+	Active       bool             `json:"active"`
+	Instruction  string           `json:"instruction"`
+	DistanceM    int              `json:"distance_m"`
+	DistanceText string           `json:"distance_text"`
+	Road         string           `json:"road"`
+	EtaMin       int              `json:"eta_min"`
+	RemainingM   int              `json:"remaining_m,omitempty"`
+	Maneuver     Maneuver         `json:"maneuver"`
+	Lanes        []LaneInfo       `json:"lanes,omitempty"`
+	ThenNext     *ThenNextMessage `json:"then_next,omitempty"`
+	RibbonPoints []RibbonPoint    `json:"ribbon_points,omitempty"`
+	RibbonTurn   int              `json:"ribbon_turn,omitempty"`
+	Minimap      *MinimapMessage  `json:"minimap,omitempty"`
 }
 
 type MediaMessage struct {
