@@ -1,0 +1,23 @@
+package screens
+
+import (
+	"moto-hud/pi/internal/hudui/scene"
+	"moto-hud/pi/internal/hudui/scenetempl"
+)
+
+// MediaBody is the centered now-playing block (design MediaFocus).
+templ MediaBody(playing string, title, artist string, mw, yPlaying, yTitle, yArtist int) {
+	@scenetempl.Text("playing", scene.Face6x12, 0, yPlaying, "start", playing)
+	@scenetempl.Text("title", scene.Face12x24, 0, yTitle, "start", title)
+	@scenetempl.Text("artist", scene.Face8x16, 0, yArtist, "start", artist)
+}
+
+// StatusRows is link/nav/pkts diagnostics (design StatusDiagnostics).
+templ StatusRows(link, nav, pkts string, mw, y1, y2, y3 int) {
+	@scenetempl.Text("", scene.Face8x16, 0, y1, "start", "LINK")
+	@scenetempl.Text("status_link", scene.Face8x16, mw, y1, "end", link)
+	@scenetempl.Text("", scene.Face8x16, 0, y2, "start", "NAV")
+	@scenetempl.Text("status_nav", scene.Face8x16, mw, y2, "end", nav)
+	@scenetempl.Text("", scene.Face8x16, 0, y3, "start", "PKTS")
+	@scenetempl.Text("status_pkts", scene.Face8x16, mw, y3, "end", pkts)
+}

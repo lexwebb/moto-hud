@@ -5,6 +5,8 @@ import (
 	"math"
 	"strings"
 
+	"moto-hud/pi/internal/hudui/render/svg"
+	"moto-hud/pi/internal/hudui/scene"
 	"moto-hud/pi/internal/protocol"
 )
 
@@ -16,9 +18,13 @@ type RoadPoint struct {
 
 const ribbonDefaultH = 36
 
-// roadRibbonSVG draws the design-kit RoadRibbon as raw SVG shapes.
-// Empty/short points → dashed vertical "no corridor" line.
+// roadRibbonSVG draws the design-kit RoadRibbon (legacy string wrapper).
 func roadRibbonSVG(points []RoadPoint, turnIndex int, w, h int) string {
+	return svg.Fragment(RoadRibbonNodes(points, turnIndex, w, h))
+}
+
+// RoadRibbonNodes draws the design-kit RoadRibbon as scene nodes.
+func RoadRibbonNodes(points []RoadPoint, turnIndex int, w, h int) []scene.Node {
 	if w <= 0 {
 		w = mainWidth()
 	}
@@ -27,10 +33,9 @@ func roadRibbonSVG(points []RoadPoint, turnIndex int, w, h int) string {
 	}
 	if len(points) < 2 {
 		cx := w / 2
-		return fmt.Sprintf(
-			`<line x1="%d" y1="4" x2="%d" y2="%d" stroke="#000" stroke-width="2" stroke-dasharray="4 5" stroke-linecap="square"/>`,
-			cx, cx, h-4,
-		)
+		return []scene.Node{
+			scene.Line{X1: cx, Y1: 4, X2: cx, Y2: h - 4, StrokeWidth: 2, Dash: "4 5"},
+		}
 	}
 
 	minX, maxX := points[0].X, points[0].X
@@ -74,17 +79,23 @@ func roadRibbonSVG(points []RoadPoint, turnIndex int, w, h int) string {
 		}
 	}
 
-	var b strings.Builder
-	fmt.Fprintf(&b,
-		`<path d="%s" fill="none" stroke="#000" stroke-width="3" stroke-linejoin="miter" stroke-linecap="square"/>`,
-		d.String(),
-	)
+	var out []scene.Node
+	out = append(out, scene.Path{
+		D: d.String(), Filled: false, StrokeWidth: 3,
+	})
 	if turnIndex >= 0 && turnIndex < len(points) {
 		t := points[turnIndex]
-		fmt.Fprintf(&b, `<rect x="%.1f" y="%.1f" width="6" height="6" fill="#000"/>`,
-			sx(t.X)-3, sy(t.Y)-3)
+		tx := int(sx(t.X) - 3)
+		ty := int(sy(t.Y) - 3)
+		out = append(out, scene.Rect{ID: "", X: tx, Y: ty, W: 6, H: 6, Filled: true})
 	}
-	return b.String()
+	return out
+}
+
+// RibbonNodesForNav builds ribbon scene nodes for the active nav message.
+func RibbonNodesForNav(nav protocol.NavMessage, w, h int) []scene.Node {
+	pts, turnIdx := ribbonForNav(nav)
+	return RoadRibbonNodes(pts, turnIdx, w, h)
 }
 
 // ribbonForNav prefers phone-supplied corridor points; otherwise a canned schematic.

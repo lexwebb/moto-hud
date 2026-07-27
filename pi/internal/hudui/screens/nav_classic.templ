@@ -1,0 +1,22 @@
+package screens
+
+import (
+	"moto-hud/pi/internal/hudui/scene"
+	"moto-hud/pi/internal/hudui/scenetempl"
+)
+
+// NavClassicBody is active nav: maneuver glyph, hero distance, road lines, optional ETA, ribbon.
+templ NavClassicBody(dist string, distBaseline, mw int, roadLines []string, roadBaselines []int, eta string, etaBaseline int, showEta bool, maneuver, lanes, ribbon templ.Component, ribbonTop int) {
+	@maneuver
+	@scenetempl.Text("distance", scene.Face16x32, mw, distBaseline, "end", dist)
+	for i, ln := range roadLines {
+		@scenetempl.Text("road", scene.Face8x16, 0, roadBaselines[i], "start", ln)
+	}
+	if showEta {
+		@scenetempl.Text("eta", scene.Face8x16, 0, etaBaseline, "start", eta)
+	}
+	@lanes
+	@scenetempl.Group("ribbon", 0, ribbonTop) {
+		@ribbon
+	}
+}

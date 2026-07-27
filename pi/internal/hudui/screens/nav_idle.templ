@@ -1,0 +1,12 @@
+package screens
+
+import (
+	"moto-hud/pi/internal/hudui/scene"
+	"moto-hud/pi/internal/hudui/scenetempl"
+)
+
+// NavIdleCentered is the waiting-for-route copy block (design kit NavIdle).
+templ NavIdleCentered(title, msg string, mw, baseline1, baseline2 int) {
+	@scenetempl.Text("title", scene.Face8x16, mw/2, baseline1, "middle", title)
+	@scenetempl.Text("msg", scene.Face8x16, mw/2, baseline2, "middle", msg)
+}

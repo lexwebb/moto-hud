@@ -15,6 +15,7 @@ import (
 	"github.com/tdewolff/canvas"
 	"github.com/tdewolff/canvas/renderers/rasterizer"
 
+	"moto-hud/pi/internal/hudui/compose"
 	"moto-hud/pi/internal/pixelfont"
 	"moto-hud/pi/internal/protocol"
 )
@@ -76,6 +77,11 @@ func resolveAssetDir() string {
 
 // Render fills an SVG template, converts Terminus <text> to pixel rects, then rasterizes.
 func Render(screen Screen, nav protocol.NavMessage, media protocol.MediaMessage, bleLinked bool) *image.Gray {
+	in := ComposeInput(screen, nav, media, bleLinked)
+	sp, err := compose.BuildPlan(in)
+	if err != nil {
+		return fallbackFrame(fmt.Sprintf("plan: %v", err))
+	}
 	svg, err := BuildPixelSVG(screen, nav, media, bleLinked)
 	if err != nil {
 		return fallbackFrame(fmt.Sprintf("svg: %v", err))
@@ -84,6 +90,7 @@ func Render(screen Screen, nav protocol.NavMessage, media protocol.MediaMessage,
 	if err != nil {
 		return fallbackFrame(fmt.Sprintf("raster: %v", err))
 	}
+	applyLinkLayer(img, sp)
 	return img
 }
 
@@ -120,6 +127,20 @@ func BuildPixelSVG(screen Screen, nav protocol.NavMessage, media protocol.MediaM
 	return []byte(out), nil
 }
 
+// BuildPixelSVGFromVars rasterizes a pre-filled template vars map (hudui plan path).
+func BuildPixelSVGFromVars(vars map[string]string) ([]byte, error) {
+	raw, err := loadFrameSVG()
+	if err != nil {
+		return nil, err
+	}
+	svg := applyVars(string(raw), vars)
+	out, err := pixelfont.ReplaceSVGText(svg)
+	if err != nil {
+		return nil, err
+	}
+	return []byte(out), nil
+}
+
 func applyVars(svg string, vars map[string]string) string {
 	for k, v := range vars {
 		if rawSVGKeys[k] {
@@ -140,12 +161,7 @@ func escapeXML(s string) string {
 }
 
 func linkMarkSVG(connected bool) string {
-	if connected {
-		return `<path d="M2,9 L6,2 L6,6 L10,6 L6,10 L6,6" fill="none" stroke="#000" stroke-width="1.6" stroke-linejoin="miter"/>` +
-			`<rect x="12" y="4" width="4" height="4" fill="#000"/>`
-	}
-	return `<line x1="2" y1="2" x2="10" y2="10" stroke="#000" stroke-width="1.6"/>` +
-		`<line x1="10" y1="2" x2="2" y2="10" stroke="#000" stroke-width="1.6"/>`
+	return compose.LinkMarkFragment(connected)
 }
 
 // progressTicks draws 5 coarse distance ticks (design ProgressTicks).
@@ -173,41 +189,6 @@ func progressTicks(distanceM int) string {
 		}
 	}
 	return b.String()
-}
-
-// maneuverPaths — design kit glyphs on a 40×40 grid (square caps, filled heads).
-func maneuverPaths(m protocol.Maneuver) string {
-	switch m {
-	case protocol.ManeuverLeft:
-		return `<line x1="20" y1="34" x2="20" y2="17"/><line x1="20" y1="17" x2="8" y2="17"/>` +
-			`<polygon points="1,17 8,12.7 8,21.3" fill="#000" stroke="none"/>`
-	case protocol.ManeuverRight:
-		return `<line x1="20" y1="34" x2="20" y2="17"/><line x1="20" y1="17" x2="32" y2="17"/>` +
-			`<polygon points="39,17 32,21.3 32,12.7" fill="#000" stroke="none"/>`
-	case protocol.ManeuverSlightLeft:
-		return `<line x1="21" y1="34" x2="21" y2="24"/><line x1="21" y1="24" x2="11" y2="9"/>` +
-			`<polygon points="7,4 15.2,4.3 10.4,11.5" fill="#000" stroke="none"/>`
-	case protocol.ManeuverSlightRight:
-		return `<line x1="19" y1="34" x2="19" y2="24"/><line x1="19" y1="24" x2="29" y2="9"/>` +
-			`<polygon points="33,4 29.6,11.5 24.8,4.3" fill="#000" stroke="none"/>`
-	case protocol.ManeuverStraight:
-		return `<line x1="20" y1="34" x2="20" y2="14"/>` +
-			`<polygon points="20,7 24.3,14 15.7,14" fill="#000" stroke="none"/>`
-	case protocol.ManeuverUTurn:
-		return `<path fill="none" d="M14,34 V16 A6,6 0 0 1 26,16 V26"/>` +
-			`<polygon points="26,33 21.7,26 30.3,26" fill="#000" stroke="none"/>`
-	case protocol.ManeuverRoundabout:
-		return `<line x1="20" y1="34" x2="20" y2="27"/><circle cx="20" cy="17" r="9" fill="none"/>` +
-			`<polygon points="29,8 22,12.3 22,3.7" fill="#000" stroke="none"/>`
-	case protocol.ManeuverArrive:
-		return `<line x1="13" y1="34" x2="13" y2="7"/><polygon points="13,7 29,11 13,17" fill="#000" stroke="none"/>`
-	case protocol.ManeuverDepart:
-		return `<circle cx="20" cy="27" r="4" fill="#000" stroke="none"/>` +
-			`<line x1="20" y1="22" x2="20" y2="8"/>` +
-			`<polygon points="20,4 24.3,11 15.7,11" fill="#000" stroke="none"/>`
-	default:
-		return `<circle cx="20" cy="20" r="10" fill="none"/><line x1="20" y1="12" x2="20" y2="22"/><circle cx="20" cy="27" r="1.5" fill="#000" stroke="none"/>`
-	}
 }
 
 // RasterizeSVG renders a pixel SVG (shapes + Terminus rect glyphs) via canvas,

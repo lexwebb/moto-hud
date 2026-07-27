@@ -17,6 +17,11 @@ type RefreshGate struct {
 
 // bucketForDistance snaps metres to the nearest distanceStepM so the panel
 // aims to redraw about every 50 m (when a refresh isn't already in flight).
+// BucketForDistance snaps metres for refresh keys and e-ink presentation (~50 m).
+func BucketForDistance(m int) int {
+	return bucketForDistance(m)
+}
+
 func bucketForDistance(m int) int {
 	if m <= 0 {
 		return 0

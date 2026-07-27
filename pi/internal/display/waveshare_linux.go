@@ -87,6 +87,19 @@ func NewWaveshare(pngFallback string) (Display, error) {
 }
 
 func (d *waveshareDisplay) Show(img *image.Gray) error {
+	return d.ShowFrame(img, FrameMeta{})
+}
+
+func (d *waveshareDisplay) ShowFrame(img *image.Gray, meta FrameMeta) error {
+	if meta.Spatial && !meta.Dirty.Empty() && d.hasBase && d.partialsSinceFull < waveshareFullEveryN {
+		reg := AlignCanvasEPD(meta.Dirty)
+		if winBuf, epdR := packEPD213Window(img, reg); !epdR.Empty() && len(winBuf) > 0 {
+			if err := d.showPartialEPDWindow(winBuf, epdR); err != nil {
+				return err
+			}
+			return nil
+		}
+	}
 	buf := packEPD213(img)
 	// First frame and every N partials: full refresh (writes both RAM buffers).
 	// Otherwise: partial (~0.3s, no flicker). Matches Waveshare epd2in13_V4.
@@ -94,6 +107,53 @@ func (d *waveshareDisplay) Show(img *image.Gray) error {
 		return d.showFull(buf)
 	}
 	return d.showPartial(buf)
+}
+
+func (d *waveshareDisplay) showPartialEPDWindow(winBuf []byte, epdR image.Rectangle) error {
+	if err := d.rst.Out(gpio.Low); err != nil {
+		return err
+	}
+	time.Sleep(2 * time.Millisecond)
+	if err := d.rst.Out(gpio.High); err != nil {
+		return err
+	}
+	if err := d.cmd(0x3C); err != nil {
+		return err
+	}
+	if err := d.data([]byte{0x80}); err != nil {
+		return err
+	}
+	if err := d.cmd(0x01); err != nil {
+		return err
+	}
+	if err := d.data([]byte{0xF9, 0x00, 0x00}); err != nil {
+		return err
+	}
+	if err := d.cmd(0x11); err != nil {
+		return err
+	}
+	if err := d.data([]byte{0x03}); err != nil {
+		return err
+	}
+	x0, y0 := epdR.Min.X, epdR.Min.Y
+	x1, y1 := epdR.Max.X-1, epdR.Max.Y-1
+	if err := d.setWindow(x0, y0, x1, y1); err != nil {
+		return err
+	}
+	if err := d.setCursor(x0, y0); err != nil {
+		return err
+	}
+	if err := d.cmd(0x24); err != nil {
+		return err
+	}
+	if err := d.data(winBuf); err != nil {
+		return err
+	}
+	if err := d.turnOnPartial(); err != nil {
+		return err
+	}
+	d.partialsSinceFull++
+	return nil
 }
 
 func (d *waveshareDisplay) showFull(buf []byte) error {

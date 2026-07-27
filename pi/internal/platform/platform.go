@@ -14,11 +14,8 @@ import (
 	"moto-hud/pi/internal/transport"
 )
 
-// Screen is the e-ink (or mock) panel.
-type Screen interface {
-	Show(img *image.Gray) error
-	Close() error
-}
+// Screen is the e-ink (or mock) panel — same contract as display.Display.
+type Screen = display.Display
 
 // Controls delivers physical or virtual button events.
 type Controls interface {
@@ -145,11 +142,13 @@ func (StdControls) Listen(ctx context.Context, on buttons.Handler) error {
 
 // MemoryScreen keeps the last frame in RAM (optional PNG mirror for debugging).
 type MemoryScreen struct {
-	mu       sync.Mutex
-	Last     *image.Gray
-	PNGPath  string
-	OnShow   func(*image.Gray)
-	png      *display.PNGDisplay
+	mu        sync.Mutex
+	Last      *image.Gray
+	LastMeta  display.FrameMeta
+	PNGPath   string
+	OnShow    func(*image.Gray)
+	OnShowMeta func(display.FrameMeta)
+	png       *display.PNGDisplay
 }
 
 func NewMemoryScreen(pngPath string) *MemoryScreen {
@@ -161,12 +160,21 @@ func NewMemoryScreen(pngPath string) *MemoryScreen {
 }
 
 func (m *MemoryScreen) Show(img *image.Gray) error {
+	return m.ShowFrame(img, display.FrameMeta{})
+}
+
+func (m *MemoryScreen) ShowFrame(img *image.Gray, meta display.FrameMeta) error {
 	m.mu.Lock()
 	cp := image.NewGray(img.Bounds())
 	copy(cp.Pix, img.Pix)
 	m.Last = cp
+	m.LastMeta = meta
 	cb := m.OnShow
+	cbMeta := m.OnShowMeta
 	m.mu.Unlock()
+	if cbMeta != nil {
+		cbMeta(meta)
+	}
 	if cb != nil {
 		cb(cp)
 	}

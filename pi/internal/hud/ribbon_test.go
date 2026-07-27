@@ -4,6 +4,7 @@ import (
 	"strings"
 	"testing"
 
+	"moto-hud/pi/internal/hudui/compose"
 	"moto-hud/pi/internal/protocol"
 )
 
@@ -112,7 +113,7 @@ func TestCompactDistanceText(t *testing.T) {
 		"":          "",
 	}
 	for in, want := range cases {
-		if got := compactDistanceText(in); got != want {
+		if got := compose.CompactDistanceText(in); got != want {
 			t.Fatalf("compactDistanceText(%q)=%q want %q", in, got, want)
 		}
 	}

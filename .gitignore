@@ -6,31 +6,3 @@
 !site/public/**/*.png
 !pi/**/testdata/**/*.png
 pi/**/testdata/**/*.got.png
-
-# Unused / abandoned font experiments
-assets/fonts/LiberationSans-Bold.ttf
-
-# Go
-pi/vendor/
-
-# Android
-android/.gradle/
-android/build/
-android/app/build/
-android/**/build/
-android/**/out/
-android/**/.gradle/
-android/local.properties
-android/.idea/
-*.iml
-
-# Site
-site/node_modules/
-site/dist/
-site/.astro/
-
-# OS / editor
-.DS_Store
-.idea/
-*.swp
-mcp-config.json

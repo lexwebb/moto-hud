@@ -10,6 +10,7 @@ import (
 	"syscall"
 	"time"
 
+	"moto-hud/pi/internal/display"
 	"moto-hud/pi/internal/hud"
 	"moto-hud/pi/internal/platform"
 	"moto-hud/pi/internal/protocol"
@@ -126,8 +127,12 @@ func maybeShow(state *hud.State, gate *hud.RefreshGate, scr platform.Screen) {
 		return
 	}
 	state.ClearForce()
-	img := hud.Render(screen, nav, media, linked)
-	if err := scr.Show(img); err != nil {
+	fr := hud.RenderWithEngine(screen, nav, media, linked, force)
+	if err := display.ShowFrame(scr, fr.Image, display.FrameMeta{
+		Spatial: fr.Spatial,
+		Dirty:   fr.Dirty,
+		Patched: fr.Patched,
+	}); err != nil {
 		log.Printf("display: %v", err)
 	}
 }

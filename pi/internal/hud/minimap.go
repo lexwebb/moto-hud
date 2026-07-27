@@ -4,8 +4,9 @@ import (
 	"fmt"
 	"image"
 	"math"
-	"strings"
 
+	"moto-hud/pi/internal/hudui/render/svg"
+	"moto-hud/pi/internal/hudui/scene"
 	"moto-hud/pi/internal/protocol"
 )
 
@@ -15,6 +16,11 @@ const (
 	minimapRadiusMax = 50.0
 	minimapRadiusMin = 25.0
 )
+
+// HasMinimap reports whether nav carries a minimap route snapshot.
+func HasMinimap(nav protocol.NavMessage) bool {
+	return hasMinimap(nav)
+}
 
 func hasMinimap(nav protocol.NavMessage) bool {
 	return nav.Minimap != nil && len(nav.Minimap.Route) >= 2
@@ -51,14 +57,22 @@ func minimapViewRadius(mm *protocol.MinimapMessage) float64 {
 	return maxR
 }
 
-// minimapSVG draws a tube-map junction snapshot: meter octilinear (H/V/45°),
-// then Bresenham 1×1 rects so 1-bit AA can't fatten dashes. Route is thicker.
+// minimapSVG draws a tube-map junction snapshot (string wrapper for lab/WASM).
 func minimapSVG(mm *protocol.MinimapMessage, w, h int) string {
-	return minimapSVGLayers(mm, w, h, true, true, true)
+	return svg.Fragment(MinimapNodes(mm, w, h))
 }
 
-// minimapSVGLayers draws selected layers (context dashes, solid route, turn/rider marks).
+// MinimapNodes draws context dashes, solid route, and turn/rider marks as scene nodes.
+func MinimapNodes(mm *protocol.MinimapMessage, w, h int) []scene.Node {
+	return minimapNodesLayers(mm, w, h, true, true, true)
+}
+
+// minimapSVGLayers draws selected layers (legacy string wrapper).
 func minimapSVGLayers(mm *protocol.MinimapMessage, w, h int, context, route, marks bool) string {
+	return svg.Fragment(minimapNodesLayers(mm, w, h, context, route, marks))
+}
+
+func minimapNodesLayers(mm *protocol.MinimapMessage, w, h int, context, route, marks bool) []scene.Node {
 	if w <= 0 {
 		w = 70
 	}
@@ -67,10 +81,9 @@ func minimapSVGLayers(mm *protocol.MinimapMessage, w, h int, context, route, mar
 	}
 	if mm == nil || len(mm.Route) < 2 {
 		cx := w / 2
-		return fmt.Sprintf(
-			`<line x1="%d" y1="4" x2="%d" y2="%d" stroke="#000" stroke-width="1"/>`,
-			cx, cx, h-4,
-		)
+		return []scene.Node{
+			scene.Line{X1: cx, Y1: 4, X2: cx, Y2: h - 4},
+		}
 	}
 
 	const pad = 3.0
@@ -91,33 +104,34 @@ func minimapSVGLayers(mm *protocol.MinimapMessage, w, h int, context, route, mar
 		return sx, sy, true
 	}
 
-	var b strings.Builder
+	var out []scene.Node
 
 	if context {
-		b.WriteString(`<g id="context">`)
+		var ctx scene.Builder
 		for _, way := range mm.Context {
 			pix := tubePixels(schematizeTube(way, 8), toScreen)
-			b.WriteString(dashedPixelRects(pix, 3, 3))
+			appendDashedStroke(&ctx, pix, 3, 3)
 		}
-		b.WriteString(`</g>`)
+		out = append(out, scene.Group{ID: "context", Children: ctx.Nodes()})
 	}
 
 	if route {
+		var routeB scene.Builder
 		r := ensurePoint(schematizeTube(mm.Route, 5), protocol.RibbonPoint{X: 0, Y: 0})
 		routePix := tubePixels(r, toScreen)
-		b.WriteString(solidPixelStroke(routePix, 3))
+		appendSolidStroke(&routeB, routePix, 3)
+		out = append(out, scene.Group{ID: "route", Children: routeB.Nodes()})
 	}
 
 	if marks {
-		fmt.Fprintf(&b, `<rect id="turn" x="%d" y="%d" width="4" height="4" fill="#000"/>`,
-			int(cx)-2, int(cy)-2)
+		out = append(out, scene.Rect{ID: "turn", X: int(cx) - 2, Y: int(cy) - 2, W: 4, H: 4, Filled: true})
 		if mm.Rider != nil {
 			if rx, ry, ok := toScreen(mm.Rider.X, mm.Rider.Y); ok {
-				fmt.Fprintf(&b, `<rect id="rider" x="%d" y="%d" width="5" height="5" fill="#000"/>`, rx-2, ry-2)
+				out = append(out, scene.Rect{ID: "rider", X: rx - 2, Y: ry - 2, W: 5, H: 5, Filled: true})
 			}
 		}
 	}
-	return b.String()
+	return out
 }
 
 // RenderMinimap rasterizes the junction pane alone (for lab / golden tests).
@@ -199,26 +213,24 @@ func tubeKnee(a, b [2]int) [][2]int {
 	return [][2]int{{a[0] + sx*adx, a[1] + sy*adx}, b}
 }
 
-func dashedPixelRects(pts [][2]int, dash, gap int) string {
+func appendDashedStroke(b *scene.Builder, pts [][2]int, dash, gap int) {
 	if len(pts) < 2 {
-		return ""
+		return
 	}
 	if dash < 1 {
 		dash = 1
 	}
-	var b strings.Builder
 	on := true
 	left := dash
 	for i := 0; i < len(pts)-1; i++ {
 		line := bresenham(pts[i][0], pts[i][1], pts[i+1][0], pts[i+1][1])
-		// Skip first pixel of each segment after the first (shared vertex).
 		start := 0
 		if i > 0 && len(line) > 0 {
 			start = 1
 		}
 		for _, p := range line[start:] {
 			if on {
-				fmt.Fprintf(&b, `<rect x="%d" y="%d" width="1" height="1" fill="#000"/>`, p[0], p[1])
+				b.Rect("", p[0], p[1], 1, 1, true)
 			}
 			left--
 			if left <= 0 {
@@ -231,26 +243,23 @@ func dashedPixelRects(pts [][2]int, dash, gap int) string {
 			}
 		}
 	}
-	return b.String()
 }
 
-func solidPixelStroke(pts [][2]int, thickness int) string {
+func appendSolidStroke(b *scene.Builder, pts [][2]int, thickness int) {
 	if len(pts) < 2 {
-		return ""
+		return
 	}
 	if thickness < 1 {
 		thickness = 1
 	}
 	seen := map[[2]int]bool{}
-	var b strings.Builder
-	b.WriteString(`<g id="route">`)
 	paint := func(x, y int) {
 		p := [2]int{x, y}
 		if seen[p] {
 			return
 		}
 		seen[p] = true
-		fmt.Fprintf(&b, `<rect x="%d" y="%d" width="1" height="1" fill="#000"/>`, x, y)
+		b.Rect("", x, y, 1, 1, true)
 	}
 	r := thickness / 2
 	for i := 0; i < len(pts)-1; i++ {
@@ -262,7 +271,6 @@ func solidPixelStroke(pts [][2]int, thickness int) string {
 		for _, p := range line[start:] {
 			for ox := -r; ox <= r; ox++ {
 				for oy := -r; oy <= r; oy++ {
-					// Diamond-ish brush so diagonals don't get a square blob.
 					if absInt(ox)+absInt(oy) <= r {
 						paint(p[0]+ox, p[1]+oy)
 					}
@@ -270,8 +278,18 @@ func solidPixelStroke(pts [][2]int, thickness int) string {
 			}
 		}
 	}
-	b.WriteString(`</g>`)
-	return b.String()
+}
+
+func dashedPixelRects(pts [][2]int, dash, gap int) string {
+	var b scene.Builder
+	appendDashedStroke(&b, pts, dash, gap)
+	return svg.Fragment(b.Nodes())
+}
+
+func solidPixelStroke(pts [][2]int, thickness int) string {
+	var sb scene.Builder
+	appendSolidStroke(&sb, pts, thickness)
+	return svg.Fragment([]scene.Node{scene.Group{ID: "route", Children: sb.Nodes()}})
 }
 
 func bresenham(x0, y0, x1, y1 int) [][2]int {

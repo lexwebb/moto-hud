@@ -85,7 +85,8 @@ func button(this js.Value, args []js.Value) any {
 
 func renderPNG(this js.Value, args []js.Value) any {
 	screen, nav, media, linked, _ := state.Snapshot()
-	img := hud.Render(screen, nav, media, linked)
+	fr := hud.RenderWithEngine(screen, nav, media, linked, true)
+	img := fr.Image
 	var buf bytes.Buffer
 	if err := png.Encode(&buf, img); err != nil {
 		return errVal(err.Error())
