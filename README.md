@@ -128,22 +128,21 @@ HTTP injector (also used by `mock-nav`):
 | Existing / regression | Inky pHAT **black/white** | Still supported via `-host inky`. B/W Inky is discontinued; 4-colour Inky is too slow for nav (~15–20s). |
 | Optional LCD | [Pimoroni Display HAT Mini](https://shop.pimoroni.com/products/display-hat-mini) | 320×240 IPS; HUD letterboxed. Instant refresh; backlight + sun glare trade-offs. |
 
-1. Enable SPI: `sudo raspi-config` → Interface → SPI. For Inky / Waveshare (CE0) add to `/boot/firmware/config.txt`:
+1. Enable SPI: `sudo raspi-config` → Interface → SPI (`dtparam=spi=on`).
 
-   ```
-   dtoverlay=spi0-0cs
-   ```
+   - **Waveshare 2.13″ HAT:** use default SPI0 **with hardware CE0**. Do **not** add `dtoverlay=spi0-0cs` — that leaves CS floating high and the panel stays blank while the driver still reports “ready”.
+   - **Inky pHAT:** may need `dtoverlay=spi0-0cs` (soft CS); see Pimoroni docs.
+   - Display HAT Mini uses **SPI0 CE1**; `dtparam=spi=on` is enough.
 
-   Display HAT Mini uses **SPI0 CE1**; ensure `dtparam=spi=on` (default overlay is fine).
-
-2. Build on the Pi (or cross-compile):
+2. Cross-compile for the Pi (Docker; any host OS):
 
    ```bash
-   cd pi
-   go build -o ../bin/motohud ./cmd/motohud
-   # optional real BLE peripheral (BlueZ):
-   go build -tags ble -o ../bin/motohud ./cmd/motohud
+   ./scripts/build-armv6.sh           # stub BLE (pure Go)
+   ./scripts/build-armv6.sh --ble     # real BlueZ peripheral (CGO)
+   ./scripts/build-armv6.sh --ble --deploy 10.12.194.1   # scp + restart
    ```
+
+   On-device `go build -tags ble` still works if you have Go + `libbluetooth-dev` on the Pi, but Docker is the supported path.
 
 3. Run with hardware display:
 
@@ -153,6 +152,43 @@ HTTP injector (also used by `mock-nav`):
    ```
 
 4. Install systemd unit from [`pi/systemd/motohud.service`](pi/systemd/motohud.service) (adjust paths/user).
+
+**SD card from a Mac (Pi Zero W + Waveshare):** use **Raspberry Pi OS Lite** (32-bit / armhf) — not desktop. Flash + customise:
+
+```bash
+./scripts/flash-lite.sh --disk disk12 \
+  --user motohud --password motohud \
+  --ssid 'YourWifi' --psk '…' \   # 2.4 GHz only on Zero W
+  --bwr                           # only if you have HAT (B) red/black/white
+```
+
+Or, with `bootfs` already mounted on an existing Lite card:
+
+```bash
+./scripts/prepare-bootfs.sh --boot /Volumes/bootfs \
+  --user motohud --password motohud \
+  --ssid 'YourWifi' --psk '…' \
+  --bwr   # HAT (B) only
+```
+
+That writes an ARMv6 `motohud` binary, Waveshare SPI (hardware CE0 — never `spi0-0cs`), official USB Ethernet gadget (`rpi-usb-gadget`), cloud-init NetworkManager Wi‑Fi, and a firstrun installer. Use the Zero’s **data** micro‑USB port (next to HDMI), not PWR. Wait for **two** boots (~2–4 min).
+
+**SSH over USB (recommended first):** macOS Sequoia/Tahoe cannot Internet‑Share to this gadget (`CHANNEL_IO` → no `bridge100`). Skip Sharing; run:
+
+```bash
+./scripts/macos-usb-gadget.sh   # 10.12.194.2/28, no gateway; Wi‑Fi stays default route
+ssh motohud@10.12.194.1         # Pi SHARED address
+```
+
+Then mDNS / Wi‑Fi: `ssh motohud@motohud.local`. HTTP: `http://10.12.194.1:8787/`.
+
+**BLE (phone link):** `flash-lite` / `prepare-bootfs` build a BlueZ binary via Docker by default. To refresh a running Pi:
+
+```bash
+./scripts/build-armv6.sh --ble --deploy 10.12.194.1
+```
+
+Android companion scans for BLE name **MotoHUD**.
 
 ### Display pin maps (BCM)
 
