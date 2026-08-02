@@ -5,6 +5,8 @@ package display
 import (
 	"fmt"
 	"image"
+	"os"
+	"strings"
 	"time"
 
 	"periph.io/x/conn/v3/gpio"
@@ -30,6 +32,13 @@ type waveshareDisplay struct {
 	busy              gpio.PinIn
 	hasBase           bool
 	partialsSinceFull int
+	// bwr: 2.13" HAT (B) black/white/red. 0x26 is the red plane (not "old frame").
+	bwr bool
+}
+
+func waveshareBWREnabled() bool {
+	v := strings.TrimSpace(strings.ToLower(os.Getenv("MOTOHUD_WAVESHARE_BWR")))
+	return v == "1" || v == "true" || v == "yes" || v == "b" || v == "bwr"
 }
 
 // Full refresh after this many partials (Waveshare V4 datasheet recommendation).
@@ -76,13 +85,17 @@ func NewWaveshare(pngFallback string) (Display, error) {
 		fmt.Printf("display: SPI connect failed (%v); PNG fallback\n", err)
 		return NewPNG(pngFallback), nil
 	}
-	d := &waveshareDisplay{port: port, conn: conn, dc: dc, rst: rst, busy: busy}
+	d := &waveshareDisplay{port: port, conn: conn, dc: dc, rst: rst, busy: busy, bwr: waveshareBWREnabled()}
 	if err := d.init(); err != nil {
 		_ = port.Close()
 		fmt.Printf("display: Waveshare init failed (%v); PNG fallback\n", err)
 		return NewPNG(pngFallback), nil
 	}
-	fmt.Println("display: Waveshare 2.13 B/W e-Paper ready")
+	if d.bwr {
+		fmt.Println("display: Waveshare 2.13 BWR HAT (B) — full refresh, red plane cleared")
+	} else {
+		fmt.Println("display: Waveshare 2.13 B/W e-Paper ready")
+	}
 	return d, nil
 }
 
@@ -91,6 +104,11 @@ func (d *waveshareDisplay) Show(img *image.Gray) error {
 }
 
 func (d *waveshareDisplay) ShowFrame(img *image.Gray, meta FrameMeta) error {
+	buf := packEPD213(img)
+	// HAT (B) has no usable partial path for nav; always full BWR update.
+	if d.bwr {
+		return d.showFull(buf)
+	}
 	if meta.Spatial && !meta.Dirty.Empty() && d.hasBase && d.partialsSinceFull < waveshareFullEveryN {
 		reg := AlignCanvasEPD(meta.Dirty)
 		if winBuf, epdR := packEPD213Window(img, reg); !epdR.Empty() && len(winBuf) > 0 {
@@ -100,7 +118,6 @@ func (d *waveshareDisplay) ShowFrame(img *image.Gray, meta FrameMeta) error {
 			return nil
 		}
 	}
-	buf := packEPD213(img)
 	// First frame and every N partials: full refresh (writes both RAM buffers).
 	// Otherwise: partial (~0.3s, no flicker). Matches Waveshare epd2in13_V4.
 	if !d.hasBase || d.partialsSinceFull >= waveshareFullEveryN {
@@ -163,19 +180,33 @@ func (d *waveshareDisplay) showFull(buf []byte) error {
 			return err
 		}
 	}
-	if err := d.cmd(0x24); err != nil {
+	if err := d.cmd(0x24); err != nil { // black/white RAM
 		return err
 	}
 	if err := d.data(buf); err != nil {
 		return err
 	}
-	if err := d.cmd(0x26); err != nil {
+	if err := d.cmd(0x26); err != nil { // B/W: previous frame; BWR (B): RED plane
 		return err
 	}
-	if err := d.data(buf); err != nil {
+	second := buf
+	if d.bwr {
+		// epd2in13b_V4: 0xFF on red plane = white (no red). Never copy the BW image here.
+		second = make([]byte, len(buf))
+		for i := range second {
+			second[i] = 0xFF
+		}
+	}
+	if err := d.data(second); err != nil {
 		return err
 	}
-	if err := d.turnOn(); err != nil {
+	var err error
+	if d.bwr {
+		err = d.turnOnBWR() // epd2in13b_V4: activate only (no 0x22/0xF7)
+	} else {
+		err = d.turnOn()
+	}
+	if err != nil {
 		return err
 	}
 	d.hasBase = true
@@ -275,7 +306,12 @@ func (d *waveshareDisplay) init() error {
 	if err := d.cmd(0x21); err != nil { // Display update control
 		return err
 	}
-	if err := d.data([]byte{0x00, 0x80}); err != nil {
+	// B/W V4: 0x00,0x80 — BWR HAT (B) V4: 0x80,0x80 (waveshare epd2in13b_V4)
+	upd := []byte{0x00, 0x80}
+	if d.bwr {
+		upd = []byte{0x80, 0x80}
+	}
+	if err := d.data(upd); err != nil {
 		return err
 	}
 	if err := d.cmd(0x18); err != nil { // temperature sensor
@@ -340,6 +376,15 @@ func (d *waveshareDisplay) turnOn() error {
 	if err := d.data([]byte{0xF7}); err != nil {
 		return err
 	}
+	if err := d.cmd(0x20); err != nil {
+		return err
+	}
+	d.waitBusy()
+	return nil
+}
+
+// turnOnBWR matches Waveshare epd2in13b_V4.ondisplay (no 0x22 mode byte).
+func (d *waveshareDisplay) turnOnBWR() error {
 	if err := d.cmd(0x20); err != nil {
 		return err
 	}
