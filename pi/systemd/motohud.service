@@ -5,9 +5,12 @@ Wants=bluetooth.target
 
 [Service]
 Type=simple
-User=pi
-WorkingDirectory=/home/pi/moto-hud
-ExecStart=/home/pi/moto-hud/bin/motohud -inky -out /tmp/hud.png -http :8787
+User=motohud
+WorkingDirectory=/home/motohud/moto-hud
+# 1 = Waveshare 2.13" HAT (B) BWR; 0 = pure B/W HAT (preferred)
+Environment=MOTOHUD_WAVESHARE_BWR=1
+# Drop -demo once bring-up is done. Ship BLE via: ./scripts/build-armv6.sh --ble --deploy HOST
+ExecStart=/home/motohud/moto-hud/bin/motohud -host waveshare -demo -out /tmp/hud.png -http :8787 -assets /home/motohud/moto-hud/assets/hud
 Restart=on-failure
 RestartSec=3
 
