@@ -1,0 +1,27 @@
+[Unit]
+Description=Enable legacy BLE advertising for MotoHUD
+Documentation=https://github.com/raspberrypi/linux/issues/7473
+After=bluetooth.service
+Before=motohud.service
+Wants=bluetooth.service
+
+[Service]
+Type=oneshot
+# Kernel 6.18.34+rpt breaks BlueZ RegisterAdvertisement; legacy btmgmt works.
+# Drop this unit once the Pi runs 6.18.36+. timeout(1) avoids systemd start hangs
+# seen with bare btmgmt ExecStart lines on this image.
+ExecStart=/usr/bin/timeout 5 /usr/bin/btmgmt --index 0 power on
+ExecStart=/usr/bin/timeout 5 /usr/bin/btmgmt --index 0 le on
+ExecStart=/usr/bin/timeout 5 /usr/bin/btmgmt --index 0 connectable on
+ExecStart=/usr/bin/timeout 5 /usr/bin/btmgmt --index 0 bondable on
+ExecStart=/usr/bin/timeout 5 /usr/bin/btmgmt --index 0 name MotoHUD
+ExecStart=/usr/bin/timeout 5 /usr/bin/btmgmt --index 0 advertising on
+ExecStart=/usr/bin/timeout 5 /usr/bin/btmgmt --index 0 discov on
+# BlueZ may reset Pairable after adapter bring-up; motohud also sets this on start.
+ExecStart=/usr/bin/busctl set-property org.bluez /org/bluez/hci0 org.bluez.Adapter1 Pairable b true
+RemainAfterExit=yes
+SuccessExitStatus=0 124
+TimeoutStartSec=45
+
+[Install]
+WantedBy=multi-user.target

@@ -360,7 +360,8 @@ func (d *waveshareDisplay) setCursor(x, y int) error {
 	if err := d.cmd(0x4E); err != nil {
 		return err
 	}
-	if err := d.data([]byte{byte(x)}); err != nil {
+	// 0x4E uses the same byte-address units as 0x44 (setWindow), not pixels.
+	if err := d.data([]byte{byte(x >> 3)}); err != nil {
 		return err
 	}
 	if err := d.cmd(0x4F); err != nil {

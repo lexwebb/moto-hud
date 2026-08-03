@@ -13,7 +13,9 @@ type RefreshPolicy struct {
 
 func DefaultRefreshPolicy() RefreshPolicy {
 	const canvas = Width * Height
-	return RefreshPolicy{MaxPartialPixels: canvas * 35 / 100}
+	// 40%: AlignEPD pads canvas Y to 8px (EPD byte columns after CW rotate),
+	// which expands distance/road slots enough to tip a 35% budget into full frames.
+	return RefreshPolicy{MaxPartialPixels: canvas * 40 / 100}
 }
 
 // RefreshMode is how the display should be updated this frame.

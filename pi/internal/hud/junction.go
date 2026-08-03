@@ -11,8 +11,8 @@ import (
 )
 
 // PreferJunctionTemplates selects the semantic IR drawer for the live left column
-// when nav carries a JunctionMessage. Default false keeps the production meter
-// minimap path (MinimapNodes) untouched.
+// when nav carries a JunctionMessage (or synthesizes from maneuver). Default false
+// keeps the classic glyph layout; enable with motohud -junction or MOTOHUD_JUNCTION=1.
 //
 // Hook points:
 //   - compose/nav_live.go left corridor (via DrawDeps.HasJunction / JunctionNodes)

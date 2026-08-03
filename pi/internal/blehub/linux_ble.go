@@ -82,19 +82,20 @@ func (s *BlueZServer) Start(ctx context.Context) error {
 		return (&StubServer{Hub: s.Hub}).Start(ctx)
 	}
 
-	adv := adapter.DefaultAdvertisement()
-	if err := adv.Configure(bluetooth.AdvertisementOptions{
-		LocalName:    protocol.DeviceName,
-		ServiceUUIDs: []bluetooth.UUID{svcUUID},
-	}); err != nil {
-		log.Printf("ble: advertise configure failed (%v); stubbing", err)
-		return (&StubServer{Hub: s.Hub}).Start(ctx)
-	}
-	if err := adv.Start(); err != nil {
+	// Bypass tinygo DefaultAdvertisement: it hardcodes Type=broadcast, which
+	// BlueZ on Pi Zero W rejects (Invalid Parameters 0x0d). Register a
+	// connectable peripheral advertisement ourselves (name only; Android scans
+	// by device name, and a 128-bit ServiceUUID won't fit with the name).
+	adv, err := startPeripheralAdvertisement(protocol.DeviceName)
+	if err != nil {
 		log.Printf("ble: advertise start failed (%v); stubbing", err)
 		return (&StubServer{Hub: s.Hub}).Start(ctx)
 	}
-	log.Printf("ble: advertising as %s", protocol.DeviceName)
+	if LegacyOK {
+		log.Printf("ble: GATT up as %s (legacy adv — ensure btmgmt advertising on / motohud-ble-adv.service)", protocol.DeviceName)
+	} else {
+		log.Printf("ble: advertising as %s", protocol.DeviceName)
+	}
 	s.Hub.SetLinked(false)
 
 	go func() {

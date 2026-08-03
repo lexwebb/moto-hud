@@ -83,6 +83,10 @@ dependencies {
     // Typed OsmAnd AIDL (external OsmAnd app) — always in base.
     implementation("net.osmand:android-aidl-lib:5.3@aar")
 
+    // :osmand pulls Picasso; its ContentProvider is merged into the base
+    // manifest on sideload, so the class must live in the base APK too.
+    implementation("com.squareup.picasso:picasso:2.71828")
+
     coreLibraryDesugaring("com.android.tools:desugar_jdk_libs:2.1.3")
 
     testImplementation("junit:junit:4.13.2")

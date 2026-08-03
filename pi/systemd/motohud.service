@@ -1,16 +1,16 @@
 [Unit]
 Description=Moto HUD e-ink service
-After=bluetooth.target network.target
-Wants=bluetooth.target
+After=bluetooth.target network.target motohud-ble-adv.service
+Wants=bluetooth.target motohud-ble-adv.service
 
 [Service]
 Type=simple
 User=motohud
 WorkingDirectory=/home/motohud/moto-hud
-# 1 = Waveshare 2.13" HAT (B) BWR; 0 = pure B/W HAT (preferred)
-Environment=MOTOHUD_WAVESHARE_BWR=1
-# Drop -demo once bring-up is done. Ship BLE via: ./scripts/build-armv6.sh --ble --deploy HOST
-ExecStart=/home/motohud/moto-hud/bin/motohud -host waveshare -demo -out /tmp/hud.png -http :8787 -assets /home/motohud/moto-hud/assets/hud
+# 1 = Waveshare 2.13" HAT (B) BWR; 0 = pure B/W HAT (preferred for nav speed)
+Environment=MOTOHUD_WAVESHARE_BWR=0
+# -junction: live left column (ADR 0013). Drop -demo once bring-up is done.
+ExecStart=/home/motohud/moto-hud/bin/motohud -host waveshare -junction -demo -out /tmp/hud.png -http :8787 -assets /home/motohud/moto-hud/assets/hud
 Restart=on-failure
 RestartSec=3
 

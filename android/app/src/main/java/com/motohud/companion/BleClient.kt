@@ -10,11 +10,11 @@ import android.bluetooth.BluetoothGattDescriptor
 import android.bluetooth.BluetoothManager
 import android.bluetooth.BluetoothProfile
 import android.bluetooth.le.ScanCallback
-import android.bluetooth.le.ScanFilter
 import android.bluetooth.le.ScanResult
 import android.bluetooth.le.ScanSettings
 import android.content.Context
-import android.os.ParcelUuid
+import android.os.Handler
+import android.os.Looper
 import android.util.Log
 import org.json.JSONObject
 import java.util.UUID
@@ -24,6 +24,7 @@ class BleClient(private val context: Context) : HudSink {
 
     private val adapter: BluetoothAdapter? =
         (context.getSystemService(Context.BLUETOOTH_SERVICE) as BluetoothManager).adapter
+    private val mainHandler = Handler(Looper.getMainLooper())
 
     private var gatt: BluetoothGatt? = null
     private var navChar: BluetoothGattCharacteristic? = null
@@ -32,42 +33,92 @@ class BleClient(private val context: Context) : HudSink {
     private var hbChar: BluetoothGattCharacteristic? = null
 
     @Volatile
+    private var wantLink: Boolean = false
+
+    @Volatile
     var connected: Boolean = false
         private set
 
     private val scanCallback = object : ScanCallback() {
         override fun onScanResult(callbackType: Int, result: ScanResult) {
+            if (!wantLink) return
             val name = result.device.name ?: result.scanRecord?.deviceName
             if (name != Protocol.DEVICE_NAME) return
             stopScan()
             HudBus.setStatus("Connecting to ${result.device.address}")
+            // Close any prior GATT before a new connect attempt.
+            gatt?.close()
             gatt = result.device.connectGatt(context, false, gattCallback, BluetoothDevice.TRANSPORT_LE)
         }
 
         override fun onScanFailed(errorCode: Int) {
-            HudBus.setStatus("BLE scan failed: $errorCode")
+            val why = when (errorCode) {
+                SCAN_FAILED_ALREADY_STARTED -> "already started"
+                SCAN_FAILED_APPLICATION_REGISTRATION_FAILED -> "app registration failed"
+                SCAN_FAILED_INTERNAL_ERROR -> "internal error"
+                SCAN_FAILED_FEATURE_UNSUPPORTED -> "unsupported"
+                SCAN_FAILED_OUT_OF_HARDWARE_RESOURCES -> "out of hardware resources"
+                6 -> "scanning too frequently"
+                else -> "code $errorCode"
+            }
+            HudBus.setStatus("BLE scan failed: $why")
         }
     }
 
     private val gattCallback = object : BluetoothGattCallback() {
         override fun onConnectionStateChange(g: BluetoothGatt, status: Int, newState: Int) {
+            Log.i(TAG, "connection status=$status newState=$newState")
             if (newState == BluetoothProfile.STATE_CONNECTED) {
+                if (status != BluetoothGatt.GATT_SUCCESS) {
+                    HudBus.setStatus("BLE connect error $status")
+                    cleanupGatt(g)
+                    rescanIfWanted()
+                    return
+                }
                 HudBus.setStatus("BLE connected, discovering…")
-                g.discoverServices()
+                // Many stacks drop the link if discoverServices runs too early.
+                mainHandler.postDelayed({
+                    if (gatt !== g || !wantLink) return@postDelayed
+                    runCatching { g.requestConnectionPriority(BluetoothGatt.CONNECTION_PRIORITY_HIGH) }
+                    if (!g.discoverServices()) {
+                        HudBus.setStatus("discoverServices rejected")
+                        g.disconnect()
+                    }
+                }, 600)
+                // If discovery never completes (common with flaky BlueZ), bail and rescan.
+                mainHandler.postDelayed({
+                    if (gatt === g && wantLink && !connected) {
+                        Log.w(TAG, "service discovery timed out")
+                        HudBus.setStatus("Discovery timeout — retrying")
+                        runCatching { g.disconnect() }
+                    }
+                }, 8_000)
             } else if (newState == BluetoothProfile.STATE_DISCONNECTED) {
                 connected = false
-                HudBus.setStatus("BLE disconnected")
-                navChar = null
-                mediaChar = null
-                cmdChar = null
-                hbChar = null
+                clearChars()
+                HudBus.setStatus(
+                    if (status == BluetoothGatt.GATT_SUCCESS) "BLE disconnected"
+                    else "BLE disconnected (status $status)",
+                )
+                cleanupGatt(g)
+                rescanIfWanted()
             }
         }
 
         override fun onServicesDiscovered(g: BluetoothGatt, status: Int) {
+            Log.i(TAG, "servicesDiscovered status=$status")
+            if (g !== gatt) return
+            if (status != BluetoothGatt.GATT_SUCCESS) {
+                HudBus.setStatus("Service discovery failed: $status")
+                g.disconnect()
+                return
+            }
             val svc = g.getService(UUID.fromString(Protocol.SERVICE_UUID))
             if (svc == null) {
-                HudBus.setStatus("Service not found")
+                val uuids = g.services?.joinToString { it.uuid.toString() }.orEmpty()
+                Log.w(TAG, "service missing; have=[$uuids]")
+                HudBus.setStatus("Service not found ($uuids)")
+                g.disconnect()
                 return
             }
             navChar = svc.getCharacteristic(UUID.fromString(Protocol.NAV_UUID))
@@ -77,6 +128,9 @@ class BleClient(private val context: Context) : HudSink {
             cmdChar?.let { enableNotify(g, it) }
             connected = true
             HudBus.setStatus("HUD ready")
+            // Flush current nav (incl. idle) — StateFlow may already have been
+            // collected before GATT was up, so the Pi would keep a stale frame.
+            writeNav(HudBus.nav.value)
             writeHeartbeat()
         }
 
@@ -95,19 +149,28 @@ class BleClient(private val context: Context) : HudSink {
     }
 
     fun startScan() {
+        wantLink = true
         val scanner = adapter?.bluetoothLeScanner
         if (scanner == null) {
             HudBus.setStatus("Bluetooth unavailable")
             return
         }
+        if (adapter?.isEnabled != true) {
+            HudBus.setStatus("Bluetooth is off")
+            return
+        }
+        // Stop any prior scan first — otherwise Android returns
+        // SCAN_FAILED_ALREADY_STARTED (1) and the UI looks stuck.
+        runCatching { scanner.stopScan(scanCallback) }
+
         HudBus.setStatus("Scanning for ${Protocol.DEVICE_NAME}…")
-        val filter = ScanFilter.Builder()
-            .setServiceUuid(ParcelUuid(UUID.fromString(Protocol.SERVICE_UUID)))
-            .build()
+        // Do not filter on Service UUID: the Pi advertises LocalName "MotoHUD"
+        // only (no UUID in the 31-byte ADV / legacy btmgmt path). Match by name
+        // in onScanResult.
         val settings = ScanSettings.Builder()
             .setScanMode(ScanSettings.SCAN_MODE_LOW_LATENCY)
             .build()
-        scanner.startScan(listOf(filter), settings, scanCallback)
+        scanner.startScan(emptyList(), settings, scanCallback)
     }
 
     fun stopScan() {
@@ -115,10 +178,14 @@ class BleClient(private val context: Context) : HudSink {
     }
 
     fun close() {
+        wantLink = false
+        mainHandler.removeCallbacksAndMessages(null)
         stopScan()
+        gatt?.disconnect()
         gatt?.close()
         gatt = null
         connected = false
+        clearChars()
     }
 
     override fun writeNav(nav: NavState) {
@@ -132,6 +199,25 @@ class BleClient(private val context: Context) : HudSink {
     override fun writeHeartbeat() {
         val body = JSONObject().put("type", "heartbeat").put("ts", System.currentTimeMillis() / 1000).toString()
         write(hbChar, body.toByteArray(Charsets.UTF_8))
+    }
+
+    private fun rescanIfWanted() {
+        if (!wantLink) return
+        mainHandler.postDelayed({
+            if (wantLink && !connected && gatt == null) startScan()
+        }, 750)
+    }
+
+    private fun cleanupGatt(g: BluetoothGatt) {
+        runCatching { g.close() }
+        if (gatt === g) gatt = null
+    }
+
+    private fun clearChars() {
+        navChar = null
+        mediaChar = null
+        cmdChar = null
+        hbChar = null
     }
 
     private fun write(ch: BluetoothGattCharacteristic?, payload: ByteArray) {

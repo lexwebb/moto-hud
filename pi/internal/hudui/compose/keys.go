@@ -66,9 +66,17 @@ func (Keys) ETA(nav protocol.NavMessage) hudui.ChangeKey {
 }
 
 func (Keys) Ribbon(nav protocol.NavMessage) hudui.ChangeKey {
+	// Left column: junction IR (preferred), else minimap/ribbon length.
 	k := hudui.ChangeKey(len(nav.RibbonPoints)) | hudui.ChangeKey(nav.RibbonTurn<<8)
 	if nav.Minimap != nil {
 		k ^= hudui.ChangeKey(len(nav.Minimap.Route) << 4)
+	}
+	if nav.Junction != nil {
+		k ^= hashStr(nav.Junction.Kind) ^ hashStr(nav.Junction.Outbound) ^ hashStr(nav.Junction.Drive)
+		k ^= hudui.ChangeKey(nav.Junction.Exit<<12) | hudui.ChangeKey(nav.Junction.Exits<<16)
+	} else {
+		// Pi synthesizes from maneuver when junction IR is absent.
+		k ^= hashStr(string(nav.Maneuver)) << 2
 	}
 	return k
 }

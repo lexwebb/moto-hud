@@ -52,8 +52,9 @@ class MainActivity : AppCompatActivity() {
         }
         findViewById<Button>(R.id.btnStart).setOnClickListener {
             LinkPrefs.setHttp(this, httpEnable.isChecked, httpUrl.text.toString())
-            ensurePermissions()
+            if (!ensurePermissions()) return@setOnClickListener
             ContextCompat.startForegroundService(this, Intent(this, HudForegroundService::class.java))
+            Toast.makeText(this, R.string.start_hud, Toast.LENGTH_SHORT).show()
         }
         findViewById<Button>(R.id.btnStop).setOnClickListener {
             stopService(Intent(this, HudForegroundService::class.java))
@@ -64,31 +65,38 @@ class MainActivity : AppCompatActivity() {
             HudBus.status.collect { status.text = it }
         }
         lifecycleScope.launch {
-            HudBus.nav.collect {
-                val engine = when {
-                    OsmandModule.isRichNavReady(this@MainActivity) -> "embedded"
-                    HudBus.isOsmandBound() -> "aidl"
-                    else -> "maps"
-                }
-                val src = when {
-                    HudBus.isOsmandBound() && it.lanes.isNotEmpty() -> "OsmAnd+$engine·lanes"
-                    HudBus.isOsmandBound() -> "OsmAnd+$engine"
-                    else -> "Maps?"
-                }
-                navText.text = if (it.active) {
-                    val then = it.thenNext?.let { t -> " → then ${t.maneuver} ${t.distanceText}" }.orEmpty()
-                    val junc = it.junction?.let { j -> " · j=${j.kind}/${j.outbound}" }.orEmpty()
-                    "[$src] ${it.maneuver} ${it.distanceText}$then$junc\n${it.road.ifBlank { it.instruction }}"
-                } else {
-                    "Nav idle · engine=$engine"
-                }
-            }
+            HudBus.nav.collect { updateNavLabel(navText, it) }
+        }
+        lifecycleScope.launch {
+            // engine= is derived from bind state; refresh when AIDL connects
+            // even if nav is still idle.
+            HudBus.osmandBound.collect { updateNavLabel(navText, HudBus.nav.value) }
         }
         lifecycleScope.launch {
             HudBus.media.collect {
                 mediaText.text = listOf(it.title, it.artist).filter { s -> s.isNotBlank() }.joinToString(" — ")
                     .ifBlank { "No media" }
             }
+        }
+    }
+
+    private fun updateNavLabel(navText: TextView, nav: NavState) {
+        val engine = when {
+            OsmandModule.isRichNavReady(this) -> "embedded"
+            HudBus.isOsmandBound() -> "aidl"
+            else -> "maps"
+        }
+        val src = when {
+            HudBus.isOsmandBound() && nav.lanes.isNotEmpty() -> "OsmAnd+$engine·lanes"
+            HudBus.isOsmandBound() -> "OsmAnd+$engine"
+            else -> "Maps?"
+        }
+        navText.text = if (nav.active) {
+            val then = nav.thenNext?.let { t -> " → then ${t.maneuver} ${t.distanceText}" }.orEmpty()
+            val junc = nav.junction?.let { j -> " · j=${j.kind}/${j.outbound}" }.orEmpty()
+            "[$src] ${nav.maneuver} ${nav.distanceText}$then$junc\n${nav.road.ifBlank { nav.instruction }}"
+        } else {
+            "Nav idle · engine=$engine"
         }
     }
 
@@ -162,7 +170,8 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-    private fun ensurePermissions() {
+    /** @return true if all required permissions are already granted */
+    private fun ensurePermissions(): Boolean {
         val needed = mutableListOf<String>()
         if (ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION)
             != PackageManager.PERMISSION_GRANTED
@@ -188,7 +197,10 @@ class MainActivity : AppCompatActivity() {
         }
         if (needed.isNotEmpty()) {
             ActivityCompat.requestPermissions(this, needed.toTypedArray(), 1001)
+            Toast.makeText(this, "Grant permissions, then tap Start again", Toast.LENGTH_LONG).show()
+            return false
         }
+        return true
     }
 
     companion object {

@@ -137,7 +137,7 @@ User=${USER_NAME}
 WorkingDirectory=/home/${USER_NAME}/moto-hud
 # 1 = Waveshare 2.13" HAT (B) BWR; 0 = pure B/W HAT (preferred for nav speed)
 Environment=MOTOHUD_WAVESHARE_BWR=${BWR}
-ExecStart=/home/${USER_NAME}/moto-hud/bin/motohud -host ${HOST_KIND}${DEMO_FLAG} -out /tmp/hud.png -http :8787 -assets /home/${USER_NAME}/moto-hud/assets/hud
+ExecStart=/home/${USER_NAME}/moto-hud/bin/motohud -host ${HOST_KIND} -junction${DEMO_FLAG} -out /tmp/hud.png -http :8787 -assets /home/${USER_NAME}/moto-hud/assets/hud
 Restart=on-failure
 RestartSec=3
 

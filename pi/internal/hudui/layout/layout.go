@@ -192,15 +192,23 @@ func UnionRects(rects []image.Rectangle) image.Rectangle {
 	return u
 }
 
-// AlignEPD expands r to 8px horizontal columns for Waveshare windows.
+// AlignEPD expands r to 8px on both axes for Waveshare window updates.
+// After CW rotate into EPD memory, EPD X = canvas Y (byte-addressed), so Y
+// alignment is required; X is padded for symmetry with the display packer.
 func AlignEPD(r image.Rectangle) image.Rectangle {
 	if r.Empty() {
 		return r
 	}
+	const canvasH = 122
 	x0 := r.Min.X &^ 7
 	x1 := (r.Max.X + 7) &^ 7
-	if x1 < r.Max.X {
-		x1 += 8
+	y0 := r.Min.Y &^ 7
+	y1 := (r.Max.Y + 7) &^ 7
+	if x1 > 250 {
+		x1 = 250
 	}
-	return image.Rect(x0, r.Min.Y, x1, r.Max.Y)
+	if y1 > canvasH {
+		y1 = canvasH
+	}
+	return image.Rect(x0, y0, x1, y1)
 }

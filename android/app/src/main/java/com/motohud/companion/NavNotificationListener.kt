@@ -72,11 +72,12 @@ class NavNotificationListener : NotificationListenerService() {
         }
 
         val maneuver = ManeuverParser.fromText(instruction)
+        val distanceM = ManeuverParser.parseDistanceMeters(distanceCandidate.ifBlank { blob })
         return NavState(
             active = true,
             instruction = instruction,
-            distanceM = ManeuverParser.parseDistanceMeters(distanceCandidate.ifBlank { blob }),
-            distanceText = distanceCandidate.ifBlank { "" },
+            distanceM = distanceM,
+            distanceText = if (distanceM > 0) ManeuverParser.formatDistanceMeters(distanceM) else "",
             road = road,
             etaMin = ManeuverParser.parseEtaMinutes(blob),
             maneuver = maneuver,

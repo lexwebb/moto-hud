@@ -24,7 +24,13 @@ func main() {
 	demo := flag.Bool("demo", false, "Show a static demo nav frame on start")
 	assets := flag.String("assets", "", "Path to assets/hud (auto-detected if empty)")
 	hostKind := flag.String("host", "auto", "Hardware host: auto|png|inky|waveshare|lcd|emu|test")
+	junction := flag.Bool("junction", false, "Live nav left column: junction IR templates (ADR 0013)")
 	flag.Parse()
+
+	if *junction || envTruthy("MOTOHUD_JUNCTION") {
+		hud.PreferJunctionTemplates = true
+		log.Printf("hud: junction IR templates enabled (live left column)")
+	}
 
 	if *assets != "" {
 		hud.SetAssetDir(*assets)
@@ -158,4 +164,13 @@ func detectRepoRoot() string {
 		dir = parent
 	}
 	return ""
+}
+
+func envTruthy(key string) bool {
+	switch os.Getenv(key) {
+	case "1", "true", "TRUE", "yes", "YES", "on", "ON":
+		return true
+	default:
+		return false
+	}
 }
