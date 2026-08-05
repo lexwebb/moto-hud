@@ -1,28 +1,30 @@
-// Moto HUD bench enclosure — Pi Zero + Inky pHAT clamshell
+// Moto HUD bench enclosure — Pi Zero + display HAT clamshell
 // Units: millimetres
 //
 // Usage (Customizer / CLI):
-//   part = "assembly" | "base" | "lid"
+//   part = "assembly" | "base" | "lid" | "caps"
 // Preview: F5   Render + export STL: F6 → File → Export
 // CLI:
-//   openscad -D "part=\"base\"" -o exports/base.stl moto_hud_case.scad
-//   openscad -D "part=\"lid\"" -o exports/lid.stl moto_hud_case.scad
-//   openscad -D "part=\"assembly\"" -o exports/assembly.stl moto_hud_case.scad
+//   openscad -D 'part="base"' -o exports/base.stl moto_hud_case.scad
+//   openscad -D 'part="lid"' -o exports/lid.stl moto_hud_case.scad
+//   openscad -D 'part="caps"' -o exports/caps.stl moto_hud_case.scad
+//   openscad -D 'part="assembly"' -o exports/assembly.stl moto_hud_case.scad
 
 /* [Part] */
-part = "assembly"; // [assembly, base, lid]
+part = "assembly"; // [assembly, base, lid, caps]
 explode = 0;       // [0:0.5:12] lid lift for assembly preview (mm)
+cap_index = -1;    // [-1:1:2] caps export: -1 = all three on a sprue; 0/1/2 = one cap
 
 /* [Board stack — caliper-check these] */
 // Raspberry Pi Zero PCB footprint
 board_w = 65.0;
 board_d = 30.0;
-// Pi PCB + header + Inky pHAT stack height (published Inky depth ~8.5; leave headroom)
+// Pi PCB + header + HAT stack height (Inky ~8.5; leave headroom for Waveshare too)
 stack_h = 14.0;
-// Usable Inky glass (Pimoroni ~48.5 × 23.8)
+// Usable glass (Inky / Waveshare 2.13″ ~48.5 × 23.8)
 window_w = 48.5;
 window_d = 23.8;
-// Window offset from board origin (Pi Zero corner = 0,0); tune after measuring Inky
+// Window offset from board origin (Pi Zero corner = 0,0); tune after measuring HAT
 window_ox = (board_w - window_w) / 2;
 window_oy = (board_d - window_d) / 2 + 0.5;
 
@@ -51,12 +53,32 @@ sd_h = 3.0;
 sd_enable = true;
 
 /* [Buttons — lid face, on right-hand side rail] */
+// cap = printed mushroom + 6×6 tactile wells; panel8 = 8 mm high-head panel holes
+button_mode = "cap"; // [cap, panel8]
 button_count = 3;
-button_d = 6.0;
-button_pitch = 10.0;
-button_rail = 10.0;  // extra case width on +X for buttons (SD stays on -X)
-button_ox = 5.0;     // button centre X from outer right edge, inward
-// button row centred on board depth (Y)
+button_pitch = 12.0; // centres; leave clearance between ~11 mm caps
+button_rail = 12.0;  // extra case width on +X for buttons (SD stays on -X)
+button_ox = 6.0;     // button centre X from outer right edge, inward
+// Order along +Y (rail on right, screen upright): Prev, Next, Action
+
+// Cap mode (Path A′) — glove target is the print; electrical is the tactile
+cap_od = 11.0;
+cap_dome_h = 2.5;
+stem_d = 3.6;
+stem_clear = 0.35;
+stem_len = 5.5;      // through lid + travel into tactile
+flange_d = 5.2;      // retention flange under dome (wider than shaft)
+flange_h = 0.8;
+retention_h = 1.0;   // underside counterbore depth in lid
+travel = 1.2;
+tactile_foot = 6.2;  // 6×6 body + fit
+tactile_h = 3.5;     // body height — caliper after purchase and retune
+well_depth = 2.0;
+wire_ch_w = 2.5;
+wire_ch_h = 2.0;
+
+// panel8 fallback
+button_d = 8.2;
 
 /* [Quality] */
 $fn = 48;
@@ -73,9 +95,18 @@ cavity_d = board_d + 2 * clearance;
 board_x = wall + clearance;
 board_y = wall + clearance;
 
+shaft_d = stem_d + print_tol + stem_clear;
+rail_x0 = wall + cavity_w_board; // start of solid +X rail (inside cavity wall)
+
 function hole_xy(i, j) = [
     hole_inset + i * (board_w - 2 * hole_inset),
     hole_inset + j * (board_d - 2 * hole_inset)
+];
+
+// Button centres on the +X rail; n = 0..button_count-1 → Prev, Next, Action
+function button_xy(n) = [
+    outer_w - button_ox,
+    board_y + (board_d - (button_count - 1) * button_pitch) / 2 + n * button_pitch
 ];
 
 module at_board_xy() {
@@ -131,6 +162,104 @@ module sd_cutout() {
             cube([wall + clearance + 2 * eps, sd_w + print_tol, sd_h + print_tol]);
 }
 
+// --- Buttons ----------------------------------------------------------------
+
+module button_panel8_holes() {
+    for (n = [0 : button_count - 1]) {
+        p = button_xy(n);
+        translate([p[0], p[1], -eps])
+            cylinder(h = lid_t + 2 * eps, d = button_d + print_tol);
+    }
+}
+
+module button_cap_shafts() {
+    // Lid coords: z=0 underside (toward cavity), z=lid_t outer face.
+    // Cap drops in from outside: flange seats in outer counterbore; stem hangs toward tactile.
+    for (n = [0 : button_count - 1]) {
+        p = button_xy(n);
+        translate([p[0], p[1], -eps])
+            cylinder(h = lid_t + 2 * eps, d = shaft_d);
+        translate([p[0], p[1], lid_t - retention_h])
+            cylinder(h = retention_h + eps, d = flange_d + print_tol);
+    }
+}
+
+module tactile_wells() {
+    for (n = [0 : button_count - 1]) {
+        p = button_xy(n);
+        translate([
+            p[0] - tactile_foot / 2,
+            p[1] - tactile_foot / 2,
+            split_z - well_depth
+        ])
+            cube([tactile_foot, tactile_foot, well_depth + eps]);
+    }
+}
+
+module wire_channels() {
+    // Channel from each well toward the board cavity (−X), open at top of rail
+    for (n = [0 : button_count - 1]) {
+        p = button_xy(n);
+        ch_x0 = rail_x0 - eps;
+        ch_len = p[0] - tactile_foot / 2 - ch_x0 + eps;
+        if (ch_len > 0)
+            translate([
+                ch_x0,
+                p[1] - wire_ch_w / 2,
+                split_z - wire_ch_h
+            ])
+                cube([ch_len, wire_ch_w, wire_ch_h + eps]);
+    }
+}
+
+module button_cap_solid() {
+    // Origin at flange top (= lid outer face when seated). Dome +Z; stem −Z through lid.
+    union() {
+        // Domed head
+        intersection() {
+            translate([0, 0, -cap_od / 2 + cap_dome_h])
+                sphere(d = cap_od);
+            translate([-cap_od, -cap_od, 0])
+                cube([2 * cap_od, 2 * cap_od, cap_dome_h + eps]);
+        }
+        // Flange seats in outer counterbore
+        translate([0, 0, -flange_h])
+            cylinder(h = flange_h + eps, d = flange_d);
+        // Stem through lid toward tactile
+        translate([0, 0, -stem_len])
+            cylinder(h = stem_len, d = stem_d);
+    }
+}
+
+module caps_sprue() {
+    // Print flange-down (stem into bed support / or float with brim); dome up.
+    pitch = cap_od + 4;
+    lift = stem_len; // sit stem tips on Z=0 for flat bed contact option
+    if (cap_index >= 0 && cap_index < button_count) {
+        translate([0, 0, lift])
+            button_cap_solid();
+    } else {
+        for (n = [0 : button_count - 1]) {
+            translate([n * pitch, 0, lift])
+                button_cap_solid();
+            if (n < button_count - 1)
+                translate([n * pitch + cap_od / 2 - 0.5, -0.6, lift - flange_h])
+                    cube([pitch - cap_od + 1, 1.2, 0.8]);
+        }
+    }
+}
+
+module caps_in_assembly() {
+    // Seat caps in lid shafts: flange in retention recess, dome proud of outer face
+    for (n = [0 : button_count - 1]) {
+        p = button_xy(n);
+        translate([p[0], p[1], split_z + explode + lid_t])
+            button_cap_solid();
+    }
+}
+
+// --- Shells -----------------------------------------------------------------
+
 module base_shell() {
     // Cavity over the board only — solid rail under the side buttons
     difference() {
@@ -146,6 +275,10 @@ module base_shell() {
         }
         screw_holes_xy(0, floor_t, screw_d + print_tol);
         screw_boss_pilots(boss_h);
+        if (button_mode == "cap") {
+            tactile_wells();
+            wire_channels();
+        }
     }
 }
 
@@ -174,17 +307,6 @@ module lid_window_recess() {
             ]);
 }
 
-module button_holes() {
-    // Along +X side rail, centred on board depth
-    span = (button_count - 1) * button_pitch;
-    x = outer_w - button_ox;
-    y0 = board_y + (board_d - span) / 2;
-    for (n = [0 : button_count - 1]) {
-        translate([x, y0 + n * button_pitch, -eps])
-            cylinder(h = lid_t + 2 * eps, d = button_d + print_tol);
-    }
-}
-
 module lid_shell() {
     lip_h = 1.2;
     lip_inset = 0.15;
@@ -210,7 +332,10 @@ module lid_shell() {
             ]);
         lid_window_cut();
         lid_window_recess();
-        button_holes();
+        if (button_mode == "cap")
+            button_cap_shafts();
+        else
+            button_panel8_holes();
         screw_holes_xy(-lip_h, lid_t + lip_h, screw_d + print_tol);
     }
 }
@@ -219,13 +344,18 @@ module assembly() {
     base_shell();
     translate([0, 0, split_z + explode])
         lid_shell();
+    if (button_mode == "cap")
+        caps_in_assembly();
 }
 
 if (part == "base")
     base_shell();
 else if (part == "lid")
-    // Sit lid flat on XY for printing / STL export
+    // Sit lid flat on XY for printing / STL export (lip up)
     translate([0, 0, 1.2])
         lid_shell();
+else if (part == "caps")
+    // Dome up for TPU; stem hangs below — or flip in slicer if preferred
+    caps_sprue();
 else
     assembly();

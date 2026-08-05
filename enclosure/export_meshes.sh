@@ -10,7 +10,7 @@ if ! command -v "$OPENSCAD" >/dev/null 2>&1; then
   exit 1
 fi
 
-for part in base lid assembly; do
+for part in base lid caps assembly; do
   echo "Rendering $part..."
   "$OPENSCAD" -D "part=\"$part\"" -o "exports/${part}.stl" moto_hud_case.scad
 done

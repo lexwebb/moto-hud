@@ -21,7 +21,7 @@ if (-not $openscad) {
 
 New-Item -ItemType Directory -Force -Path "exports" | Out-Null
 
-foreach ($part in @("base", "lid", "assembly")) {
+foreach ($part in @("base", "lid", "caps", "assembly")) {
   Write-Host "Rendering $part..."
   cmd /c "`"$openscad`" -D ""part=\""$part\"""" -o exports\$part.stl moto_hud_case.scad"
 }

@@ -202,7 +202,7 @@ Avoid these for buttons:
 
 ### Button wiring (BCM)
 
-Active-low with internal pull-ups.
+Active-low with internal pull-ups. Full soldering dummies guide, enclosure BOM, and Waveshare 8-pin note: [`docs/BUTTONS.md`](docs/BUTTONS.md). Caps + tactile wells: [`enclosure/README.md`](enclosure/README.md).
 
 | Button | BCM (inky / waveshare) | BCM (`-host lcd`) | Role |
 |--------|------------------------|-------------------|------|
