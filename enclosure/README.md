@@ -2,7 +2,7 @@
 
 Parametric OpenSCAD clamshell for a **Raspberry Pi Zero + e-ink HAT** stack (Inky or Waveshare 2.13″). Buttons are a right-hand rail: printed mushroom caps over 6×6 mm tactiles by default.
 
-On-bike shape (planned): this clamshell becomes the removable **HUD pod**; a separate **bike plate** stays on the motorcycle. Magnets + keyed pogo pass 5 V. Plan and millimetre contract: [`DOCK.md`](DOCK.md), [`dock_interface.scad`](dock_interface.scad), [ADR 0014](../docs/adr/0014-two-part-magnetic-pogo-dock.md). The printable bench case is unchanged until the pod underside is cut to that interface.
+On-bike shape (planned): this clamshell becomes the removable **HUD pod** (Pi **Zero W**); a separate **bike plate** stays on the motorcycle. USB-C from the bike accessory port feeds the plate; magnets + keyed pogo pass 5 V into the pod. Plan and millimetre contract: [`DOCK.md`](DOCK.md), [`dock_interface.scad`](dock_interface.scad), [ADR 0014](../docs/adr/0014-two-part-magnetic-pogo-dock.md). The printable bench case is unchanged until the pod underside is cut to that interface.
 
 ## Files
 
@@ -107,7 +107,7 @@ After changing the `.scad`, re-export meshes (including `assembly.glb`) and refr
 
 - Print **base**, **lid**, and **caps** separately. Lid export is already flipped upright with lip up.
 - Start with the default clearances; if the board is tight, bump `clearance` / `print_tol` by 0.1–0.2 mm.
-- USB cutout sized for Pi Zero micro-USB power; widen `usb_w` / `usb_h` for Zero 2 W USB-C if needed.
+- USB cutout sized for Pi **Zero W** micro-USB PWR (on-bike power is USB-C into the plate, not this hole).
 
 ## Next
 

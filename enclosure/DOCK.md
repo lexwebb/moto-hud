@@ -3,21 +3,21 @@
 Product split recorded in [ADR 0014](../docs/adr/0014-two-part-magnetic-pogo-dock.md) (**proposed**). Shared millimetre contract: [`dock_interface.scad`](dock_interface.scad). The current [`moto_hud_case.scad`](moto_hud_case.scad) remains the bench clamshell until the pod underside is cut to this interface.
 
 ```
-Bike 12 V ── fuse ──► bike plate ── buck → 5 V ── recessed pogo
-                         │ magnets + tray fence (shear)
-                         ▼
-                    HUD pod (Pi + HAT + buttons)
-                         USB still for bench, undocked only
+Bike accessory USB ── USB-C ──► bike plate (sink + polyfuse) ── recessed pogo 5 V
+                                      │ magnets + tray fence (shear)
+                                      ▼
+                                 HUD pod (Pi Zero W + HAT + buttons)
+                                      micro-USB PWR for bench, undocked only
 ```
 
 ## What lives where
 
 | | **Bike plate** (stays on the motorcycle) | **HUD pod** (comes off) |
 |---|---|---|
-| Structure | Tray + mount pattern (AMPS / RAM diamond) | Today’s clamshell: floor, lid, button caps |
-| Electronics | Fuse, 12 V→5 V buck, optional dock-detect MOSFET | Pi Zero + e-ink HAT + tactiles |
+| Structure | Tray + USB-C inlet + mount pattern (AMPS / RAM diamond) | Today’s clamshell: floor, lid, button caps |
+| Electronics | USB-C sink (CC), VBUS polyfuse, optional dock-detect MOSFET | **Pi Zero W** + e-ink HAT + tactiles |
 | Dock face | Spring pogo (live, recessed) + magnets | Target pads + opposite-polarity magnets |
-| Cables | Strain-relieved 12 V lead into the plate | Short pigtail pad → Pi 5 V / GND |
+| Cables | Accessory USB-C into the plate (strain-relieved jack) | Short pigtail pad → Pi GPIO 5 V / GND |
 | User | Gloved drop-in / pull-off | Screen, three buttons, SD still in the pod |
 
 The plate is allowed to be bike-specific later (clamp vs stem vs ram). The **dock face** is not: one pod should sit on any plate that implements `dock_interface.scad`.
@@ -59,28 +59,46 @@ Do not rely on a round magnetic connector that can spin.
 Today’s base has **through-floor M2.5 holes**. A dock face cannot have screw tips or countersinks in the magnet/pogo plane.
 
 - Pi bosses become **blind** (pilot from inside, no through-hole), or screws sit under a 0.8 mm cover sheet that *is* the dock face.
-- USB cutout on +Y stays for bench.
+- USB cutout on +Y stays for **bench** (Zero W micro-USB PWR). On-bike 5 V does not use that hole.
 - SD cutout on −X stays; swapping cards still means the pod is off the bike.
 
 ## Electrical
 
+Board is **Raspberry Pi Zero W** (not Zero 2 W). Accessory power is **USB-C 5 V into the plate**.
+
 ### Budget
 
-Pi Zero W is typically **0.15–0.35 A** at 5 V with BLE/Wi-Fi and e-ink SPI; Zero 2 W can spike toward **0.6 A+**. Design the dock for **2 A** continuous, fuse the 12 V side at **1–2 A**.
+Zero W is typically **0.15–0.35 A** at 5 V with BLE/Wi-Fi and e-ink SPI. Size the plate polyfuse at **1 A** (the Pi has no polyfuse of its own; accessory sockets are often 2–3 A). Pogo still **≥2 A** rated so contact resistance is not the weak point.
 
-Pi wants **4.75–5.25 V** at the board. Budget contact resistance + cable: the plate buck should be set to **5.1 V** at no-load and checked **under load at the Pi**, not at the module.
+Pi wants **4.75–5.25 V** at the board. Check **under load at the Pi**, not at the accessory socket — USB-C cable + pogo + pigtail all drop voltage. Zero W current is low enough that this should stay in spec on a short cable.
+
+### USB-C into the plate
+
+The plate is a USB-C **UFP / sink**, not a charger and not PD.
+
+```
+Accessory port ── USB-C cable ──► plate receptacle
+                                    CC1, CC2 → 5.1 kΩ to GND  (enable 5 V VBUS)
+                                    VBUS → 1 A polyfuse → DETECT MOSFET → pogo 5 V
+                                    D+/D− unconnected
+```
+
+- **Do not** fit a PD trigger that requests 9 / 12 / 20 V. Default USB-C 5 V is what Zero W needs.
+- If the bike accessory is USB-A, use A-to-C; the plate inlet stays USB-C.
+- Strain-relieve the jack in a printed block on the plate **+Y** edge (`usb_c_*` in `dock_interface.scad`). Rubber dust cap when the cable is out.
+- No 12 V buck, SAE pigtail, or load-dump TVS in v0 — the accessory port already did that conversion. A USB VBUS ESD diode on the inlet is still worth fitting.
 
 ### Pinout (power only)
 
 | Pin | Plate (spring) | Pod (pad) | Notes |
 |-----|----------------|-----------|--------|
-| 1 | 5 V (switched if dock-detect) | 5 V | Duplicate later if we need current sharing |
+| 1 | 5 V (switched if dock-detect) | 5 V | From fused VBUS |
 | 2 | GND | GND | |
-| 3 | `DETECT` (pulled up in plate, 3.3–5 V logic) | GND via 0 Ω | Plate enables 5 V only when DETECT is low |
+| 3 | `DETECT` (pulled up in plate) | GND via 0 Ω | Plate enables 5 V only when DETECT is low |
 
 v0 can ship **2-pin** (always-on 5 V) for bench; **3-pin + MOSFET** is the on-bike default so an empty wet tray is not a live short.
 
-Do **not** put motorcycle 12 V on the pogo.
+Do **not** put motorcycle 12 V on the pogo. Do **not** pass USB data through the pogo.
 
 ### Connector style
 
@@ -94,27 +112,15 @@ Do **not** put motorcycle 12 V on the pogo.
 
 Spring pins live on the **plate** (replaceable, recessed below the fence). Pads live on the **pod** (flat, wipeable). Recess live pins ~1 mm below fence top.
 
-### 12 V → 5 V in the plate
-
-```
-Battery / SAE ── inline mini-blade fuse ── reverse diode / TVS ── buck (8–36 V in → 5.1 V)
-                                                                      │
-                                                         DETECT MOSFET ── pogo 5 V
-```
-
-- Accessory tap: **SAE 2-pin (powerlet)** if the bike has one; otherwise a fused pigtail to the battery, not an unfused tap at the tail light.
-- Prototype buck: a sealed 2–3 A module is enough. Road: wide-input, load-dump tolerant (ISO 7637-ish), or a pre-made USB-C PD pigtail **only if** we then regulate to a clean 5.1 V for the Pi — do not feed a PD trigger into GPIO 5 V and hope.
-- Strain-relieve the 12 V lead in the plate (gland or printed clamp). No load on solder joints.
-
-### Into the Pi
+### Into the Pi (Zero W)
 
 | Mode | Path |
 |------|------|
-| Docked | Pogo 5 V / GND → short pigtail → **GPIO physical 2 and 6** (or the 5 V / GND test pads). Pi Zero has **no polyfuse**. |
-| Bench, undocked | Existing USB PWR (micro-USB on Zero W; USB-C on Zero 2 W). |
+| Docked | Pogo 5 V / GND → short pigtail → **GPIO physical 2 and 6** (or the 5 V / GND test pads). Zero W has **no polyfuse**. |
+| Bench, undocked | micro-USB **PWR** on the Zero W (the port inward of HDMI). |
 | Both | **Forbidden** unless the pod floor PCB has ideal-diode / MOSFET OR-ing. v0: unplug USB when docking. |
 
-Do not feed 5 V into the USB gadget **data** port (the one next to HDMI on a Zero W) as if it were PWR.
+Do not feed 5 V into the USB gadget **data** port (the one next to HDMI) as if it were PWR. Do not widen the pod USB cutout for USB-C — that inlet lives on the plate.
 
 ### EMI / antenna
 
@@ -133,6 +139,7 @@ The split is a rain gutter, not an IP67 plane.
 - Drain the tray (two 3 mm holes at the low edge once we know on-bike orientation).
 - Gasket optional around the pogo well only (closed-cell strip), not the whole fence — water should leave, not pool on live pins.
 - DETECT + recessed pins are the electrical weather story for v0; conformal coat and lid gasket stay on the [buttons / sealing list](../docs/BUTTONS.md).
+- USB-C inlet gets a rubber dust cap when the accessory cable is out.
 - Printed caps remain actuators, not seals.
 
 ## BOM (v0, buy-to-fit)
@@ -141,11 +148,13 @@ The split is a rain gutter, not an IP67 plane.
 |-----|------|------|
 | 8 | 6×3 mm N52 discs | 4 plate + 4 pod |
 | 1 pair | Keyed 3-pin magnetic pogo, ≥2 A, ~12–14 mm housing | Centre well; confirm footprint before cutting `pogo_well_d` |
-| 1 | 8–36 V → 5 V 3 A buck | Inside plate |
-| 1 | Mini-blade fuse holder + 2 A fuse | 12 V input |
-| 1 | SAE 2-pin pigtail or fused battery lead | Bike tap |
-| 1 | TVS + series diode (or a protected buck that includes them) | Polarity / spikes |
-| — | 24–26 AWG silicone to Pi 5 V/GND | Pod pigtail |
+| 1 | USB-C receptacle (panel / breakout) + dust cap | Plate inlet; power only |
+| 2 | 5.1 kΩ 1% (CC1, CC2 to GND) | Advertise 5 V sink to the accessory port |
+| 1 | ~1 A polyfuse (hold ≥0.5 A) | VBUS; Zero W has no onboard fuse |
+| 1 | USB VBUS ESD / TVS (optional but cheap) | Inlet protection |
+| 1 | DETECT MOSFET + pull-up (on-bike) | Dead tray when undocked |
+| — | USB-C cable from accessory port (or A-to-C) | Bike → plate |
+| — | 24–26 AWG silicone to Pi GPIO 5 V/GND | Pod pigtail |
 | — | AMPS / RAM hardware | Plate to bike |
 
 Caliper the real pogo housing and magnet OD before the first dock-face print. Same loop as `tactile_h` on the button rail.
@@ -159,20 +168,19 @@ Do **not** silently break the printable bench case. Sequence:
 3. New pod floor: magnet pockets, pogo well, blind bosses, tray-compatible outer footprint (same `outer_w` / `outer_d` as today unless the fence needs a 0.3 mm shrink).
 4. Export `plate.stl` + a docked `assembly` that shows plate + pod + explode.
 
-Parameter ownership: **interface file** owns magnet XY, pogo XY, well diameter, fence height. Case file owns walls, buttons, window.
+Parameter ownership: **interface file** owns magnet XY, pogo XY, well diameter, fence height, and the plate USB-C inlet block. Case file owns walls, buttons, window.
 
 ## Phases
 
-1. **This plan** — lock split, 5 V pogo, tray+magnets, plate-side buck.
+1. **This plan** — lock split, Zero W, USB-C accessory into the plate, 5 V pogo, tray+magnets.
 2. **Print the dock face only** — two slabs with pockets + well, no Pi cavity. Measure pull-off, shear on a fence, and whether polarity actually rejects 180°.
-3. **Electrical bench** — fuse + buck + pogo into a Zero on the desk; load-test 5.1 V at the board; then add DETECT.
+3. **Electrical bench** — USB-C PSU → plate inlet (CC sink) → pogo into a Zero W; load-test 5 V at the board; then add DETECT.
 4. **Pod CAD** — blind bosses, pockets in the real floor, keep lid/buttons.
-5. **Plate CAD** — tray, well, AMPS, cable clamp, electronics pocket.
+5. **Plate CAD** — tray, well, USB-C inlet block, AMPS, electronics pocket for polyfuse / MOSFET.
 6. **On-bike** — orientation, drain holes, sun/heat, real clamp geometry.
 
 ## Open questions (do not block CAD slabs)
 
-- Where does 12 V actually come from on the first bike (existing SAE vs battery pigtail)?
-- Zero W (micro-USB) or Zero 2 W (USB-C, more current, antenna still on-board)?
 - Handlebar / stem / ram — measure after the dock face exists; AMPS is the stand-in.
 - Is ~15 N pull-off the right “won’t launch, still removable with gloves” feel once we have a printed fence?
+- Accessory socket USB-A vs USB-C on the bike itself — plate inlet stays USB-C either way.

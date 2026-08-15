@@ -1,9 +1,10 @@
 // Dock mating contract — bike plate ↔ HUD pod underside
 // Units: millimetres. Owned by enclosure/DOCK.md / ADR 0014.
 //
-// Include from the pod floor and the bike plate so magnet XY, pogo well, and
-// tray fence cannot drift. This file is a previewable slab; it does not replace
-// moto_hud_case.scad (bench clamshell) until the pod underside is cut to match.
+// Include from the pod floor and the bike plate so magnet XY, pogo well,
+// tray fence, and the plate USB-C inlet cannot drift. This file is a
+// previewable slab; it does not replace moto_hud_case.scad (bench clamshell)
+// until the pod underside is cut to match.
 //
 //   openscad -o exports/dock_interface.stl dock_interface.scad
 //   openscad -D 'iface_part="plate"' -o exports/dock_plate_slab.stl dock_interface.scad
@@ -39,6 +40,14 @@ mag_pocket_extra_z = 0.2;
 mag_inset_x0 = 16.0;
 mag_inset_x1 = 7.0;
 mag_inset_y = 7.0;
+
+/* [USB-C inlet — plate only, +Y edge. Sink from bike accessory port.] */
+usb_c_block_w = 16.0;
+usb_c_block_d = 10.0;
+usb_c_block_h = 8.0;
+usb_c_w = 9.2;   // receptacle opening; caliper the real shell
+usb_c_h = 3.5;
+usb_c_z = 2.0;   // opening bottom above plate z=0
 
 /* [Pogo well — keyed 3-pin magnetic housing, caliper then retune] */
 pogo_well_d = 14.0;
@@ -110,6 +119,25 @@ module pod_dock_slab() {
     }
 }
 
+module usb_c_inlet_cut() {
+    // Through the +Y face of the inlet block (cable plugs from outside).
+    translate([
+        (plate_w - usb_c_w) / 2,
+        plate_d - eps,
+        usb_c_z
+    ])
+        cube([usb_c_w, usb_c_block_d + 2 * eps, usb_c_h]);
+}
+
+module usb_c_inlet_block() {
+    translate([
+        (plate_w - usb_c_block_w) / 2,
+        plate_d - eps,
+        0
+    ])
+        cube([usb_c_block_w, usb_c_block_d + eps, usb_c_block_h]);
+}
+
 // --- Bike plate: floor + fence; springs in the well, recessed.
 module bike_plate_slab() {
     well_h = plate_t + fence_h;
@@ -131,6 +159,7 @@ module bike_plate_slab() {
                         fence_h + 3 * eps
                     ]);
             }
+            usb_c_inlet_block();
         }
         // Magnet pockets in the floor, opening toward the pod (up)
         translate([
@@ -146,6 +175,7 @@ module bike_plate_slab() {
             -eps
         ])
             pogo_well_cut(well_h + 2 * eps);
+        usb_c_inlet_cut();
     }
 }
 
