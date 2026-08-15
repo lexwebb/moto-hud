@@ -6,9 +6,9 @@ import { STLLoader } from 'three/examples/jsm/loaders/STLLoader.js';
 
 const MODELS = [
   { id: 'bench', label: 'Bench', file: 'assembly.glb' },
-  { id: 'dock', label: 'Dock slabs', file: 'dock_interface.stl' },
+  { id: 'dock', label: 'Dock', file: 'dock_interface.stl' },
   { id: 'plate', label: 'Bike plate', file: 'dock_plate_slab.stl' },
-  { id: 'pod', label: 'Pod face', file: 'dock_pod_slab.stl' },
+  { id: 'pod', label: 'Pod', file: 'dock_pod_slab.stl' },
 ] as const;
 
 type ModelId = (typeof MODELS)[number]['id'];
@@ -165,7 +165,7 @@ export default function EnclosureViewer() {
 
     const spec = MODELS.find((m) => m.id === modelId) ?? MODELS[0];
     const base = import.meta.env.BASE_URL;
-    const url = `${base}enclosure/${spec.file}`;
+    const url = `${base}enclosure/${spec.file}?v=ucap2`;
     if (status) status.textContent = 'Loading…';
 
     const onError = (err: unknown) => {

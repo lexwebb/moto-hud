@@ -24,11 +24,13 @@ The plate is allowed to be bike-specific later (clamp vs stem vs ram). The **doc
 
 ## Mechanical
 
-### Tray, then magnets, then pogo
+### U-caps, grip gaps, then magnets and pogo
 
-Magnets alone are a MagSafe-style face dock. On a motorcycle they lose to **shear** (braking, wind, vibration) before they lose to pull-off. The plate is a **shallow tray**: 2 mm fence, ~3 mm tall, around the pod footprint (~82 × 35 mm with current walls). Plate floor is **4 mm** so 3 mm magnet pockets do not break through to the bike side. The pod drops in; the fence takes XY; magnets take Z and keep the pogo compressed.
+Magnets alone are a MagSafe-style face dock. On a motorcycle they lose to **shear** before pull-off. The plate is a chamfered plinth with **U-shaped end caps** that rise `wrap_h` (~9 mm) into matching **ridged insets** on the pod. The middle of each long side is open (~46 mm) so a glove can pinch the pod; finger scoops undercut the plinth there. Caps take XY; magnets take Z and keep the pogo compressed.
 
-Pull-off target: about **10–20 N** by hand (gloved, one motion) and high enough that idle vibration does not walk the pod up the fence. Crash: prefer the pod to pop free of the plate rather than rip the bar clamp out — do not add a rigid latch in v0.
+Every outer edge and corner is a **1.2 mm chamfer**. Plate floor is **4 mm** so 3 mm magnet pockets do not break through.
+
+Pull-off target: about **10–20 N** by hand (gloved, one motion). Crash: prefer the pod to pop free of the plate rather than rip the bar clamp out — no rigid latch in v0.
 
 ### Magnets
 
@@ -48,7 +50,7 @@ Place pockets using `dock_interface.scad` (`mag_xy`, `mag_d`). Keep them clear o
 
 Pogo typically wants **±0.5 mm**. Magnets help close Z; they do not clock XY well. Use:
 
-1. Tray fence (coarse).
+1. U-shaped end caps (coarse XY) + ridged insets on the pod.
 2. Keyed pogo housing or two **Ø2 mm plastic dowels** (fine), offset so the pod only seats one way.
 3. Magnet polarity as the last foolproof against 180°.
 
@@ -85,7 +87,7 @@ Accessory port ── USB-C cable ──► plate receptacle
 
 - **Do not** fit a PD trigger that requests 9 / 12 / 20 V. Default USB-C 5 V is what Zero W needs.
 - If the bike accessory is USB-A, use A-to-C; the plate inlet stays USB-C.
-- Strain-relieve the jack in a printed block on the plate **+Y** edge (`usb_c_*` in `dock_interface.scad`). Rubber dust cap when the cable is out.
+- Strain-relieve the jack in a printed block on the plate **+X** end cap (`usb_c_*` in `dock_interface.scad`), not in the long-side grip gap. Rubber dust cap when the cable is out.
 - No 12 V buck, SAE pigtail, or load-dump TVS in v0 — the accessory port already did that conversion. A USB VBUS ESD diode on the inlet is still worth fitting.
 
 ### Pinout (power only)
@@ -168,7 +170,7 @@ Do **not** silently break the printable bench case. Sequence:
 3. New pod floor: magnet pockets, pogo well, blind bosses, tray-compatible outer footprint (same `outer_w` / `outer_d` as today unless the fence needs a 0.3 mm shrink).
 4. Export `plate.stl` + a docked `assembly` that shows plate + pod + explode.
 
-Parameter ownership: **interface file** owns magnet XY, pogo XY, well diameter, fence height, and the plate USB-C inlet block. Case file owns walls, buttons, window.
+Parameter ownership: **interface file** owns magnet XY, pogo XY, well diameter, U-cap wrap, grip gap, chamfer, and the plate USB-C inlet. Case file owns walls, buttons, window.
 
 ## Phases
 

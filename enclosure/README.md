@@ -113,7 +113,7 @@ After changing the `.scad`, re-export meshes (including `assembly.glb`) and refr
 
 On-bike dock (not in the bench STL yet): [`DOCK.md`](DOCK.md).
 
-- Print **dock-face slabs** from `dock_interface.scad` and caliper pull-off / shear before cutting the real pod floor
+- Print **dock-face slabs** from `dock_interface.scad` (U-caps + grip gaps) and caliper pull-off / shear before cutting the real pod floor
 - Weather sealing / lens / silicone skirt over caps
 - Handlebar remote pod (large switches; same BCM map) — independent of the dock
 - Bike-specific clamp body after measuring bars; plate uses AMPS / RAM in the meantime
