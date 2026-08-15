@@ -1,12 +1,16 @@
 # Moto HUD enclosure (bench prototype)
 
-Parametric OpenSCAD clamshell for a **Raspberry Pi Zero + e-ink HAT** stack (Inky or Waveshare 2.13″). Buttons are a right-hand rail: printed mushroom caps over 6×6 mm tactiles by default. No bike mount or full weather sealing yet — fit the boards and switches first.
+Parametric OpenSCAD clamshell for a **Raspberry Pi Zero + e-ink HAT** stack (Inky or Waveshare 2.13″). Buttons are a right-hand rail: printed mushroom caps over 6×6 mm tactiles by default.
+
+On-bike shape (planned): this clamshell becomes the removable **HUD pod**; a separate **bike plate** stays on the motorcycle. Magnets + keyed pogo pass 5 V. Plan and millimetre contract: [`DOCK.md`](DOCK.md), [`dock_interface.scad`](dock_interface.scad), [ADR 0014](../docs/adr/0014-two-part-magnetic-pogo-dock.md). The printable bench case is unchanged until the pod underside is cut to that interface.
 
 ## Files
 
 | Path | Purpose |
 |------|---------|
-| [`moto_hud_case.scad`](moto_hud_case.scad) | Parametric model (`part`: `assembly` / `base` / `lid` / `caps`) |
+| [`moto_hud_case.scad`](moto_hud_case.scad) | Parametric bench model (`part`: `assembly` / `base` / `lid` / `caps`) |
+| [`DOCK.md`](DOCK.md) | Two-part magnetic pogo plan (bike plate + HUD pod) |
+| [`dock_interface.scad`](dock_interface.scad) | Shared dock-face contract (magnets, tray fence, pogo well) |
 | [`preview.html`](preview.html) | Standalone Three.js orbit viewer (dev convenience) |
 | [`exports/`](exports/) | STL / GLB meshes for print + site |
 
@@ -105,8 +109,11 @@ After changing the `.scad`, re-export meshes (including `assembly.glb`) and refr
 - Start with the default clearances; if the board is tight, bump `clearance` / `print_tol` by 0.1–0.2 mm.
 - USB cutout sized for Pi Zero micro-USB power; widen `usb_w` / `usb_h` for Zero 2 W USB-C if needed.
 
-## Next (not in this pass)
+## Next
 
-- Bike mount interface (after you measure the mount area)
+On-bike dock (not in the bench STL yet): [`DOCK.md`](DOCK.md).
+
+- Print **dock-face slabs** from `dock_interface.scad` and caliper pull-off / shear before cutting the real pod floor
 - Weather sealing / lens / silicone skirt over caps
-- Handlebar remote pod (large switches; same BCM map)
+- Handlebar remote pod (large switches; same BCM map) — independent of the dock
+- Bike-specific clamp body after measuring bars; plate uses AMPS / RAM in the meantime

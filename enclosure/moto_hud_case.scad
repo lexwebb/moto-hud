@@ -1,6 +1,10 @@
 // Moto HUD bench enclosure — Pi Zero + display HAT clamshell
 // Units: millimetres
 //
+// On-bike dock (plate + magnets + pogo) is planned separately:
+//   DOCK.md, dock_interface.scad, docs/adr/0014-two-part-magnetic-pogo-dock.md
+// Do not cut this floor to the dock face until those pockets are calipered.
+//
 // Usage (Customizer / CLI):
 //   part = "assembly" | "base" | "lid" | "caps"
 // Preview: F5   Render + export STL: F6 → File → Export
