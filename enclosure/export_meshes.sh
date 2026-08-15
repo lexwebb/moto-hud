@@ -19,7 +19,7 @@ echo "Rendering dock interface slabs..."
 "$OPENSCAD" -D 'iface_part="assembly"' -o exports/dock_interface.stl dock_interface.scad
 "$OPENSCAD" -D 'iface_part="plate"' -o exports/dock_plate_slab.stl dock_interface.scad
 "$OPENSCAD" -D 'iface_part="pod"' -o exports/dock_pod_slab.stl dock_interface.scad
-"$OPENSCAD" -D 'iface_part="plate_usb"' -o exports/dock_plate_underside.stl dock_interface.scad
+"$OPENSCAD" -D 'iface_part="plate_usb"' -o exports/dock_plate_usb.stl dock_interface.scad
 
 echo "Converting assembly.stl -> assembly.glb..."
 python3 - <<'PY'

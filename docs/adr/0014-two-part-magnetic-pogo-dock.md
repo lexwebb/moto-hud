@@ -22,6 +22,6 @@ The on-bike enclosure splits into a **bike plate** that stays on the motorcycle 
 
 - CAD splits: keep the current clamshell as the **pod**; add a **bike plate** and a shared underside **dock interface** ([`enclosure/DOCK.md`](../../enclosure/DOCK.md), [`enclosure/dock_interface.scad`](../../enclosure/dock_interface.scad)).
 - Through-floor Pi screws in the bench case cannot poke the dock face — bosses stay blind or are covered.
-- Bike electrical: USB-C inlet in the **underside centre** of the plate (UFP, 5.1 kΩ on CC), polyfuse on VBUS, recessed pogo on the mating face, dock-detect so pins are not hot when empty. No 12 V buck.
+- Bike electrical: USB-C inlet in the **rider-facing long edge** of the plate (UFP, 5.1 kΩ on CC), polyfuse on VBUS, recessed pogo on the mating face, dock-detect so pins are not hot when empty. No 12 V buck.
 - Pod is **Pi Zero W**: docked power on GPIO 5 V/GND; bench power on micro-USB **PWR** (not the gadget port). Do not backfeed both without OR-ing.
 - Magnets sit in the floor, away from a full steel sheet over the Zero W antenna.

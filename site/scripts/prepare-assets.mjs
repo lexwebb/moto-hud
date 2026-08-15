@@ -38,7 +38,7 @@ for (const name of [
   'dock_interface.stl',
   'dock_plate_slab.stl',
   'dock_pod_slab.stl',
-  'dock_plate_underside.stl',
+  'dock_plate_usb.stl',
 ]) {
   const src = join(encSrcDir, name);
   if (existsSync(src)) {

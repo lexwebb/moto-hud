@@ -26,6 +26,12 @@ foreach ($part in @("base", "lid", "caps", "assembly")) {
   cmd /c "`"$openscad`" -D ""part=\""$part\"""" -o exports\$part.stl moto_hud_case.scad"
 }
 
+Write-Host "Rendering dock interface slabs..."
+cmd /c "`"$openscad`" -D ""iface_part=\""assembly\"""" -o exports\dock_interface.stl dock_interface.scad"
+cmd /c "`"$openscad`" -D ""iface_part=\""plate\"""" -o exports\dock_plate_slab.stl dock_interface.scad"
+cmd /c "`"$openscad`" -D ""iface_part=\""pod\"""" -o exports\dock_pod_slab.stl dock_interface.scad"
+cmd /c "`"$openscad`" -D ""iface_part=\""plate_usb\"""" -o exports\dock_plate_usb.stl dock_interface.scad"
+
 Write-Host "Converting assembly.stl -> assembly.glb..."
 python -c @"
 import trimesh

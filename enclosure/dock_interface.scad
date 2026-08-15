@@ -4,11 +4,11 @@
 // Plate: rounded plinth + U-shaped end caps that rise into matching
 // rebates on the pod. Long-side middles are open for a gloved grip.
 // Magnets live under the caps; pogo sits in the open middle.
-// USB-C sinks into the underside centre of the plate (not a side jack).
+// USB-C enters the rider-facing long edge (−Y, bottom of the HUD).
 //
 //   openscad -o exports/dock_interface.stl dock_interface.scad
 //   openscad -D 'iface_part="plate"' -o exports/dock_plate_slab.stl dock_interface.scad
-//   openscad -D 'iface_part="pod"'   -o exports/dock_pod_slab.stl dock_interface.scad
+//   openscad -D 'iface_part="plate_usb"' -o exports/dock_plate_usb.stl dock_interface.scad
 
 /* [Preview] */
 iface_part = "assembly"; // [assembly, plate, pod, plate_usb]
@@ -30,7 +30,7 @@ wrap_h = 9.0;        // how far caps rise up the pod
 wrap_x = 18.0;       // remaining side-wall length from each short end (mm)
 fit = 0.35;          // extra rebate vs wall (print + paint)
 round_r = 2.5;       // rounded bevel on every outer edge / corner
-plate_t = 13.0;      // thick enough for underside USB-C + pogo well + septum
+plate_t = 13.0;      // thick enough for USB-C in the rider-facing floor edge
 scoop_r = 5.5;       // finger undercut in the grip gap
 
 /* [Magnets — 6×3 mm N52 discs, checkerboard polarity] */
@@ -42,17 +42,18 @@ mag_inset_x0 = 16.0;
 mag_inset_x1 = 7.0;
 mag_inset_y = 7.0;
 
-/* [USB-C inlet — underside centre of the plate. Sink from bike accessory port.] */
-usb_c_w = 9.2;       // receptacle opening
-usb_c_h = 3.5;
-usb_c_depth = 7.5;   // into the floor from z=0 (bottom)
+/* [USB-C inlet — rider-facing long edge (−Y), middle of the plate.] */
+usb_c_w = 9.2;       // receptacle opening along X
+usb_c_h = 3.5;       // opening along Z
+usb_c_depth = 10.0;  // into the floor along +Y
+usb_c_z = 3.4;       // opening bottom; above the 2.5 mm floor fillet
 usb_c_shell_w = 12.5;
-usb_c_shell_d = 7.0;
+usb_c_shell_h = 6.5;
 
 /* [Pogo well — keyed 3-pin magnetic housing, caliper then retune] */
 pogo_well_d = 14.0;
 pogo_well_clear = 0.3;
-pogo_well_depth = 3.5; // from the mating face down; does not break into USB-C
+pogo_well_depth = 3.5; // from the mating face down; stays above the USB-C pocket
 pogo_recess = 1.0;
 pogo_pitch = 2.54;
 pogo_pad_d = 2.0;
@@ -155,20 +156,20 @@ module pod_dock_slab() {
     }
 }
 
-// USB-C plug enters from below, dead-centre of the plate floor.
+// USB-C plug enters the −Y face (bottom of the HUD, toward the rider).
 module usb_c_inlet_cut() {
     translate([
         (plate_w - usb_c_shell_w) / 2,
-        (plate_d - usb_c_shell_d) / 2,
-        -eps
+        -eps,
+        usb_c_z - (usb_c_shell_h - usb_c_h) / 2
     ])
-        round_cube(usb_c_shell_w, usb_c_shell_d, usb_c_depth - 1.0 + eps, 0.8);
+        round_cube(usb_c_shell_w, usb_c_depth + eps, usb_c_shell_h, 0.8);
     translate([
         (plate_w - usb_c_w) / 2,
-        (plate_d - usb_c_h) / 2,
-        -eps
+        -eps,
+        usb_c_z
     ])
-        round_cube(usb_c_w, usb_c_h, usb_c_depth + eps, 0.9);
+        round_cube(usb_c_w, usb_c_depth + 2 * eps, usb_c_h, 0.8);
 }
 
 module grip_cutouts() {
@@ -182,11 +183,10 @@ module grip_cutouts() {
 }
 
 module finger_scoops() {
-    for (y = [0, plate_d]) {
-        translate([plate_w / 2, y, plate_t])
-            rotate([0, 90, 0])
-                cylinder(h = grip_w - 2, r = scoop_r, center = true);
-    }
+    // +Y only — the rider-facing (−Y) long edge holds the USB-C inlet.
+    translate([plate_w / 2, plate_d, plate_t])
+        rotate([0, 90, 0])
+            cylinder(h = grip_w - 2, r = scoop_r, center = true);
 }
 
 module bike_plate_slab() {
@@ -202,7 +202,7 @@ module bike_plate_slab() {
         finger_scoops();
         translate([brim, brim, plate_t - (mag_h + mag_pocket_extra_z)])
             mag_pockets(mag_h + mag_pocket_extra_z + eps);
-        // Pogo from the mating face down only — septum above the USB-C pocket
+        // Pogo from the mating face down; USB-C is in the −Y floor edge
         translate([brim, brim, plate_t - pogo_well_depth])
             pogo_well_cut(pogo_well_depth + wrap_h + 2);
         usb_c_inlet_cut();
@@ -220,9 +220,9 @@ if (iface_part == "plate")
 else if (iface_part == "pod")
     pod_dock_slab();
 else if (iface_part == "plate_usb")
-    // Flip so the underside USB-C opening faces +Z for the viewer.
-    translate([0, plate_d, plate_t + wrap_h])
-        rotate([180, 0, 0])
+    // Stand the rider-facing (−Y) edge up so the USB-C opening is visible.
+    translate([0, 0, plate_d])
+        rotate([-90, 0, 0])
             bike_plate_slab();
 else
     assembly();

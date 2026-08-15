@@ -17,7 +17,7 @@ Terms meaningful to the product. Implementation details live in code and ADRs.
 | **Ribbon** | Secondary left-column corridor schematic when neither junction nor synthesizable maneuver exists. |
 | **Link** | BLE (or HTTP injector) connection carrying `nav`, `media`, `cmd`, `heartbeat`. |
 | **HUD pod** | Removable enclosure that holds the Pi, display HAT, and buttons; docks to the bike plate. |
-| **Bike plate** | Motorcycle-mounted tray: USB-C sink from the accessory port, magnets, pogo springs, bar/stem adapter. |
+| **Bike plate** | Motorcycle-mounted tray: USB-C sink in the rider-facing long edge, magnets, pogo springs, bar/stem adapter. |
 | **Dock** | Magnetic + keyed pogo mating face between plate and pod (power only; see [ADR 0014](docs/adr/0014-two-part-magnetic-pogo-dock.md)). |
 
 Decisions: [`docs/adr/`](docs/adr/).
