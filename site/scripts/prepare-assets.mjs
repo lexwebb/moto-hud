@@ -34,7 +34,12 @@ if (existsSync(glbSrc)) {
   console.warn('missing', glbSrc);
 }
 
-for (const name of ['dock_interface.stl', 'dock_plate_slab.stl', 'dock_pod_slab.stl']) {
+for (const name of [
+  'dock_interface.stl',
+  'dock_plate_slab.stl',
+  'dock_pod_slab.stl',
+  'dock_plate_underside.stl',
+]) {
   const src = join(encSrcDir, name);
   if (existsSync(src)) {
     copyFileSync(src, join(glbDstDir, name));

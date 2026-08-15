@@ -26,9 +26,9 @@ The plate is allowed to be bike-specific later (clamp vs stem vs ram). The **doc
 
 ### U-caps, grip gaps, then magnets and pogo
 
-Magnets alone are a MagSafe-style face dock. On a motorcycle they lose to **shear** before pull-off. The plate is a chamfered plinth with **U-shaped end caps** that rise `wrap_h` (~9 mm) into matching **ridged insets** on the pod. The middle of each long side is open (~46 mm) so a glove can pinch the pod; finger scoops undercut the plinth there. Caps take XY; magnets take Z and keep the pogo compressed.
+Magnets alone are a MagSafe-style face dock. On a motorcycle they lose to **shear** before pull-off. The plate is a rounded plinth with **U-shaped end caps** that rise `wrap_h` (~9 mm) into matching **ridged insets** on the pod. The middle of each long side is open (~46 mm) so a glove can pinch the pod; finger scoops undercut the plinth there. Caps take XY; magnets take Z and keep the pogo compressed.
 
-Every outer edge and corner is a **1.2 mm chamfer**. Plate floor is **4 mm** so 3 mm magnet pockets do not break through.
+Every outer edge and corner is a **2.5 mm rounded bevel** (fillet, not a 45° chamfer). Plate floor is **13 mm** so an underside USB-C jack, a pogo well, and a septum all fit; 3 mm magnet pockets sit in the top of that floor.
 
 Pull-off target: about **10–20 N** by hand (gloved, one motion). Crash: prefer the pod to pop free of the plate rather than rip the bar clamp out — no rigid latch in v0.
 
@@ -39,7 +39,7 @@ Pull-off target: about **10–20 N** by hand (gloved, one motion). Crash: prefer
 | Parts | 4× **6 mm × 3 mm** N52 discs (nickel) |
 | XY | Not the geometric corners: **−X (SD) centres at 16 mm** so they miss the Pi M2.5 bosses (~5.9 mm); **+X centres at 7 mm** in the button rail. Y inset 7 mm. See `mag_xy` in the interface file. |
 | Pockets | 6.2 mm ID × 3.2 mm deep, epoxy, **flush** with the face (no proud magnets to chip) |
-| Pod Z | Bench `floor_t` is only 2 mm; 3 mm magnets need local wells into the 3 mm under-PCB air gap (keep ≤ ~1.2 mm proud of the inner floor, clear of through-hole solder) **or** a 4 mm floor on the docked pod. The interface **slab** is 4 mm so we can print a pull-test article without the Pi cavity. |
+| Pod Z | Bench `floor_t` is only 2 mm; 3 mm magnets need local wells into the 3 mm under-PCB air gap **or** a thicker docked-pod floor. The interface preview pod is a 16 mm stand-in; the plate floor is 13 mm. |
 | Polarity | Checkerboard **N–S / S–N** so a 180° dock is repulsive (protects 5 V / GND) |
 | Keepers | Magnets in **both** faces (magnet-to-magnet). No full steel plate — that would shroud the Pi Zero W antenna in the pod floor |
 | Environment | Encapsulate (epoxy + paint or a 0.4 mm printed skin only if pull still meets target). Bare Ni-Cu-Ni rusts. NdFeB fades above ~80 °C — keep the plate off black sun-soaked plastic if we can |
@@ -87,7 +87,7 @@ Accessory port ── USB-C cable ──► plate receptacle
 
 - **Do not** fit a PD trigger that requests 9 / 12 / 20 V. Default USB-C 5 V is what Zero W needs.
 - If the bike accessory is USB-A, use A-to-C; the plate inlet stays USB-C.
-- Strain-relieve the jack in a printed block on the plate **+X** end cap (`usb_c_*` in `dock_interface.scad`), not in the long-side grip gap. Rubber dust cap when the cable is out.
+- Strain-relieve the jack in the **underside centre** of the plate floor (`usb_c_*` in `dock_interface.scad`). The plug comes up from the bike, not in from a side wall. Rubber dust cap when the cable is out. Pogo stays on the **top** centre of that same floor, with a solid septum between them.
 - No 12 V buck, SAE pigtail, or load-dump TVS in v0 — the accessory port already did that conversion. A USB VBUS ESD diode on the inlet is still worth fitting.
 
 ### Pinout (power only)
@@ -170,7 +170,7 @@ Do **not** silently break the printable bench case. Sequence:
 3. New pod floor: magnet pockets, pogo well, blind bosses, tray-compatible outer footprint (same `outer_w` / `outer_d` as today unless the fence needs a 0.3 mm shrink).
 4. Export `plate.stl` + a docked `assembly` that shows plate + pod + explode.
 
-Parameter ownership: **interface file** owns magnet XY, pogo XY, well diameter, U-cap wrap, grip gap, chamfer, and the plate USB-C inlet. Case file owns walls, buttons, window.
+Parameter ownership: **interface file** owns magnet XY, pogo XY, well diameter, U-cap wrap, grip gap, rounded bevel, and the underside USB-C inlet. Case file owns walls, buttons, window.
 
 ## Phases
 
@@ -178,7 +178,7 @@ Parameter ownership: **interface file** owns magnet XY, pogo XY, well diameter, 
 2. **Print the dock face only** — two slabs with pockets + well, no Pi cavity. Measure pull-off, shear on a fence, and whether polarity actually rejects 180°.
 3. **Electrical bench** — USB-C PSU → plate inlet (CC sink) → pogo into a Zero W; load-test 5 V at the board; then add DETECT.
 4. **Pod CAD** — blind bosses, pockets in the real floor, keep lid/buttons.
-5. **Plate CAD** — tray, well, USB-C inlet block, AMPS, electronics pocket for polyfuse / MOSFET.
+5. **Plate CAD** — U-caps, underside-centre USB-C, AMPS, electronics pocket for polyfuse / MOSFET.
 6. **On-bike** — orientation, drain holes, sun/heat, real clamp geometry.
 
 ## Open questions (do not block CAD slabs)

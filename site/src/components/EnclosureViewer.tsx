@@ -8,6 +8,7 @@ const MODELS = [
   { id: 'bench', label: 'Bench', file: 'assembly.glb' },
   { id: 'dock', label: 'Dock', file: 'dock_interface.stl' },
   { id: 'plate', label: 'Bike plate', file: 'dock_plate_slab.stl' },
+  { id: 'plate_usb', label: 'Plate USB', file: 'dock_plate_underside.stl' },
   { id: 'pod', label: 'Pod', file: 'dock_pod_slab.stl' },
 ] as const;
 
@@ -69,8 +70,8 @@ export default function EnclosureViewer() {
     const plastic = new THREE.MeshStandardMaterial({
       color: 0x9aa3ae,
       metalness: 0.05,
-      roughness: 0.65,
-      flatShading: true,
+      roughness: 0.55,
+      flatShading: false,
     });
 
     let loaded: THREE.Object3D | null = null;
@@ -165,7 +166,7 @@ export default function EnclosureViewer() {
 
     const spec = MODELS.find((m) => m.id === modelId) ?? MODELS[0];
     const base = import.meta.env.BASE_URL;
-    const url = `${base}enclosure/${spec.file}?v=ucap2`;
+    const url = `${base}enclosure/${spec.file}?v=round4`;
     if (status) status.textContent = 'Loading…';
 
     const onError = (err: unknown) => {
