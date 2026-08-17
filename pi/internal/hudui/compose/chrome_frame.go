@@ -9,7 +9,7 @@ import (
 	"moto-hud/pi/internal/hudui/token"
 )
 
-// frameBodyNodes is the full panel body slot for frame.svg (chrome + main column).
+// frameBodyNodes is the full panel body (chrome + main column), without BLE link ink.
 func frameBodyNodes(in Input, mainCol []scene.Node) []scene.Node {
 	ch := chromeFor(in)
 	pad, _, divY, ruleX, headerBaseline, legTop, legMid, legBot, linkX, linkY := chromeGeom()
@@ -21,10 +21,22 @@ func frameBodyNodes(in Input, mainCol []scene.Node) []scene.Node {
 	))
 }
 
+// FrameDocument is the full 250×122 panel scene (chrome + main + BLE link ink).
+func FrameDocument(in Input, sp plan.ScreenPlan) scene.Document {
+	nodes := frameBodyNodes(in, sp.Body)
+	_, _, _, _, _, _, _, _, linkX, linkY := chromeGeom()
+	var b scene.Builder
+	b.Append(nodes...)
+	b.Group("ble_link", linkX, linkY, func(gb *scene.Builder) {
+		gb.Append(LinkMarkNodes(in.Linked)...)
+	})
+	return scene.Document{Width: token.Width, Height: token.Height, Nodes: b.Nodes()}
+}
+
 // FrameVars returns frame.svg template vars with a scene-serialized body fragment.
 func FrameVars(in Input, sp plan.ScreenPlan) (map[string]string, error) {
-	frag := svg.Fragment(frameBodyNodes(in, sp.Body))
-	return map[string]string{"body": frag}, nil
+	doc := FrameDocument(in, sp)
+	return map[string]string{"body": svg.Fragment(doc.Nodes)}, nil
 }
 
 // FrameBodyForTest serializes chrome + main column for tests.

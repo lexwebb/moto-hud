@@ -1,10 +1,10 @@
 package hud
 
 import (
-	"fmt"
 	"image"
 	"math"
 
+	"moto-hud/pi/internal/hudui/render/bitmap"
 	"moto-hud/pi/internal/hudui/render/svg"
 	"moto-hud/pi/internal/hudui/scene"
 	"moto-hud/pi/internal/protocol"
@@ -151,13 +151,10 @@ func RenderMinimapLayers(mm *protocol.MinimapMessage, w, h int, context, route, 
 	if h <= 0 {
 		h = 80
 	}
-	frag := minimapSVGLayers(mm, w, h, context, route, marks)
-	svg := fmt.Sprintf(
-		`<svg xmlns="http://www.w3.org/2000/svg" width="%d" height="%d" viewBox="0 0 %d %d">`+
-			`<rect width="%d" height="%d" fill="#fff"/>%s</svg>`,
-		w, h, w, h, w, h, frag,
-	)
-	return RasterizeSVGAt([]byte(svg), w, h)
+	doc := scene.Patch(w, h, func(b *scene.Builder) {
+		b.Append(minimapNodesLayers(mm, w, h, context, route, marks)...)
+	})
+	return bitmap.Rasterize(doc)
 }
 
 // MinimapSVGFragment returns the raw SVG shapes for debugging (no outer <svg>).

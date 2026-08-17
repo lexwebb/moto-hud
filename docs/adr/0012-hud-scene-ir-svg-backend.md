@@ -3,20 +3,18 @@ status: accepted
 date: 2026-07-27
 ---
 
-# HUD scene IR; SVG as render backend only
+# HUD scene IR; bitmap is the only rasterizer
 
-Compose, refresh plans, and patches must not build SVG tags or depend on `<text>` / `<g>` strings. They produce a small **integer scene graph** (1-bit black/white semantics on the 250×122 canvas). **SVG is a backend**: one adapter lowers scene → SVG → existing `pixelfont` + rasterize path (Pi, WASM, design preview). **templ** authors screen trees in `hudui/screens/`; **`scenetempl`** turns templ components into scene nodes at compose time. `scene.RawSVG` remains for ribbon, minimap, lanes, and maneuver paths until native vector nodes exist.
+Compose, refresh plans, and patches produce a small **integer scene graph** (1-bit black/white on 250×122). **`hudui/render/bitmap`** is the sole path from scene → `*image.Gray` — full frames (`compose.FrameDocument`), patch layers, minimap/junction panes, Pi, and WASM. **`hudui/render/svg`** serializes scene → SVG markup for `/frame.svg`, designer export, and lab debug strings only — it does not rasterize.
 
 ## Considered options
 
-- **Chosen** — `hudui/scene` display list + `hudui/render/svg` serializer; `plan.Layer.Patch` returns `scene.Document`; full-frame body migrates incrementally (`BodySVG` → scene or templ→scene at the adapter).
-- **Rejected: SVG everywhere in compose** — couples layout/refresh to tag soup and duplicates patch vs full-frame paths.
-- **Rejected: parse SVG back to scene** — fragile, costly on Pi Zero.
-- **Rejected: immediate direct scene→Gray rasterizer** — optional later for hot patches; reuse SVG rasterizer until profiling says otherwise.
+- **Chosen** — scene IR + `render/bitmap` everywhere pixels are produced.
+- **Rejected: SVG/`canvas` on the hot path** — megabyte allocs; blocked MCU ports; WASM paid the same cost.
+- **Rejected: HTML/CSS runtime** — ADR 0010; fights partial-refresh slots.
 
 ## Consequences
 
-- Rename `NavSVGDeps` toward **`DrawDeps`** (fit/wrap/maneuver/ribbon/minimap/lane helpers); patches and nav chrome use `scene.Builder` / `DrawDeps.*Nodes`.
-- Engine `PatchLayer` serializes `scene.Document` only inside `render/svg`.
-- Compose no longer uses **RawSVG** for nav chrome or link; keep the type only for legacy/tests until removed.
+- `tdewolff/canvas` is not a runtime dependency of `motohud` / WASM.
+- `RawSVG` nodes fail bitmap rasterize; production compose must emit typed nodes.
 - Related: [0010](0010-hud-ui-templ-component-layout.md), [0011](0011-component-refresh-tiers-partial-regions.md).

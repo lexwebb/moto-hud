@@ -1,7 +1,6 @@
 package hud
 
 import (
-	"bytes"
 	"embed"
 	"fmt"
 	"image"
@@ -11,9 +10,6 @@ import (
 	"path/filepath"
 	"strings"
 	"sync"
-
-	"github.com/tdewolff/canvas"
-	"github.com/tdewolff/canvas/renderers/rasterizer"
 
 	"moto-hud/pi/internal/hudui/compose"
 	"moto-hud/pi/internal/pixelfont"
@@ -75,23 +71,14 @@ func resolveAssetDir() string {
 	return assetDir
 }
 
-// Render fills an SVG template, converts Terminus <text> to pixel rects, then rasterizes.
+// Render composes a full frame via scene IR → bitmap.
 func Render(screen Screen, nav protocol.NavMessage, media protocol.MediaMessage, bleLinked bool) *image.Gray {
 	in := ComposeInput(screen, nav, media, bleLinked)
 	sp, err := compose.BuildPlan(in)
 	if err != nil {
 		return fallbackFrame(fmt.Sprintf("plan: %v", err))
 	}
-	svg, err := BuildPixelSVG(screen, nav, media, bleLinked)
-	if err != nil {
-		return fallbackFrame(fmt.Sprintf("svg: %v", err))
-	}
-	img, err := RasterizeSVG(svg)
-	if err != nil {
-		return fallbackFrame(fmt.Sprintf("raster: %v", err))
-	}
-	applyLinkLayer(img, sp)
-	return img
+	return renderFromPlan(in, sp)
 }
 
 // BuildSVG returns filled SVG markup with <text> placeholders resolved (designer form).
@@ -189,55 +176,6 @@ func progressTicks(distanceM int) string {
 		}
 	}
 	return b.String()
-}
-
-// RasterizeSVG renders a pixel SVG (shapes + Terminus rect glyphs) via canvas,
-// then hard-thresholds to 1-bit so stroked glyphs (arrows) don't keep AA gray.
-func RasterizeSVG(svg []byte) (*image.Gray, error) {
-	return RasterizeSVGAt(svg, Width, Height)
-}
-
-// RasterizeSVGAt is RasterizeSVG at an arbitrary pane size (e.g. minimap lab).
-func RasterizeSVGAt(svg []byte, w, h int) (*image.Gray, error) {
-	if w <= 0 {
-		w = Width
-	}
-	if h <= 0 {
-		h = Height
-	}
-	c, err := canvas.ParseSVG(bytes.NewReader(svg))
-	if err != nil {
-		return nil, err
-	}
-	const scale = 1.0
-	rgba := rasterizer.Draw(c, canvas.DPMM(scale), canvas.DefaultColorSpace)
-	return toGray1Bit(rgba, w, h), nil
-}
-
-func toGray1Bit(src image.Image, w, h int) *image.Gray {
-	b := src.Bounds()
-	sw, sh := b.Dx(), b.Dy()
-	out := image.NewGray(image.Rect(0, 0, w, h))
-	for y := 0; y < h; y++ {
-		sy := b.Min.Y + y*sh/h
-		if sy >= b.Max.Y {
-			sy = b.Max.Y - 1
-		}
-		for x := 0; x < w; x++ {
-			sx := b.Min.X + x*sw/w
-			if sx >= b.Max.X {
-				sx = b.Max.X - 1
-			}
-			r, g, bl, _ := src.At(sx, sy).RGBA()
-			lum := (299*r + 587*g + 114*bl) / 1000 >> 8
-			y8 := uint8(255)
-			if lum < 200 {
-				y8 = 0
-			}
-			out.SetGray(x, y, color.Gray{Y: y8})
-		}
-	}
-	return out
 }
 
 func fallbackFrame(msg string) *image.Gray {

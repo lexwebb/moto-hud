@@ -2,7 +2,6 @@ package hud
 
 import (
 	"image"
-	"image/color"
 	"path/filepath"
 	"testing"
 
@@ -28,25 +27,6 @@ func TestRenderIsStrict1Bit(t *testing.T) {
 			if v != 0 && v != 255 {
 				t.Fatalf("mid-gray %d at (%d,%d) — arrow/text AA leaked", v, x, y)
 			}
-		}
-	}
-}
-
-func TestToGray1BitSnaps(t *testing.T) {
-	src := image.NewRGBA(image.Rect(0, 0, 2, 2))
-	src.Set(0, 0, color.RGBA{R: 0, G: 0, B: 0, A: 255})
-	src.Set(1, 0, color.RGBA{R: 180, G: 180, B: 180, A: 255}) // fringe → black (<200)
-	src.Set(0, 1, color.RGBA{R: 220, G: 220, B: 220, A: 255}) // near-white → white
-	src.Set(1, 1, color.RGBA{R: 255, G: 255, B: 255, A: 255})
-	out := toGray1Bit(src, 2, 2)
-	want := []uint8{0, 0, 255, 255}
-	i := 0
-	for y := 0; y < 2; y++ {
-		for x := 0; x < 2; x++ {
-			if got := out.GrayAt(x, y).Y; got != want[i] {
-				t.Fatalf("(%d,%d)=%d want %d", x, y, got, want[i])
-			}
-			i++
 		}
 	}
 }
