@@ -17,3 +17,4 @@ Short records of hard-to-reverse trade-offs. Format and when-to-write: project s
 | [0011](0011-component-refresh-tiers-partial-regions.md) | Component refresh tiers + spatial partial regions | accepted |
 | [0012](0012-hud-scene-ir-svg-backend.md) | HUD scene IR; bitmap-only rasterizer | accepted |
 | [0013](0013-junction-ir-replaces-minimap.md) | Semantics-first junction IR replaces meter minimap | accepted |
+| [0014](0014-two-part-magnetic-pogo-dock.md) | Two-part enclosure: bike plate + magnetic pogo HUD pod | proposed |

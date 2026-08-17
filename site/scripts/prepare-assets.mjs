@@ -6,8 +6,9 @@ const __dirname = dirname(fileURLToPath(import.meta.url));
 const siteRoot = join(__dirname, '..');
 const repoRoot = join(siteRoot, '..');
 
-const glbSrc = join(repoRoot, 'enclosure', 'exports', 'assembly.glb');
+const encSrcDir = join(repoRoot, 'enclosure', 'exports');
 const glbDstDir = join(siteRoot, 'public', 'enclosure');
+const glbSrc = join(encSrcDir, 'assembly.glb');
 const glbDst = join(glbDstDir, 'assembly.glb');
 
 const routeSrc = join(repoRoot, 'web', 'emulator', 'routes', 'whitehall-farringdon.json');
@@ -31,6 +32,21 @@ if (existsSync(glbSrc)) {
   console.log('copied', glbDst);
 } else {
   console.warn('missing', glbSrc);
+}
+
+for (const name of [
+  'dock_interface.stl',
+  'dock_plate_slab.stl',
+  'dock_pod_slab.stl',
+  'dock_plate_usb.stl',
+]) {
+  const src = join(encSrcDir, name);
+  if (existsSync(src)) {
+    copyFileSync(src, join(glbDstDir, name));
+    console.log('copied', join(glbDstDir, name));
+  } else {
+    console.warn('missing', src);
+  }
 }
 
 if (existsSync(routeSrc)) {

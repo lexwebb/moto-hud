@@ -1,11 +1,23 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import * as THREE from 'three';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
+import { STLLoader } from 'three/examples/jsm/loaders/STLLoader.js';
+
+const MODELS = [
+  { id: 'bench', label: 'Bench', file: 'assembly.glb' },
+  { id: 'dock', label: 'Dock', file: 'dock_interface.stl' },
+  { id: 'plate', label: 'Bike plate', file: 'dock_plate_slab.stl' },
+  { id: 'plate_usb', label: 'Plate USB', file: 'dock_plate_usb.stl' },
+  { id: 'pod', label: 'Pod', file: 'dock_pod_slab.stl' },
+] as const;
+
+type ModelId = (typeof MODELS)[number]['id'];
 
 export default function EnclosureViewer() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const statusRef = useRef<HTMLDivElement>(null);
+  const [modelId, setModelId] = useState<ModelId>('dock');
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -55,6 +67,17 @@ export default function EnclosureViewer() {
     ground.receiveShadow = true;
     scene.add(ground);
 
+    const plastic = new THREE.MeshStandardMaterial({
+      color: 0x9aa3ae,
+      metalness: 0.05,
+      roughness: 0.55,
+      flatShading: false,
+    });
+
+    let loaded: THREE.Object3D | null = null;
+    let raf = 0;
+    let alive = true;
+
     function placeKeyLight(object: THREE.Object3D) {
       const box = new THREE.Box3().setFromObject(object);
       const size = box.getSize(new THREE.Vector3());
@@ -81,6 +104,52 @@ export default function EnclosureViewer() {
       key.shadow.needsUpdate = true;
     }
 
+    function fitObject(root: THREE.Object3D) {
+      const box0 = new THREE.Box3().setFromObject(root);
+      const size0 = box0.getSize(new THREE.Vector3());
+      const scale = 0.12 / Math.max(size0.x, size0.y, size0.z, 1e-6);
+      root.scale.setScalar(scale);
+      root.updateMatrixWorld(true);
+
+      const box1 = new THREE.Box3().setFromObject(root);
+      const center1 = box1.getCenter(new THREE.Vector3());
+      root.position.x -= center1.x;
+      root.position.z -= center1.z;
+      root.position.y -= box1.min.y;
+      root.updateMatrixWorld(true);
+
+      root.traverse((obj) => {
+        if (!(obj as THREE.Mesh).isMesh) return;
+        const mesh = obj as THREE.Mesh;
+        mesh.castShadow = true;
+        mesh.receiveShadow = true;
+        mesh.material = plastic.clone();
+        mesh.geometry.computeVertexNormals();
+      });
+
+      scene.add(root);
+      loaded = root;
+      placeKeyLight(root);
+      const h = new THREE.Box3().setFromObject(root).getSize(new THREE.Vector3()).y;
+      controls.target.set(0, h * 0.4, 0);
+      controls.update();
+    }
+
+    function clearLoaded() {
+      if (!loaded) return;
+      scene.remove(loaded);
+      loaded.traverse((obj) => {
+        const mesh = obj as THREE.Mesh;
+        if (mesh.isMesh) {
+          mesh.geometry.dispose();
+          const mat = mesh.material;
+          if (Array.isArray(mat)) mat.forEach((m) => m.dispose());
+          else mat.dispose();
+        }
+      });
+      loaded = null;
+    }
+
     function resize() {
       const parent = canvas.parentElement;
       const w = parent?.clientWidth || canvas.clientWidth;
@@ -95,57 +164,45 @@ export default function EnclosureViewer() {
     if (canvas.parentElement) ro.observe(canvas.parentElement);
     resize();
 
-    const plastic = new THREE.MeshStandardMaterial({
-      color: 0x9aa3ae,
-      metalness: 0.05,
-      roughness: 0.65,
-      flatShading: true,
-    });
-
+    const spec = MODELS.find((m) => m.id === modelId) ?? MODELS[0];
     const base = import.meta.env.BASE_URL;
-    let raf = 0;
-    let alive = true;
+    const url = `${base}enclosure/${spec.file}?v=rider2`;
+    if (status) status.textContent = 'Loading…';
 
-    new GLTFLoader().load(
-      `${base}enclosure/assembly.glb`,
-      (gltf) => {
-        if (!alive) return;
-        const root = gltf.scene;
-        const box0 = new THREE.Box3().setFromObject(root);
-        const size0 = box0.getSize(new THREE.Vector3());
-        const scale = 0.12 / Math.max(size0.x, size0.y, size0.z, 1e-6);
-        root.scale.setScalar(scale);
-        root.updateMatrixWorld(true);
+    const onError = (err: unknown) => {
+      console.error(err);
+      if (status) status.textContent = `Failed to load ${spec.file}`;
+    };
 
-        const box1 = new THREE.Box3().setFromObject(root);
-        const center1 = box1.getCenter(new THREE.Vector3());
-        root.position.x -= center1.x;
-        root.position.z -= center1.z;
-        root.position.y -= box1.min.y;
-        root.updateMatrixWorld(true);
-
-        root.traverse((obj) => {
-          if (!(obj as THREE.Mesh).isMesh) return;
-          const mesh = obj as THREE.Mesh;
-          mesh.castShadow = true;
-          mesh.receiveShadow = true;
-          mesh.material = plastic.clone();
-          mesh.geometry.computeVertexNormals();
-        });
-
-        scene.add(root);
-        placeKeyLight(root);
-        const h = new THREE.Box3().setFromObject(root).getSize(new THREE.Vector3()).y;
-        controls.target.set(0, h * 0.4, 0);
-        controls.update();
-        if (status) status.textContent = '';
-      },
-      undefined,
-      (err) => {
-        console.error(err);
-        if (status) status.textContent = 'Failed to load enclosure/assembly.glb';
-      },
-    );
+    if (spec.file.endsWith('.stl')) {
+      new STLLoader().load(
+        url,
+        (geom) => {
+          if (!alive) {
+            geom.dispose();
+            return;
+          }
+          clearLoaded();
+          const mesh = new THREE.Mesh(geom, plastic.clone());
+          fitObject(mesh);
+          if (status) status.textContent = '';
+        },
+        undefined,
+        onError,
+      );
+    } else {
+      new GLTFLoader().load(
+        url,
+        (gltf) => {
+          if (!alive) return;
+          clearLoaded();
+          fitObject(gltf.scene);
+          if (status) status.textContent = '';
+        },
+        undefined,
+        onError,
+      );
+    }
 
     const frame = () => {
       controls.update();
@@ -159,14 +216,31 @@ export default function EnclosureViewer() {
       cancelAnimationFrame(raf);
       window.removeEventListener('resize', resize);
       ro.disconnect();
+      clearLoaded();
       controls.dispose();
       renderer.dispose();
       plastic.dispose();
+      ground.geometry.dispose();
+      (ground.material as THREE.Material).dispose();
     };
-  }, []);
+  }, [modelId]);
 
   return (
     <div className="viewer-wrap">
+      <div className="model-switch" role="tablist" aria-label="Enclosure model">
+        {MODELS.map((m) => (
+          <button
+            key={m.id}
+            type="button"
+            role="tab"
+            aria-selected={modelId === m.id}
+            className={modelId === m.id ? 'on' : undefined}
+            onClick={() => setModelId(m.id)}
+          >
+            {m.label}
+          </button>
+        ))}
+      </div>
       <canvas ref={canvasRef} id="viewport" />
       <div ref={statusRef} className="viewer-status">
         Loading…
@@ -181,6 +255,30 @@ export default function EnclosureViewer() {
           display: block;
           width: 100%;
           height: 100%;
+        }
+        .model-switch {
+          position: absolute;
+          top: 0.75rem;
+          left: 0.75rem;
+          z-index: 2;
+          display: flex;
+          flex-wrap: wrap;
+          gap: 0.35rem;
+        }
+        .model-switch button {
+          background: #1c1f24;
+          color: #e8eaed;
+          border: 1px solid #2c3036;
+          border-radius: 999px;
+          padding: 0.28rem 0.7rem;
+          font: inherit;
+          font-size: 0.8rem;
+          cursor: pointer;
+        }
+        .model-switch button.on {
+          background: #8ab4f8;
+          color: #12151a;
+          border-color: #8ab4f8;
         }
         .viewer-status {
           position: absolute;

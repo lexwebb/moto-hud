@@ -16,5 +16,8 @@ Terms meaningful to the product. Implementation details live in code and ADRs.
 | **Junction IR** | Semantic turn-scene description (`nav.junction`) drawn as idealized templates by `kind`; replaces geographic minimap polylines ([ADR 0013](docs/adr/0013-junction-ir-replaces-minimap.md)). |
 | **Ribbon** | Secondary left-column corridor schematic when neither junction nor synthesizable maneuver exists. |
 | **Link** | BLE (or HTTP injector) connection carrying `nav`, `media`, `cmd`, `heartbeat`. |
+| **HUD pod** | Removable enclosure that holds the Pi, display HAT, and buttons; docks to the bike plate. |
+| **Bike plate** | Motorcycle-mounted tray: USB-C sink in the rider-facing long edge, magnets, pogo springs, bar/stem adapter. |
+| **Dock** | Magnetic + keyed pogo mating face between plate and pod (power only; see [ADR 0014](docs/adr/0014-two-part-magnetic-pogo-dock.md)). |
 
 Decisions: [`docs/adr/`](docs/adr/).

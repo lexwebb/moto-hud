@@ -122,3 +122,5 @@ Onboard buttons: A=5, B=6, X=16, Y=24. Soft Action remaps to **16** (X) because 
 ## Waterproofing (later)
 
 Printed caps are actuators only — not the electrical contact. Next steps: IP67 sealed tactiles in the same wells and/or a silicone skirt over the caps; base/lid gasket; optional remote handlebar pod with larger switches on the same BCM map.
+
+On-bike power is **not** a USB cable out the side: the pod sits on a magnetic pogo **dock** ([`enclosure/DOCK.md`](../enclosure/DOCK.md)). Button BCM map does not change when docked.

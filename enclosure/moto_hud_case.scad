@@ -1,6 +1,10 @@
 // Moto HUD bench enclosure — Pi Zero + display HAT clamshell
 // Units: millimetres
 //
+// On-bike dock (plate + magnets + pogo) is planned separately:
+//   DOCK.md, dock_interface.scad, docs/adr/0014-two-part-magnetic-pogo-dock.md
+// Do not cut this floor to the dock face until those pockets are calipered.
+//
 // Usage (Customizer / CLI):
 //   part = "assembly" | "base" | "lid" | "caps"
 // Preview: F5   Render + export STL: F6 → File → Export
@@ -45,7 +49,7 @@ boss_id = 2.2;       // pilot / self-tap
 boss_h = 3.0;
 
 /* [USB / SD cutouts] */
-// Pi Zero: micro-USB power on long edge near corner; Zero 2 W uses USB-C — widen if needed
+// Pi Zero W: micro-USB PWR on long edge near corner (bench). On-bike 5 V is USB-C into the plate.
 usb_w = 10.0;
 usb_h = 5.0;
 sd_w = 14.0;

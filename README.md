@@ -17,7 +17,7 @@ Buttons (GPIO) ─────────────────────�
 | [`protocol/`](protocol/) | BLE UUIDs + JSON message schema |
 | [`pi/`](pi/) | Go HUD service, mock injector, systemd unit |
 | [`android/`](android/) | Kotlin companion app |
-| [`enclosure/`](enclosure/) | OpenSCAD bench case (CAD + mesh exports) |
+| [`enclosure/`](enclosure/) | OpenSCAD bench case + planned two-part magnetic pogo dock |
 | [`site/`](site/) | Astro project site (GitHub Pages) |
 | [`docs/adr/`](docs/adr/) | Architecture Decision Records |
 | [`CONTEXT.md`](CONTEXT.md) | Domain language / glossary |
